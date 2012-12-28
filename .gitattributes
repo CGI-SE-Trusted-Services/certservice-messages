@@ -1,0 +1,93 @@
+* text=auto !eol
+/.classpath -text svneol=unset#text/plain
+/.project -text svneol=unset#text/plain
+.settings/org.eclipse.core.resources.prefs -text svneol=unset#text/plain
+.settings/org.eclipse.jdt.core.prefs -text svneol=unset#text/plain
+.settings/org.eclipse.jdt.groovy.core.prefs -text svneol=unset#text/plain
+.settings/org.eclipse.m2e.core.prefs -text svneol=unset#text/plain
+/LICENSE.txt -text svneol=unset#text/plain
+/pom.xml -text svneol=unset#text/plain
+src/main/assembly/assembly-bin.xml -text svneol=unset#text/plain
+src/main/assembly/assembly-src.xml -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/DefaultMessageNameCatalogue.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/DefaultPKIMessageParser.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/DummyPKIMessageSecurityProvider.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/MessageNameCatalogue.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/PKIMessageException.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/PKIMessageParser.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/PKIMessageParserFactory.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/PKIMessageResponseData.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/PKIMessageSecurityProvider.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/SimplePKIMessageSecurityProvider.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/X509DataOnlyKeySelector.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/X509KeySelector.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/XSDLSInput.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/constants/AvailableCredentialStatuses.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/constants/AvailableCredentialTypes.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/Attribute.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/ChangeCredentialStatusRequest.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/ChangeCredentialStatusResponse.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/Credential.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/CredentialRequest.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/CredentialStatusList.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/FetchHardTokenDataRequest.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/FetchHardTokenDataResponse.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/GetCredentialRequest.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/GetCredentialResponse.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/GetCredentialStatusListRequest.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/GetCredentialStatusListResponse.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/GetIssuerCredentialsRequest.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/GetIssuerCredentialsResponse.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/IsIssuerRequest.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/IsIssuerResponse.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/IssueCredentialStatusListRequest.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/IssueCredentialStatusListResponse.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/IssueTokenCredentialsRequest.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/IssueTokenCredentialsResponse.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/ObjectFactory.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/PKIMessage.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/PKIRequest.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/PKIResponse.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/RemoveCredentialRequest.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/RemoveCredentialResponse.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/RequestStatus.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/StoreHardTokenDataRequest.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/StoreHardTokenDataResponse.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/TokenRequest.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/jaxb/package-info.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/manager/DefaultMessageManager.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/manager/DummyMessageHandler.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/manager/MessageHandler.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/manager/MessageManager.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/manager/MessageResponseCallback.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/utils/PKIMessageGenerateUtils.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/pkimessages/utils/SettingsUtils.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/receipts/ReceiptMessage.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/receipts/ReceiptMessageException.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/receipts/ReceiptParser.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/ca/receipts/ReceiptStatus.java -text svneol=unset#text/plain
+src/main/resources/dummykeystore.jks -text
+src/main/resources/pkimessages_1_0.zip -text
+src/main/resources/pkimessages_examplerequest.xml -text svneol=unset#text/plain
+src/main/resources/pkimessages_exampleresponse.xml -text svneol=unset#text/plain
+src/main/resources/pkimessages_schema.xsd -text svneol=unset#text/plain
+src/main/resources/test.cer -text
+src/main/resources/xmldsig-core-schema.xsd -text svneol=unset#text/plain
+src/site/markdown/README.md -text
+src/site/resources/PKIMessage_Protocol_Specification_1.0_Revision_1.1.doc -text
+src/site/resources/images/logo.png -text
+src/site/site.xml -text svneol=unset#text/plain
+src/test/groovy/org/certificateservices/ca/pkimessages/DefaultMessageNameCatalogueSpec.groovy -text
+src/test/groovy/org/certificateservices/ca/pkimessages/DefaultPKIMessageParserSpec.groovy -text
+src/test/groovy/org/certificateservices/ca/pkimessages/DummyPKIMessageSecurityProviderSpec.groovy -text
+src/test/groovy/org/certificateservices/ca/pkimessages/PKIMessageParserFactorySpec.groovy -text
+src/test/groovy/org/certificateservices/ca/pkimessages/PKIMessageResponseDataSpec.groovy -text
+src/test/groovy/org/certificateservices/ca/pkimessages/SimplePKIMessageSecurityProviderSpec.groovy -text
+src/test/groovy/org/certificateservices/ca/pkimessages/TestMessages.groovy -text
+src/test/groovy/org/certificateservices/ca/pkimessages/manager/DefaultMessageManagerSpec.groovy -text
+src/test/groovy/org/certificateservices/ca/pkimessages/utils/PKIMessageGenerateUtilsSpec.groovy -text
+src/test/groovy/org/certificateservices/ca/pkimessages/utils/SettingsUtilsSpec.groovy -text
+src/test/groovy/org/certificateservices/ca/receipts/ReceiptStatusSpec.groovy -text
+src/test/java/org/certificateservices/ca/pkimessages/DummyPKIMessageParser.java -text svneol=unset#text/plain
+src/test/java/org/certificateservices/ca/pkimessages/manager/DummyMessageManager.java -text svneol=unset#text/plain
+src/test/resources/testtruststore.jks -text
