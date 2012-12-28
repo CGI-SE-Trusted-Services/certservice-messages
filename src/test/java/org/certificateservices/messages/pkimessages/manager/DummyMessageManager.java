@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.certificateservices.ca.pkimessages.manager;
+package org.certificateservices.messages.pkimessages.manager;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -10,19 +10,20 @@ import java.util.List;
 import java.util.Properties;
 
 import org.bouncycastle.util.encoders.Base64;
-import org.certificateservices.ca.pkimessages.DummyPKIMessageSecurityProvider;
-import org.certificateservices.ca.pkimessages.PKIMessageException;
-import org.certificateservices.ca.pkimessages.PKIMessageParser;
-import org.certificateservices.ca.pkimessages.PKIMessageSecurityProvider;
-import org.certificateservices.ca.pkimessages.constants.AvailableCredentialTypes;
-import org.certificateservices.ca.pkimessages.jaxb.Credential;
-import org.certificateservices.ca.pkimessages.jaxb.CredentialRequest;
-import org.certificateservices.ca.pkimessages.jaxb.GetCredentialRequest;
-import org.certificateservices.ca.pkimessages.jaxb.IssueTokenCredentialsRequest;
-import org.certificateservices.ca.pkimessages.jaxb.ObjectFactory;
-import org.certificateservices.ca.pkimessages.jaxb.PKIMessage;
-import org.certificateservices.ca.pkimessages.jaxb.RequestStatus;
-import org.certificateservices.ca.pkimessages.utils.PKIMessageGenerateUtils;
+import org.certificateservices.messages.DummyMessageSecurityProvider;
+import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageSecurityProvider;
+import org.certificateservices.messages.pkimessages.PKIMessageParser;
+import org.certificateservices.messages.pkimessages.constants.AvailableCredentialTypes;
+import org.certificateservices.messages.pkimessages.jaxb.Credential;
+import org.certificateservices.messages.pkimessages.jaxb.CredentialRequest;
+import org.certificateservices.messages.pkimessages.jaxb.GetCredentialRequest;
+import org.certificateservices.messages.pkimessages.jaxb.IssueTokenCredentialsRequest;
+import org.certificateservices.messages.pkimessages.jaxb.ObjectFactory;
+import org.certificateservices.messages.pkimessages.jaxb.PKIMessage;
+import org.certificateservices.messages.pkimessages.jaxb.RequestStatus;
+import org.certificateservices.messages.pkimessages.manager.MessageManager;
+import org.certificateservices.messages.utils.MessageGenerateUtils;
 
 /**
  * @author Philip Vendil
@@ -31,23 +32,23 @@ import org.certificateservices.ca.pkimessages.utils.PKIMessageGenerateUtils;
 public class DummyMessageManager implements MessageManager{
 
 	PKIMessageParser messageParser;
-	PKIMessageSecurityProvider securityProvider = new DummyPKIMessageSecurityProvider();
+	MessageSecurityProvider securityProvider = new DummyMessageSecurityProvider();
 	ObjectFactory of = new ObjectFactory();
 
-	public void init(Properties config, PKIMessageParser parser, String destination, String organisation) throws IllegalArgumentException,
-	IOException, PKIMessageException {
+	public void init(Properties config, PKIMessageParser parser, String destination) throws IllegalArgumentException,
+	IOException, MessageException {
 
 		messageParser = parser;
 		try {
 			messageParser.init(securityProvider, config);
-		} catch (PKIMessageException e) {
-			throw new PKIMessageException(e.getMessage(),e);
+		} catch (MessageException e) {
+			throw new MessageException(e.getMessage(),e);
 		}
 
 	}
 
 	public PKIMessage sendMessage(String requestId, byte[] request) throws IllegalArgumentException,
-	IOException, PKIMessageException {
+	IOException, MessageException {
 		try {
 			PKIMessage rm = messageParser.parseMessage(request);
 			if(rm.getPayload().getGetCredentialRequest() != null){
@@ -61,19 +62,19 @@ public class DummyMessageManager implements MessageManager{
 					c.setCredentialSubType(gcr.getCredentialSubType());
 					c.setCredentialType(AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE);
 					c.setDisplayName("SomeDisplayName");
-					c.setExpireDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
-					c.setIssueDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
+					c.setExpireDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
+					c.setIssueDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
 					c.setIssuerId(gcr.getIssuerId());
 					c.setSerialNumber(gcr.getSerialNumber());
 					c.setStatus(100);
 					c.setUniqueId("SomeUniqueId");
-					c.setValidFromDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
+					c.setValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
 
 
-					return messageParser.parseMessage(messageParser.genGetCredentialResponse(rm, c));
+					return messageParser.parseMessage(messageParser.genGetCredentialResponse(rm, c).getResponseData());
 
 				}else{
-					return messageParser.parseMessage(messageParser.genPKIResponse(request, RequestStatus.ILLEGALARGUMENT, "some bad request"));
+					return messageParser.parseMessage(messageParser.genPKIResponse(request, RequestStatus.ILLEGALARGUMENT, "some bad request").getResponseData());
 				}
 			}
 			if(rm.getPayload().getIssueTokenCredentialsRequest() != null){
@@ -85,21 +86,21 @@ public class DummyMessageManager implements MessageManager{
 				c.setCredentialSubType(cr.getCredentialSubType());
 				c.setCredentialType(AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE);
 				c.setDisplayName("SomeDisplayName");
-				c.setExpireDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
-				c.setIssueDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
+				c.setExpireDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
+				c.setIssueDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
 				c.setIssuerId("CN=SomeIssuerId");
 				c.setSerialNumber("abc123");
 				c.setStatus(100);
 				c.setUniqueId("SomeUniqueId");
-				c.setValidFromDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
+				c.setValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
 
 				List<Credential> credentials = new ArrayList<Credential>();
 				credentials.add(c);
-				return messageParser.parseMessage(messageParser.genIssueTokenCredentialsResponse(rm, credentials, null));
+				return messageParser.parseMessage(messageParser.genIssueTokenCredentialsResponse(rm, credentials, null).getResponseData());
 			}
 
-		} catch (PKIMessageException e) {
-			throw new PKIMessageException(e.getMessage(),e);
+		} catch (MessageException e) {
+			throw new MessageException(e.getMessage(),e);
 		}
 		return null;
 	}
@@ -126,5 +127,10 @@ public class DummyMessageManager implements MessageManager{
 			"NzHWz92kL6UKUFzyBXBiBbY7TSVjO+bV/uPaTEVP7QhJk4Cahg1a7h8iMdF78ths" +
 			"+xMeZX1KyiL4Dpo2rocZAvdL/C8qkt/uEgOjwOTdmoRVxkFWcm+DRNa26cclBQ4t" +
 			"Vw==").getBytes();
+
+	public Object getConnectionFactory() throws MessageException,
+			IOException {
+		return null;
+	}
 
 }
