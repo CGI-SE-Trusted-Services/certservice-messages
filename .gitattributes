@@ -70,6 +70,15 @@ src/main/java/org/certificateservices/messages/DummyMessageSecurityProvider.java
 src/main/java/org/certificateservices/messages/MessageException.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/MessageSecurityProvider.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/SimpleMessageSecurityProvider.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/pkimessages/DefaultMessageNameCatalogue.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/pkimessages/DefaultPKIMessageParser.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/pkimessages/MessageNameCatalogue.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/pkimessages/PKIMessageParser.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/pkimessages/PKIMessageParserFactory.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/pkimessages/PKIMessageResponseData.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/pkimessages/X509DataOnlyKeySelector.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/pkimessages/X509KeySelector.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/pkimessages/XSDLSInput.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/constants/AvailableCredentialStatuses.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/constants/AvailableCredentialTypes.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/jaxb/Attribute.java -text svneol=unset#text/plain
