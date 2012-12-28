@@ -147,4 +147,6 @@ src/test/groovy/org/certificateservices/ca/pkimessages/utils/SettingsUtilsSpec.g
 src/test/groovy/org/certificateservices/ca/receipts/ReceiptStatusSpec.groovy -text
 src/test/java/org/certificateservices/ca/pkimessages/DummyPKIMessageParser.java -text svneol=unset#text/plain
 src/test/java/org/certificateservices/ca/pkimessages/manager/DummyMessageManager.java -text svneol=unset#text/plain
+src/test/java/org/certificateservices/messages/pkimessages/DummyPKIMessageParser.java -text svneol=unset#text/plain
+src/test/java/org/certificateservices/messages/pkimessages/manager/DummyMessageManager.java -text svneol=unset#text/plain
 src/test/resources/testtruststore.jks -text
