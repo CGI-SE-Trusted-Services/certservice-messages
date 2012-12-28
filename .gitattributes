@@ -77,17 +77,6 @@ src/site/markdown/README.md -text
 src/site/resources/PKIMessage_Protocol_Specification_1.0_Revision_1.1.doc -text
 src/site/resources/images/logo.png -text
 src/site/site.xml -text svneol=unset#text/plain
-src/test/groovy/org/certificateservices/ca/pkimessages/DefaultMessageNameCatalogueSpec.groovy -text
-src/test/groovy/org/certificateservices/ca/pkimessages/DefaultPKIMessageParserSpec.groovy -text
-src/test/groovy/org/certificateservices/ca/pkimessages/DummyPKIMessageSecurityProviderSpec.groovy -text
-src/test/groovy/org/certificateservices/ca/pkimessages/PKIMessageParserFactorySpec.groovy -text
-src/test/groovy/org/certificateservices/ca/pkimessages/PKIMessageResponseDataSpec.groovy -text
-src/test/groovy/org/certificateservices/ca/pkimessages/SimplePKIMessageSecurityProviderSpec.groovy -text
-src/test/groovy/org/certificateservices/ca/pkimessages/TestMessages.groovy -text
-src/test/groovy/org/certificateservices/ca/pkimessages/manager/DefaultMessageManagerSpec.groovy -text
-src/test/groovy/org/certificateservices/ca/pkimessages/utils/PKIMessageGenerateUtilsSpec.groovy -text
-src/test/groovy/org/certificateservices/ca/pkimessages/utils/SettingsUtilsSpec.groovy -text
-src/test/groovy/org/certificateservices/ca/receipts/ReceiptStatusSpec.groovy -text
 src/test/java/org/certificateservices/messages/pkimessages/DummyPKIMessageParser.java -text svneol=unset#text/plain
 src/test/java/org/certificateservices/messages/pkimessages/manager/DummyMessageManager.java -text svneol=unset#text/plain
 src/test/resources/testtruststore.jks -text
