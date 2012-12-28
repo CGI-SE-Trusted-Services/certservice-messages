@@ -2,16 +2,16 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.certificateservices.ca.pkimessages</groupId>
-	<artifactId>certservice-pkimessages</artifactId>
+	<groupId>org.certificateservices.messages</groupId>
+	<artifactId>certservice-messages</artifactId>
 	<version>1.0.9${versionAppend}</version>
 	<packaging>jar</packaging>
 	<description>See README for more details.</description>
 
-	<name>pkimessages</name>
+	<name>certservice-messages</name>
 	<url>http://www.certificateservice.org</url>
 	<scm>
-      <connection>scm:svn:https://certificateservices.org/project/certserv/svn/certservice-pkimessages/trunk</connection>
+      <connection>scm:svn:https://certificateservices.org/project/certserv/svn/certservice-messages/trunk</connection>
     </scm>
 	<licenses>
 		<license>
