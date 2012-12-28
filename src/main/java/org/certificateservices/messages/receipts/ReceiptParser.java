@@ -6,6 +6,8 @@ package org.certificateservices.messages.receipts;
 import java.util.List;
 import java.util.Properties;
 
+import org.certificateservices.messages.MessageSecurityProvider;
+
 /**
  * @author Philip Vendil
  *
@@ -15,10 +17,11 @@ public interface ReceiptParser {
 	/**
 	 * Method that initializes the receipt parser with property set.
 	 * 
+	 * @param securityProvider the message security provider to use.
 	 * @param config the configuration of the parser.
 	 * @throws ReceiptMessageException if configuration contained bad configuration of security provider.
 	 */
-	void init(Properties config) throws ReceiptMessageException;
+	void init(MessageSecurityProvider securityProvider, Properties config) throws ReceiptMessageException;
 	
 	/**
 	 * Method to parse the messageData into a ReceiptMessage with validation according to the
