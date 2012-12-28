@@ -66,6 +66,10 @@ src/main/java/org/certificateservices/ca/receipts/ReceiptMessage.java -text svne
 src/main/java/org/certificateservices/ca/receipts/ReceiptMessageException.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/ca/receipts/ReceiptParser.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/ca/receipts/ReceiptStatus.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/DummyMessageSecurityProvider.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/MessageException.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/MessageSecurityProvider.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/SimpleMessageSecurityProvider.java -text svneol=unset#text/plain
 src/main/resources/dummykeystore.jks -text
 src/main/resources/pkimessages_1_0.zip -text
 src/main/resources/pkimessages_examplerequest.xml -text svneol=unset#text/plain
