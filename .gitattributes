@@ -87,6 +87,7 @@ src/test/groovy/org/certificateservices/messages/pkimessages/TestMessages.groovy
 src/test/groovy/org/certificateservices/messages/pkimessages/manager/DefaultMessageManagerSpec.groovy -text
 src/test/groovy/org/certificateservices/messages/receipts/ReceiptStatusSpec.groovy -text
 src/test/groovy/org/certificateservices/messages/utils/MessageGenerateUtilsSpec.groovy -text
+src/test/groovy/org/certificateservices/messages/utils/SettingsUtilsSpec.groovy -text
 src/test/java/org/certificateservices/messages/pkimessages/DummyPKIMessageParser.java -text svneol=unset#text/plain
 src/test/java/org/certificateservices/messages/pkimessages/manager/DummyMessageManager.java -text svneol=unset#text/plain
 src/test/resources/testtruststore.jks -text
