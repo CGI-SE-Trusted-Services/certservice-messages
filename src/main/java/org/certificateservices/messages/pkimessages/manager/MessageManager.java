@@ -33,6 +33,14 @@ public interface MessageManager {
 	 */
 	void init(Properties config, PKIMessageParser parser, String destination) throws IllegalArgumentException, IOException, MessageException;
 	
+	
+	/**
+	 * Method called by service if the underlying MessageHandler should connect to the MessageQueue server and start processing incoming calls.
+	 * @throws MessageException if configuration problems or other internal problems occurred connecting to the MQ server.
+	 * @throws IOException if communication problems occurred connecting from the message server.
+	 */
+	void connect() throws MessageException, IOException;	
+	
 	/**
 	 * Method returning the JMS connection factory used in underlying classes.
 	 * <p>
@@ -47,6 +55,12 @@ public interface MessageManager {
 	Object getConnectionFactory() throws MessageException, IOException;
 	
 	/**
+	 * Method to return a reference to the underlying message handler used.
+	 * @return underlying message handler used.
+	 */
+	MessageHandler getMessageHandler();
+	
+	/**
 	 * Method that sends a request to message server and should wait for a response.
 	 * 
 	 * @param request the request message to send
@@ -56,6 +70,12 @@ public interface MessageManager {
 	 * @throws MessageException if there were an critical internal error at the server side, that wasn't related to communication problems.
 	 */
 	PKIMessage sendMessage(String requestId, byte[] request) throws IllegalArgumentException, IOException, MessageException;
+	
+	/**
+	 * Method returning if the underlying message handler is currently connected.
+	 * @return true if connected.
+	 */
+	public boolean isConnected();
 	
 	/**
 	 * Method that should close all underlying connections and release all resources connected

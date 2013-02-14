@@ -66,7 +66,6 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 		
 		this.messageHandler = getMessageHandler(config, parser);
 		
-		this.messageHandler.connect();
 	}
 
 	/**
@@ -317,5 +316,18 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	public Object getConnectionFactory() throws MessageException,
 			IOException {
 		return messageHandler.getConnectionFactory();		
+	}
+
+	public void connect() throws MessageException, IOException {
+		messageHandler.connect();
+		
+	}
+
+	public MessageHandler getMessageHandler() {
+		return messageHandler;
+	}
+
+	public boolean isConnected() {
+		return messageHandler.isConnected();
 	}
 }

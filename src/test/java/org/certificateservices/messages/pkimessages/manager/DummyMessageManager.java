@@ -133,4 +133,17 @@ public class DummyMessageManager implements MessageManager{
 		return null;
 	}
 
+	public void connect() throws MessageException, IOException {
+		
+		
+	}
+
+	public MessageHandler getMessageHandler() {		
+		return null;
+	}
+
+	public boolean isConnected() {
+		return true;
+	}
+
 }
