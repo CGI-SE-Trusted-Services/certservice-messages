@@ -56,6 +56,12 @@ public interface MessageHandler {
 	void sendMessage(byte[] message)  throws MessageException, IOException;	
 
 	/**
+	 * Method returning if the handler is currently connected to the JMS broker.
+	 * @return true if connected.
+	 */
+	public boolean isConnected();
+	
+	/**
 	 * Method called by service if the MessageHandler should disconnect from the MessageQueue server.
 	 * 
 	 * @throws IOException if communication problems occurred disconnecting from the message server.

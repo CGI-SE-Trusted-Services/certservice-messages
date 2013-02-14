@@ -169,4 +169,8 @@ public class DummyMessageHandler implements MessageHandler{
 		throw new MessageException("Not implemented");
 	}
 
+	public boolean isConnected() {
+		return true;
+	}
+
 }

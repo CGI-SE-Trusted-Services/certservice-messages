@@ -111,7 +111,7 @@ public class SimpleMessageSecurityProvider implements
 			if(e instanceof MessageException){
 				throw (MessageException) e;
 			}
-			throw new MessageException("Error loading signing keystore: " + e.getMessage(),e);
+			throw new MessageException("Error loading signing truststore: " + e.getMessage(),e);
 		}
 		
 	}
