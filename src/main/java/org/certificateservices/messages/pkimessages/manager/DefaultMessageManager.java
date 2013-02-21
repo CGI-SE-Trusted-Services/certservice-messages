@@ -46,11 +46,11 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	
 	private static String REVOKE_REASON_REASONINFORMATION_CESSATIONOFOPERATION = "5"; 
 	
-	private static long SLEEP_INTERVAL_MILLIS = 100;
-	private PKIMessageParser parser;
-	private String destination;
-	private MessageHandler messageHandler;
-	private long timeout;
+	protected static long SLEEP_INTERVAL_MILLIS = 100;
+	protected PKIMessageParser parser;
+	protected String destination;
+	protected MessageHandler messageHandler;
+	protected long timeout;
 	
 	/** 
 	 * Method that initializes the message manager
@@ -122,11 +122,11 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 									byte[] revokeMessage = parser.genChangeCredentialStatusRequest(MessageGenerateUtils.generateRandomUUID(),destination, responseMessage.getOrganisation(), c.getIssuerId(), c.getSerialNumber(), AvailableCredentialStatuses.REVOKED, REVOKE_REASON_REASONINFORMATION_CESSATIONOFOPERATION);
 									messageHandler.sendMessage(revokeMessage);
 								} catch (IOException e) {
-									log.error("Error revoking timed-out vehicle certificate, io exception: " + e.getMessage());
+									log.error("Error revoking timed-out certificate, io exception: " + e.getMessage());
 								} catch (MessageException e) {
-									log.error("Error revoking timed-out vehicle certificate, internal error: " + e.getMessage());
+									log.error("Error revoking timed-out certificate, internal error: " + e.getMessage());
 								} catch (IllegalArgumentException e) {
-									log.error("Error revoking timed-out vehicle certificate, illegal argument: " + e.getMessage());
+									log.error("Error revoking timed-out certificate, illegal argument: " + e.getMessage());
 								} 															
 							}
 						}
@@ -141,7 +141,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	 * 
 	 * @param requestId  the id of the message to register
 	 */
-	private synchronized void registerWaitForRequestId(String requestId){
+	protected synchronized void registerWaitForRequestId(String requestId){
 		responseMap.put(requestId, new RequestEntry());
 	}
 	
@@ -150,7 +150,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	 * @param requestId the id to check for 
 	 * @return the PKIMessage response or null if no response have been recieved yet.
 	 */
-	private synchronized PKIMessage checkIfResponseIsReady(String requestId){
+	protected synchronized PKIMessage checkIfResponseIsReady(String requestId){
 		PKIMessage retval = null;
 		RequestEntry entry = responseMap.get(requestId);
 		if(entry != null && entry.getResponse() != null){
@@ -166,7 +166,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	 * Method signaling that the waiting thread have stopped listening for
 	 * a response to this request.
 	 */
-	private synchronized void cancelWaitForResponse(String requestId){
+	protected synchronized void cancelWaitForResponse(String requestId){
 		responseMap.remove(requestId);
 	}
 	
@@ -174,7 +174,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	 * Method that is called by the responseRecieved method that it received a message
 	 * to this listener and should populate the response map.
 	 */
-	private synchronized boolean populateResponseMapIfStillExist(String requestId, PKIMessage responseMessage){
+	protected synchronized boolean populateResponseMapIfStillExist(String requestId, PKIMessage responseMessage){
 		boolean retval = false;
 		RequestEntry entry = responseMap.get(requestId);
 		if(entry != null){
@@ -192,7 +192,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	 * @param responseMessage the message to parse request id from
 	 * @return the request id or null if no valid request id was found in the response
 	 */
-	private String findRequestId(PKIMessage responseMessage) {
+	protected String findRequestId(PKIMessage responseMessage) {
 		String retval = null;
 		PKIResponse response = findResponsePayload(responseMessage);
 		if(response != null){
@@ -206,7 +206,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 		return retval;
 	}
 	
-	private PKIResponse findResponsePayload(PKIMessage responseMessage){
+	protected PKIResponse findResponsePayload(PKIMessage responseMessage){
 		if(responseMessage.getPayload().getGetCredentialResponse() != null){
 			return responseMessage.getPayload().getGetCredentialResponse();
 		}
@@ -262,7 +262,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	 * @author Philip Vendil
 	 *
 	 */
-	private class RequestEntry{
+	protected class RequestEntry{
 		
 		private PKIMessage response;
 
@@ -278,7 +278,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	/**
 	 * Returns the message handler to use, if not configured is the default message handler created and returned.
 	 */
-	private MessageHandler getMessageHandler(Properties config, PKIMessageParser parser) throws MessageException, IllegalArgumentException, IOException{
+	protected MessageHandler getMessageHandler(Properties config, PKIMessageParser parser) throws MessageException, IllegalArgumentException, IOException{
 		try{
 			String classPath = config.getProperty(SETTING_MESSAGEHANDLER_CLASSPATH);
 			if(classPath == null){
@@ -304,7 +304,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	}
 	
 	
-	private long getTimeOutInMillis(Properties config) throws MessageException{
+	protected long getTimeOutInMillis(Properties config) throws MessageException{
 		String timeout = config.getProperty(SETTING_MESSAGE_TIMEOUT_MILLIS, DEFAULT_MESSAGE_TIMEOUT_MILLIS);
 		try{
 			return Long.parseLong(timeout);

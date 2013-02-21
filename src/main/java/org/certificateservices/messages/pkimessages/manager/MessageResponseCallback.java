@@ -19,11 +19,11 @@ import org.certificateservices.messages.pkimessages.jaxb.PKIMessage;
 public interface MessageResponseCallback {
 	
 	/**
-	 * Method signaling that a response was recieved.
+	 * Method signaling that a response was received.
      * <p>
      * <b>Important</b> only messages with a destination matching this source id should be sent through
      * this callback.
-	 * @param responseMessage the response message that was recieved.
+	 * @param responseMessage the response message that was received.
 	 */
 	public void responseReceived(PKIMessage responseMessage);
 
