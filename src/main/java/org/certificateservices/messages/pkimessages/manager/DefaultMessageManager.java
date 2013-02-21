@@ -44,7 +44,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	public static final String SETTING_MESSAGEHANDLER_CLASSPATH = "mq.messagehandler.impl";
 
 	
-	private static String REVOKE_REASON_REASONINFORMATION_CESSATIONOFOPERATION = "5"; 
+	protected static String REVOKE_REASON_REASONINFORMATION_CESSATIONOFOPERATION = "5"; 
 	
 	protected static long SLEEP_INTERVAL_MILLIS = 100;
 	protected PKIMessageParser parser;
