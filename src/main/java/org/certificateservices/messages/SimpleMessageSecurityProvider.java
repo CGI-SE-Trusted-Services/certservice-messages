@@ -5,6 +5,8 @@ package org.certificateservices.messages;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
@@ -68,10 +70,21 @@ public class SimpleMessageSecurityProvider implements
 	 */
 	public SimpleMessageSecurityProvider(Properties config) throws MessageException{
 		String keyStorePath = SettingsUtils.getRequiredProperty(config, SETTING_SIGNINGKEYSTORE_PATH);
-		File keyStoreFile = new File(keyStorePath);
-		if(!keyStoreFile.canRead() || !keyStoreFile.exists() || !keyStoreFile.isFile()){
-			throw new MessageException("Error reading signing keystore: " + keyStorePath + ", make sure it exists and is readable");
+		
+		InputStream keyStoreInputStream = this.getClass().getClassLoader().getResourceAsStream(keyStorePath);
+		if(keyStoreInputStream == null){
+			File keyStoreFile = new File(keyStorePath);
+			if(!keyStoreFile.canRead() || !keyStoreFile.exists() || !keyStoreFile.isFile()){
+				throw new MessageException("Error reading signing keystore: " + keyStorePath + ", make sure it exists and is readable");
+			}else{
+				try {
+					keyStoreInputStream = new FileInputStream(keyStoreFile);
+				} catch (FileNotFoundException e) {
+					throw new MessageException("Error keystore file: " + keyStoreFile + " not found.");
+				}
+			}
 		}
+			
 		
 		String signKeystoreAlias = SettingsUtils.getRequiredProperty(config, SETTING_SIGNINGKEYSTORE_ALIAS);
 		
@@ -79,7 +92,7 @@ public class SimpleMessageSecurityProvider implements
 			String signKeystorePassword = SettingsUtils.getRequiredProperty(config, SETTING_SIGNINGKEYSTORE_PASSWORD);
 			
 			KeyStore signKeystore = KeyStore.getInstance("JKS");
-			signKeystore.load(new FileInputStream(keyStoreFile), signKeystorePassword.toCharArray());
+			signKeystore.load(keyStoreInputStream, signKeystorePassword.toCharArray());
 			signCertificate = (X509Certificate) signKeystore.getCertificate(signKeystoreAlias);
 
 			signPrivateKey = (PrivateKey) signKeystore.getKey(signKeystoreAlias, signKeystorePassword.toCharArray());
@@ -94,18 +107,27 @@ public class SimpleMessageSecurityProvider implements
 		if(signCertificate == null || signPrivateKey == null){
 			throw new MessageException("Error finding signing certificate and key for alias : " + signKeystoreAlias + ", in key store: " + keyStorePath);
 		}
-		
+				
 		String trustStorePath = SettingsUtils.getRequiredProperty(config, SETTING_TRUSTKEYSTORE_PATH);
-		File trustStoreFile = new File(trustStorePath);
-		if(!trustStoreFile.canRead() || !trustStoreFile.exists() || !trustStoreFile.isFile()){
-			throw new MessageException("Error reading signing truststore: " + trustStorePath + ", make sure it exists and is readable");
+		InputStream trustStoreInputStream = this.getClass().getClassLoader().getResourceAsStream(trustStorePath);
+		if(trustStoreInputStream == null){
+			File trustStoreFile = new File(trustStorePath);
+			if(!trustStoreFile.canRead() || !trustStoreFile.exists() || !trustStoreFile.isFile()){
+				throw new MessageException("Error reading signing truststore: " + trustStorePath + ", make sure it exists and is readable");
+			}else{
+				try {
+					trustStoreInputStream = new FileInputStream(trustStorePath);
+				} catch (FileNotFoundException e) {
+					throw new MessageException("Error keystore file: " + trustStorePath + " not found.");
+				}
+			}
 		}
 		
 		try{
 			String truststorePassword = SettingsUtils.getRequiredProperty(config, SETTING_TRUSTKEYSTORE_PASSWORD);
 			
 			trustStore = KeyStore.getInstance("JKS");
-			trustStore.load(new FileInputStream(trustStoreFile), truststorePassword.toCharArray());
+			trustStore.load(trustStoreInputStream, truststorePassword.toCharArray());
 
 		}catch(Exception e){
 			if(e instanceof MessageException){
