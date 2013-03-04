@@ -50,7 +50,7 @@ public class DummyMessageHandler implements MessageHandler{
 		
 	}
 
-	public void sendMessage(byte[] messageData) throws MessageException,
+	public void sendMessage(String messageId, byte[] messageData) throws MessageException,
 	IOException {
 		PKIMessage response = null;		
 		PKIMessage request = parser.parseMessage(messageData);

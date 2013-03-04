@@ -77,7 +77,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 		PKIMessage retval = null;
 		
 		registerWaitForRequestId(requestId);
-		messageHandler.sendMessage(request);
+		messageHandler.sendMessage(requestId, request);
 				
 		long waitTime = 0;
 		while(waitTime < timeout){
@@ -119,8 +119,9 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 							for(Credential c : itcr.getCredentials().getCredential()){
 								// Send revocation request
 								try {
-									byte[] revokeMessage = parser.genChangeCredentialStatusRequest(MessageGenerateUtils.generateRandomUUID(),destination, responseMessage.getOrganisation(), c.getIssuerId(), c.getSerialNumber(), AvailableCredentialStatuses.REVOKED, REVOKE_REASON_REASONINFORMATION_CESSATIONOFOPERATION);
-									messageHandler.sendMessage(revokeMessage);
+									String messageId = MessageGenerateUtils.generateRandomUUID();
+									byte[] revokeMessage = parser.genChangeCredentialStatusRequest(messageId,destination, responseMessage.getOrganisation(), c.getIssuerId(), c.getSerialNumber(), AvailableCredentialStatuses.REVOKED, REVOKE_REASON_REASONINFORMATION_CESSATIONOFOPERATION);
+									messageHandler.sendMessage(messageId, revokeMessage);
 								} catch (IOException e) {
 									log.error("Error revoking timed-out certificate, io exception: " + e.getMessage());
 								} catch (MessageException e) {
@@ -304,7 +305,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	}
 	
 	
-	protected long getTimeOutInMillis(Properties config) throws MessageException{
+	public static long getTimeOutInMillis(Properties config) throws MessageException{
 		String timeout = config.getProperty(SETTING_MESSAGE_TIMEOUT_MILLIS, DEFAULT_MESSAGE_TIMEOUT_MILLIS);
 		try{
 			return Long.parseLong(timeout);

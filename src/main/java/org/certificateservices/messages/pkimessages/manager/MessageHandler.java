@@ -50,10 +50,12 @@ public interface MessageHandler {
 	/**
 	 * Method to send a message to the MQ server out queue.
 	 * 
+	 * @param messageId the id of the message
+	 * @param the message data to send
 	 * @throws MessageException if configuration problems or other internal problems occurred connecting to the MQ server.
 	 * @throws IOException if communication problems occurred connecting and sending to the message server.
 	 */
-	void sendMessage(byte[] message)  throws MessageException, IOException;	
+	void sendMessage(String messageId, byte[] message)  throws MessageException, IOException;	
 
 	/**
 	 * Method returning if the handler is currently connected to the JMS broker.
