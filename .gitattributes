@@ -13,6 +13,11 @@ src/main/java/org/certificateservices/messages/DummyMessageSecurityProvider.java
 src/main/java/org/certificateservices/messages/MessageException.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/MessageSecurityProvider.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/SimpleMessageSecurityProvider.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/heartbeat/HealthStatus.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/heartbeat/HeartBeatConfigurationException.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/heartbeat/HeartBeatMessage.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/heartbeat/HeartBeatSender.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/heartbeat/MonitoringPoint.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/DefaultMessageNameCatalogue.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/DefaultPKIMessageParser.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/MessageNameCatalogue.java -text svneol=unset#text/plain
@@ -79,6 +84,8 @@ src/site/resources/images/logo.png -text
 src/site/site.xml -text svneol=unset#text/plain
 src/test/groovy/org/certificateservices/messages/DummyPKIMessageSecurityProviderSpec.groovy -text
 src/test/groovy/org/certificateservices/messages/SimplePKIMessageSecurityProviderSpec.groovy -text
+src/test/groovy/org/certificateservices/messages/heartbeat/HeartBeatMessageSpec.groovy -text
+src/test/groovy/org/certificateservices/messages/heartbeat/MonitoringPointSpec.groovy -text
 src/test/groovy/org/certificateservices/messages/pkimessages/DefaultMessageNameCatalogueSpec.groovy -text
 src/test/groovy/org/certificateservices/messages/pkimessages/DefaultPKIMessageParserSpec.groovy -text
 src/test/groovy/org/certificateservices/messages/pkimessages/PKIMessageParserFactorySpec.groovy -text
