@@ -1,6 +1,6 @@
 /************************************************************************
 *                                                                       *
-*  Certificate Service - EJBCA Components                               *
+*  Certificate Service - Messages                                   *
 *                                                                       *
 *  This software is free software; you can redistribute it and/or       *
 *  modify it under the terms of the GNU Affero General Public License   *
@@ -35,6 +35,7 @@ public class ReceiptStatusSpec extends Specification{
 		
 		where:
 		id  | expectedStatus
+		-4  | ReceiptStatus.ERROR_SENDING_MESSAGE
 		-3  | ReceiptStatus.RECIEVED_WITH_BAD_SIGNATURE
 		-2  | ReceiptStatus.RECIEVED_WITH_PAYLOAD_ERROR
 		-1  | ReceiptStatus.RECIEVED_WITH_HEADER_ERROR

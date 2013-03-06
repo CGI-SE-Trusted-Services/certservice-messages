@@ -29,7 +29,11 @@ public enum ReceiptStatus {
 	/**
 	 * Indicating that message was received but resulted in an error due to bad signature
 	 */
-	RECIEVED_WITH_BAD_SIGNATURE(-3);
+	RECIEVED_WITH_BAD_SIGNATURE(-3),
+	/**
+	 * Indicating that an error occurred when sending the message.
+	 */
+	ERROR_SENDING_MESSAGE(-4);
 	
 	private int id;
 
