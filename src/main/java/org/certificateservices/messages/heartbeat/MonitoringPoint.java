@@ -23,6 +23,8 @@ import java.util.Date;
  */
 public class MonitoringPoint {
 	
+	public static String MONITORING_POINT_ID_OVERALL_HEALTH = "HEALTH";
+	
 	private String monitoringPointId;
 	private Date timestamp;
 	private HealthStatus status;

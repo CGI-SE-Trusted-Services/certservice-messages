@@ -16,6 +16,7 @@ src/main/java/org/certificateservices/messages/SimpleMessageSecurityProvider.jav
 src/main/java/org/certificateservices/messages/heartbeat/HealthStatus.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/heartbeat/HeartBeatConfigurationException.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/heartbeat/HeartBeatMessage.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/heartbeat/HeartBeatParser.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/heartbeat/HeartBeatSender.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/heartbeat/MonitoringPoint.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/DefaultMessageNameCatalogue.java -text svneol=unset#text/plain
