@@ -238,6 +238,20 @@ public interface PKIMessageParser {
 	PKIMessageResponseData genIssueCredentialStatusListResponse(PKIMessage request, CredentialStatusList credentialStatusList) throws IllegalArgumentException, MessageException;
 	
 	/**
+	 * Method to generate a IssueCredentialStatusListResponse where there are no request, such 
+	 * as scheduled CRL issuing.
+	 * 
+	 * @param destination the destination of the response set in the PKI message.
+	 * @param requestName the name of the request message this response whould normally reply to.
+	 * @param organisation the organisation set in the response message.
+	 * @param credentialStatusList the new credential status list
+	 * @return a generated message.
+	 * @throws IllegalArgumentException if PKI message contained invalid data not conforming to the standard.
+	 * @throws MessageException if internal state occurred when processing the PKIMessage
+	 */
+	PKIMessageResponseData genIssueCredentialStatusListResponseWithoutRequest(String destination, String requestName, String organisation, CredentialStatusList credentialStatusList) throws IllegalArgumentException, MessageException;
+	
+	/**
 	 * Method to generate a RemoveCredentialRequest
 	 * 
 	 * @param requestId the id of the request

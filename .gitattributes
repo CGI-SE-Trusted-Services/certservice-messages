@@ -29,6 +29,7 @@ src/main/java/org/certificateservices/messages/pkimessages/X509KeySelector.java 
 src/main/java/org/certificateservices/messages/pkimessages/XSDLSInput.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/constants/AvailableCredentialStatuses.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/constants/AvailableCredentialTypes.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/pkimessages/constants/Constants.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/jaxb/Attribute.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/jaxb/ChangeCredentialStatusRequest.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/jaxb/ChangeCredentialStatusResponse.java -text svneol=unset#text/plain

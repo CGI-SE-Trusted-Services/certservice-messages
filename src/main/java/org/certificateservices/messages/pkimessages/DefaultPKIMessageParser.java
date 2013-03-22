@@ -567,6 +567,24 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	}
 	
 	/**
+	 * @see org.certificateservices.messages.pkimessages.PKIMessageParser#genIssueCredentialStatusListResponseWithoutRequest(String, String, CredentialStatusList)
+	 */
+	
+	public PKIMessageResponseData genIssueCredentialStatusListResponseWithoutRequest(String destination, String name, String organisation,
+			CredentialStatusList credentialStatusList)
+			throws IllegalArgumentException, MessageException {
+		String responseId = MessageGenerateUtils.generateRandomUUID();
+		IssueCredentialStatusListResponse payload = objectFactory.createIssueCredentialStatusListResponse();
+		payload.setFailureMessage(null);
+		payload.setStatus(RequestStatus.SUCCESS);
+		payload.setInResponseTo(responseId);
+		payload.setCredentialStatusList(credentialStatusList);
+		PKIMessage pkiMessage = genPKIMessage(name,responseId, destination, organisation, payload);		
+		byte[] responseData = marshallAndSignPKIMessage(pkiMessage);
+		return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getDestinationId(),responseData, true);
+	}
+	
+	/**
 	 * @see org.certificateservices.messages.pkimessages.PKIMessageParser#genRemoveCredentialRequest(String, String, String, String)
 	 */
 	
