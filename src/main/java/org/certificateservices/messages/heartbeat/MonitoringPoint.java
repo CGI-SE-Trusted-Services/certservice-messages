@@ -29,8 +29,8 @@ public class MonitoringPoint {
 	private Date timestamp;
 	private HealthStatus status;
 	private String description;
-	private Integer currentThroughput;
-	private Integer maxThroughput;
+	private Long currentThroughput;
+	private Long maxThroughput;
 	private String throughputUnits;
 	
 	/**
@@ -88,8 +88,8 @@ public class MonitoringPoint {
 	 * @throws IllegalArgumentException  if constructor parameters contained invalid data.
 	 */
 	public MonitoringPoint(String monitoringPointId, Date timestamp,
-			HealthStatus status, String description, Integer currentThroughput,
-			Integer maxThroughput, String throughputUnits) throws IllegalArgumentException {
+			HealthStatus status, String description, Long currentThroughput,
+			Long maxThroughput, String throughputUnits) throws IllegalArgumentException {
 		this(monitoringPointId, timestamp, status, description);
 		this.currentThroughput = currentThroughput;
 		this.maxThroughput = maxThroughput;
@@ -132,7 +132,7 @@ public class MonitoringPoint {
 	 * 
 	 * @return optional current throughput of the given monitoring point, can be null if not applicable.
 	 */
-	public Integer getCurrentThroughput() {
+	public Long getCurrentThroughput() {
 		return currentThroughput;
 	}
 
@@ -140,7 +140,7 @@ public class MonitoringPoint {
 	 * 
 	 * @return optional estimated maximum throughput of the given monitoring point, can be null if not applicable.
 	 */
-	public Integer getMaxThroughput() {
+	public Long getMaxThroughput() {
 		return maxThroughput;
 	}
 

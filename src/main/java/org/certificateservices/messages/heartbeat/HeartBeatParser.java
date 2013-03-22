@@ -44,6 +44,6 @@ public interface HeartBeatParser {
 	 * @throws IllegalArgumentException if supplied arguments were invalid.
 	 * @throws MessageException if internal problems occurred when generating the heart beat message.
 	 */
-	byte[] genReceiptMessage(String messageId, HeartBeatMessage heartBeatMessage)  throws IllegalArgumentException, MessageException;
+	byte[] genHeartBeatMessage(String messageId, HeartBeatMessage heartBeatMessage)  throws IllegalArgumentException, MessageException;
 
 }
