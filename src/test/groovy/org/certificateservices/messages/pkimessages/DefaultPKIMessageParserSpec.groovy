@@ -46,6 +46,7 @@ import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.xml.sax.InputSource
 
+import spock.lang.IgnoreRest;
 import spock.lang.Specification
 
 
@@ -507,6 +508,29 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg","IssueCredentialStatusListResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.issueCredentialStatusListResponse, request)
+		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.issuerId == "SomeIssuerId"
+		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.credentialStatusListType == "SomeCredentialStatusListType"
+		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.credentialType == "SomeCredentialType"
+		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.serialNumber == "16"
+		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.listData == "MTIzNDVBQkNFRg=="
+		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.description == "SomeDescription"
+		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.issueDate == "1970-01-01T01:00:01.235+01:00"
+		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.expireDate == "1970-01-01T01:00:01.234+01:00"
+		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.validFromDate == "1970-01-01T01:00:01.236+01:00"
+	}
+
+	def "Test that signed genIssueCredentialStatusListResponseWithoutRequest message is populated correctly and signature is valid"(){
+
+		when:
+		  PKIMessageResponseData result = mp.genIssueCredentialStatusListResponseWithoutRequest("SOMEDESTINATION","SOMENAME", "SomeOrg", createDummyCredentialStatusList())
+		  String message = new String(result.responseData,"UTF-8")
+		  def xmlMessage = new XmlSlurper().parseText(message)
+		then:
+		  assert result.isForwardableResponse == true
+		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEDESTINATION", "SomeOrg","IssueCredentialStatusListResponse")
+		  verifySignature(message)
+		  assert xmlMessage.payload.issueCredentialStatusListResponse.inResponseTo == result.getMessageId()
+		  assert xmlMessage.payload.issueCredentialStatusListResponse.status == "SUCCESS"
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.issuerId == "SomeIssuerId"
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.credentialStatusListType == "SomeCredentialStatusListType"
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.credentialType == "SomeCredentialType"

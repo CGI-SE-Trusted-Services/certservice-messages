@@ -216,5 +216,14 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 			throws IllegalArgumentException, MessageException {
 		return null;
 	}
+
+
+	public PKIMessageResponseData genIssueCredentialStatusListResponseWithoutRequest(
+			String destination, String name, String organisation,
+			CredentialStatusList credentialStatusList)
+			throws IllegalArgumentException, MessageException {
+		// Auto-generated method stub
+		return null;
+	}
 	
 }
