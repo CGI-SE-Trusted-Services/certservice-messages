@@ -36,7 +36,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	 * Setting indicating the time-out of a message in milli-seconds before IOException is thrown.
 	 */
 	public static final String SETTING_MESSAGE_TIMEOUT_MILLIS = "mq.message.timeout";
-	public static final String DEFAULT_MESSAGE_TIMEOUT_MILLIS = "10000"; // 10 seconds 	
+	public static final String DEFAULT_MESSAGE_TIMEOUT_MILLIS = "60000"; // 60 seconds 	
 	
 	/**
 	 * Setting indicating the message handler to use to send and receive the messages.
