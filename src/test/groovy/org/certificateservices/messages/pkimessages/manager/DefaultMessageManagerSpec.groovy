@@ -169,7 +169,7 @@ class DefaultMessageManagerSpec extends Specification{
 		when:
 		config = new Properties();		
 		then:
-		assert mm.getTimeOutInMillis(config) == 10000L
+		assert mm.getTimeOutInMillis(config) == 60000L
 
 	}
 	
