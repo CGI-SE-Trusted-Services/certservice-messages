@@ -14,6 +14,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 
 /**
@@ -100,6 +101,8 @@ public class PKIMessage {
     protected String version;
     @XmlAttribute(name = "ID", required = true)
     protected String id;
+    @XmlAttribute(name = "timeStamp")
+	private XMLGregorianCalendar timeStamp;
 
     /**
      * Gets the value of the name property.
@@ -293,8 +296,32 @@ public class PKIMessage {
         this.id = value;
     }
 
+    /**
+     * Gets the value of the timeStamp property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link XMLGregorianCalendar }
+     *     
+     */
+    public XMLGregorianCalendar getTimeStamp() {
+		return timeStamp;
+	}
 
     /**
+     * Sets the value of the timeStamp property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link XMLGregorianCalendar }
+     *     
+     */
+	public void setTimeStamp(XMLGregorianCalendar timeStamp) {
+		this.timeStamp = timeStamp;
+	}
+
+
+	/**
      * <p>Java class for anonymous complex type.
      * 
      * <p>The following schema fragment specifies the expected content contained within this class.

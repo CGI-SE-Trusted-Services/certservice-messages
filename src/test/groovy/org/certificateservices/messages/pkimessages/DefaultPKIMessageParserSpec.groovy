@@ -660,6 +660,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		assert xmlMessage.destinationId == expectedDestinationId
 		assert xmlMessage.organisation == expectedOrganisation
 		assert xmlMessage.payload != null
+		assert xmlMessage.@timeStamp != null
 	}
 	
 	private void verifySignature(String message){

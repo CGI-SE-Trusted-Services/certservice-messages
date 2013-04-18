@@ -839,6 +839,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		}else{
 		  retval.setID(messageId);
 		}
+		retval.setTimeStamp(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date()));
 		retval.setName(messageNameCatalogue.lookupName(requestName, payload));
 		retval.setDestinationId(destinationID);
 		retval.setSourceId(sourceId);
