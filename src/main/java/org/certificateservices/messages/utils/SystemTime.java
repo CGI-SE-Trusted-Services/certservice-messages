@@ -12,6 +12,8 @@
 *************************************************************************/
 package org.certificateservices.messages.utils;
 
+import java.util.Date;
+
 
 /**
  * Interface to do system time modularized, mockable and testable.
@@ -22,6 +24,12 @@ package org.certificateservices.messages.utils;
  *
  */
 public interface SystemTime {
+	
+	/**
+	 * Method that returns the current system time in milliseconds
+	 * @return current system time in milliseconds in date format.
+	 */
+	Date getSystemTime();
 
 	/**
 	 * Method that returns the current system time in milliseconds

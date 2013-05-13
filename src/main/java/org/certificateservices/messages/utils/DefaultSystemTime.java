@@ -12,6 +12,8 @@
 *************************************************************************/
 package org.certificateservices.messages.utils;
 
+import java.util.Date;
+
 /**
  * Default implementation of SystemTime that gets the system time from
  * System.currentTimeMillis()
@@ -21,6 +23,16 @@ package org.certificateservices.messages.utils;
  */
 public class DefaultSystemTime implements SystemTime {
 
+	/**
+	 * Default implementation of SystemTime that gets the system time from
+     * System.currentTimeMillis()
+     * 
+	 * @see org.certificateservices.messages.utils.SystemTime#getSystemTime()
+	 */
+	public Date getSystemTime() {
+		return new Date(System.currentTimeMillis());
+	}
+	
 	/**
 	 * Default implementation of SystemTime that gets the system time from
      * System.currentTimeMillis()

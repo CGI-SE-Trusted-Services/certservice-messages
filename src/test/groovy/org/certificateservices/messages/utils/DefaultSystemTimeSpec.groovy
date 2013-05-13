@@ -20,6 +20,7 @@ class DefaultSystemTimeSpec extends Specification{
 	 def "Test default system time works"(){
 		 expect:
 		 (new DefaultSystemTime()).getSystemTimeMS() != 0
+		 (new DefaultSystemTime()).getSystemTime() != null
 	 }
 	 
 	 
