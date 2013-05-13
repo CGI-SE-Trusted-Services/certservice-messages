@@ -69,8 +69,10 @@ src/main/java/org/certificateservices/messages/receipts/ReceiptMessage.java -tex
 src/main/java/org/certificateservices/messages/receipts/ReceiptMessageException.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/receipts/ReceiptParser.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/receipts/ReceiptStatus.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/utils/DefaultSystemTime.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/utils/MessageGenerateUtils.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/utils/SettingsUtils.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/utils/SystemTime.java -text svneol=unset#text/plain
 src/main/resources/dummykeystore.jks -text
 src/main/resources/pkimessages_1_0.zip -text
 src/main/resources/pkimessages_examplerequest.xml -text svneol=unset#text/plain
@@ -93,6 +95,7 @@ src/test/groovy/org/certificateservices/messages/pkimessages/PKIMessageResponseD
 src/test/groovy/org/certificateservices/messages/pkimessages/TestMessages.groovy -text
 src/test/groovy/org/certificateservices/messages/pkimessages/manager/DefaultMessageManagerSpec.groovy -text
 src/test/groovy/org/certificateservices/messages/receipts/ReceiptStatusSpec.groovy -text
+src/test/groovy/org/certificateservices/messages/utils/DefaultSystemTimeSpec.groovy -text
 src/test/groovy/org/certificateservices/messages/utils/MessageGenerateUtilsSpec.groovy -text
 src/test/groovy/org/certificateservices/messages/utils/SettingsUtilsSpec.groovy -text
 src/test/java/org/certificateservices/messages/pkimessages/DummyPKIMessageParser.java -text svneol=unset#text/plain
