@@ -22,14 +22,14 @@
 	</licenses>
 	<distributionManagement>
 		<repository>
-			<id>st-buildhost.customer.st</id>
-			<name>st-buildhost.customer.st-releases</name>
-			<url>http://10.0.0.5:8081/artifactory/libs-release-local</url>
+			<id>dev.certificateservices.org-release</id>
+			<name>dev.certificateservices.org</name>
+			<url>http://dev.certificateservices.org/artifactory/libs-release-local</url>
 		</repository>
 		<snapshotRepository>
-			<id>st-buildhost.customer.st</id>
-			<name>st-buildhost.customer.st-snapshots</name>
-			<url>http://10.0.0.5:8081/artifactory/libs-snapshot-local</url>
+			<id>dev.certificateservices.org-snapshot</id>
+			<name>dev.certificateservices.org</name>
+			<url>http://dev.certificateservices.org/artifactory/libs-snapshot-local</url>
 		</snapshotRepository>
 	</distributionManagement>
 	<properties>
