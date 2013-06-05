@@ -24,12 +24,12 @@
 		<repository>
 			<id>dev.certificateservices.org-release</id>
 			<name>dev.certificateservices.org</name>
-			<url>http://dev.certificateservices.org/artifactory/libs-release-local</url>
+			<url>https://dev.certificateservices.org/artifactory/libs-release-local</url>
 		</repository>
 		<snapshotRepository>
 			<id>dev.certificateservices.org-snapshot</id>
 			<name>dev.certificateservices.org</name>
-			<url>http://dev.certificateservices.org/artifactory/libs-snapshot-local</url>
+			<url>https://dev.certificateservices.org/artifactory/libs-snapshot-local</url>
 		</snapshotRepository>
 	</distributionManagement>
 	<properties>
