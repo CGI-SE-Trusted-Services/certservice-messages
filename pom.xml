@@ -201,7 +201,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-scm-plugin</artifactId>
-				<version>1.0</version>
+				<version>2.2.1</version>
 				<configuration>
 					<tag>VER_${project.version}</tag>
 				</configuration>
