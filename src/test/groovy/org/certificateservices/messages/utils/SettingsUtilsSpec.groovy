@@ -1,5 +1,7 @@
 package org.certificateservices.messages.utils
 
+import static org.junit.Assert.*;
+
 import java.io.File;
 
 import javax.xml.datatype.XMLGregorianCalendar;

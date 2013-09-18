@@ -52,14 +52,13 @@ import spock.lang.Specification
 
 class DefaultPKIMessageParserSpec extends Specification {
 	
-	private static DefaultPKIMessageParser mp = new DefaultPKIMessageParser();
-	private static ObjectFactory of = new ObjectFactory();
-	private static DummyMessageSecurityProvider secprov = new DummyMessageSecurityProvider();
+	static DefaultPKIMessageParser mp = new DefaultPKIMessageParser();
+	static ObjectFactory of = new ObjectFactory();
+	static DummyMessageSecurityProvider secprov = new DummyMessageSecurityProvider();
 	
-	private static final String TEST_ID = "12345678-1234-4444-8000-123456789012"
+	static final String TEST_ID = "12345678-1234-4444-8000-123456789012"
 
 	
-    @BeforeClass
 	def setupSpec(){
 		
 		Properties config = new Properties();
@@ -67,6 +66,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		mp.init(secprov, config)		
 	}
 	
+
 	@Test
 	def "Test that unmarshaller validates against the schema"(){
 		when:

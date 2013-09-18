@@ -18,12 +18,12 @@ import org.junit.Test;
 import spock.lang.Specification
 
 
-class DefaultMessageNameCatalogueSpec extends Specification {
+public class DefaultMessageNameCatalogueSpec extends Specification {
 	
 
 	static MessageNameCatalogue messageNameCatalogue;
 	
-	@BeforeClass
+
 	def setupSpec(){		
 		Properties config = new Properties();
 		config.setProperty(DefaultMessageNameCatalogue.SETTING_MESSAGE_NAME_PREFIX + "isissuerrequest", "SomeOtherName");

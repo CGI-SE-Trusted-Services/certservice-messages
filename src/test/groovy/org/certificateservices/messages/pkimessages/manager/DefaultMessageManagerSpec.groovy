@@ -31,7 +31,6 @@ class DefaultMessageManagerSpec extends Specification{
 	
 	private static final String TEST_ID = "12345678-1234-4444-8000-123456789012"
 
-	@BeforeClass
 	def setupSpec(){
         config = new Properties();
 		config.setProperty(DefaultPKIMessageParser.SETTING_SOURCEID, "somesourceId");		

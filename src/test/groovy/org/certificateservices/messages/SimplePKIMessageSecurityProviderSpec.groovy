@@ -18,8 +18,7 @@ import spock.lang.Specification
 class SimplePKIMessageSecurityProviderSpec extends Specification {
 	
 	@Shared SimpleMessageSecurityProvider prov
-	
-	@BeforeClass
+
 	def setupSpec(){
 		Properties config = new Properties();
 		config.setProperty(SimpleMessageSecurityProvider.SETTING_SIGNINGKEYSTORE_PATH, this.getClass().getResource("/dummykeystore.jks").getPath())

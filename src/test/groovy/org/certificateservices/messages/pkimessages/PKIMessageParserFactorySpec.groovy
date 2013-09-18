@@ -30,7 +30,7 @@ class PKIMessageParserFactorySpec extends Specification {
 	Properties config = new Properties()
 	DummyMessageSecurityProvider secprov = new DummyMessageSecurityProvider();
 	
-	@Before
+
 	def setup(){
 		config.setProperty(DefaultPKIMessageParser.SETTING_SOURCEID, "SomeSourceID")
 	}
