@@ -14,6 +14,7 @@ import org.certificateservices.messages.MessageException;
 import org.certificateservices.messages.pkimessages.PKIMessageParser;
 import org.certificateservices.messages.pkimessages.constants.AvailableCredentialStatuses;
 import org.certificateservices.messages.pkimessages.constants.AvailableCredentialTypes;
+import org.certificateservices.messages.pkimessages.constants.Constants;
 import org.certificateservices.messages.pkimessages.jaxb.ChangeCredentialStatusRequest;
 import org.certificateservices.messages.pkimessages.jaxb.Credential;
 import org.certificateservices.messages.pkimessages.jaxb.CredentialRequest;
@@ -72,7 +73,7 @@ public class DummyMessageHandler implements MessageHandler{
 			c.setUniqueId("SomeUniqueId");
 			c.setValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
 
-			response = parser.parseMessage(parser.genGetCredentialResponse(request, c).getResponseData());
+			response = parser.parseMessage(parser.genGetCredentialResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, c).getResponseData());
 
 		}
 		if(request.getPayload().getIssueTokenCredentialsRequest() != null){
@@ -94,7 +95,7 @@ public class DummyMessageHandler implements MessageHandler{
 
 			List<Credential> credentials = new ArrayList<Credential>();
 			credentials.add(c);
-			response = parser.parseMessage(parser.genIssueTokenCredentialsResponse(request, credentials, null).getResponseData());
+			response = parser.parseMessage(parser.genIssueTokenCredentialsResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, credentials, null).getResponseData());
 		}
 		if(request.getPayload().getChangeCredentialStatusRequest() != null){
 			ChangeCredentialStatusRequest r = request.getPayload().getChangeCredentialStatusRequest();

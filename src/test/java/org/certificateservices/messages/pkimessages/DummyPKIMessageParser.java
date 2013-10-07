@@ -41,7 +41,7 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 	
-	public PKIMessageResponseData genIssueTokenCredentialsResponse(PKIMessage request,
+	public PKIMessageResponseData genIssueTokenCredentialsResponse(String relatedEndEntity, PKIMessage request,
 			List<Credential> credentials, List<Credential> revokedCredentials) throws IllegalArgumentException,
 			MessageException {
 		//  Auto-generated method stub
@@ -58,7 +58,7 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 	
-	public PKIMessageResponseData genChangeCredentialStatusResponse(PKIMessage request,
+	public PKIMessageResponseData genChangeCredentialStatusResponse(String relatedEndEntity, PKIMessage request,
 			String issuerId, String serialNumber, int credentialStatus,
 			String reasonInformation, Date revocationDate)
 			throws IllegalArgumentException, MessageException {
@@ -75,7 +75,7 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 	
-	public PKIMessageResponseData genGetCredentialResponse(PKIMessage request,
+	public PKIMessageResponseData genGetCredentialResponse(String relatedEndEntity, PKIMessage request,
 			Credential credential) throws IllegalArgumentException,
 			MessageException {
 		//  Auto-generated method stub
@@ -92,7 +92,7 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 	
-	public PKIMessageResponseData genGetCredentialStatusListResponse(PKIMessage request,
+	public PKIMessageResponseData genGetCredentialStatusListResponse(String relatedEndEntity,PKIMessage request,
 			CredentialStatusList credentialStatusList)
 			throws IllegalArgumentException, MessageException {
 		//  Auto-generated method stub
@@ -108,7 +108,7 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 	
-	public PKIMessageResponseData genGetIssuerCredentialsResponse(PKIMessage request,
+	public PKIMessageResponseData genGetIssuerCredentialsResponse(String relatedEndEntity,PKIMessage request,
 			Credential issuerCredential) throws IllegalArgumentException,
 			MessageException {
 		//  Auto-generated method stub
@@ -123,7 +123,7 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 	
-	public PKIMessageResponseData genIsIssuerResponse(PKIMessage request, boolean isIssuer)
+	public PKIMessageResponseData genIsIssuerResponse(String relatedEndEntity,PKIMessage request, boolean isIssuer)
 			throws IllegalArgumentException, MessageException {
 		//  Auto-generated method stub
 		return null;
@@ -140,7 +140,7 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 	
-	public PKIMessageResponseData genIssueCredentialStatusListResponse(PKIMessage request,
+	public PKIMessageResponseData genIssueCredentialStatusListResponse(String relatedEndEntity,PKIMessage request,
 			CredentialStatusList credentialStatusList)
 			throws IllegalArgumentException, MessageException {
 		//  Auto-generated method stub
@@ -156,7 +156,7 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 	
-	public PKIMessageResponseData genRemoveCredentialResponse(PKIMessage request)
+	public PKIMessageResponseData genRemoveCredentialResponse(String relatedEndEntity,PKIMessage request)
 			throws IllegalArgumentException, MessageException {
 		//  Auto-generated method stub
 		return null;
@@ -172,7 +172,7 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 	
-	public PKIMessageResponseData genFetchHardTokenDataResponse(PKIMessage request,
+	public PKIMessageResponseData genFetchHardTokenDataResponse(String relatedEndEntity,PKIMessage request,
 			String tokenSerial, byte[] encryptedData)
 			throws IllegalArgumentException, MessageException {
 		//  Auto-generated method stub
@@ -189,14 +189,14 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 	
-	public PKIMessageResponseData genStoreHardTokenDataResponse(PKIMessage request)
+	public PKIMessageResponseData genStoreHardTokenDataResponse(String relatedEndEntity,PKIMessage request)
 			throws IllegalArgumentException, MessageException {
 		//  Auto-generated method stub
 		return null;
 	}
 
 	
-	public PKIMessageResponseData genPKIResponse(byte[] request, RequestStatus status,
+	public PKIMessageResponseData genPKIResponse(String relatedEndEntity,byte[] request, RequestStatus status,
 			String failureMessage) throws IllegalArgumentException,
 			MessageException {
 		//  Auto-generated method stub
@@ -204,7 +204,7 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 	
-	public PKIMessageResponseData genPKIResponse(byte[] request, RequestStatus status,
+	public PKIMessageResponseData genPKIResponse(String relatedEndEntity,byte[] request, RequestStatus status,
 			String failureMessage, String destinationId)
 			throws IllegalArgumentException, MessageException {
 		//  Auto-generated method stub
@@ -219,7 +219,7 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 
 
 	public PKIMessageResponseData genIssueCredentialStatusListResponseWithoutRequest(
-			String destination, String name, String organisation,
+			String relatedEndEntity,String destination, String name, String organisation,
 			CredentialStatusList credentialStatusList)
 			throws IllegalArgumentException, MessageException {
 		// Auto-generated method stub

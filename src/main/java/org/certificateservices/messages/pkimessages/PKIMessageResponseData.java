@@ -6,6 +6,8 @@ package org.certificateservices.messages.pkimessages;
 import java.util.Arrays;
 import java.util.Set;
 
+import org.certificateservices.messages.pkimessages.constants.Constants;
+
 /**
  * Value class containing the result of a message processing call.
  * <p>
@@ -17,6 +19,8 @@ import java.util.Set;
 public class PKIMessageResponseData {
 	
 	private String messageId;
+	private String messageName;
+	private String relatedEndEntity;
 	private String destination;
 	private byte[] responseData;
 	private boolean isForwardableResponse = false;
@@ -33,13 +37,17 @@ public class PKIMessageResponseData {
 	 * Default constructor
 	 * 
 	 * @param messageId the related id of the message
+	 * @param messageName the name of the message in the response
+	 * @param relatedEndEntity the related end entity of the message.
 	 * @param destination the PKI Message destination to send the message to.
 	 * @param responseData the response data
 	 */
-	public PKIMessageResponseData(String messageId, String destination,
+	public PKIMessageResponseData(String messageId, String messageName, String relatedEndEntity, String destination,
 			byte[] responseData) {
 		super();
 		this.messageId = messageId;
+		this.setMessageName(messageName);
+		this.setRelatedEndEntity(relatedEndEntity);
 		this.destination = destination;
 		this.responseData = responseData;
 	}
@@ -49,14 +57,20 @@ public class PKIMessageResponseData {
 	 * a failure response.
 	 * 
 	 * @param messageId the related id of the message
+	 * @param messageName the name of the message in the response
+	 * @param relatedEndEntity the related end entity of the message.
 	 * @param destination the PKI Message destination to send the message to.
 	 * @param responseData the response data
 	 * @param isForwardableResponse true if response is forwardable.
 	 */
-	public PKIMessageResponseData(String messageId, String destination,
+	public PKIMessageResponseData(String messageId,
+			String messageName, String relatedEndEntity,
+			String destination,
 			byte[] responseData, boolean isForwardableResponse) {
 		super();
 		this.messageId = messageId;
+		this.setMessageName(messageName);
+		this.setRelatedEndEntity(relatedEndEntity);
 		this.destination = destination;
 		this.responseData = responseData;
 		this.isForwardableResponse = isForwardableResponse;
@@ -140,6 +154,38 @@ public class PKIMessageResponseData {
 	 */
 	public void setMessageId(String messageId) {
 		this.messageId = messageId;
+	}
+
+	/**
+	 * 
+	 * @return the related end entity of the message.
+	 */
+	public String getRelatedEndEntity() {
+		return relatedEndEntity != null ? relatedEndEntity : Constants.RELATED_END_ENTITY_UNKNOWN;
+	}
+
+	/**
+	 * 
+	 * @param relatedEndEntity the related end entity of the message.
+	 */
+	public void setRelatedEndEntity(String relatedEndEntity) {
+		this.relatedEndEntity = relatedEndEntity;
+	}
+
+	/**
+	 * 
+	 * @return the name of the message in the response
+	 */
+	public String getMessageName() {
+		return messageName;
+	}
+
+	/**
+	 * 
+	 * @param messageName the name of the message in the response
+	 */
+	public void setMessageName(String messageName) {
+		this.messageName = messageName;
 	}
 
 	@Override

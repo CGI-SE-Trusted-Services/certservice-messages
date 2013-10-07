@@ -15,6 +15,7 @@ import org.certificateservices.messages.MessageException;
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.pkimessages.PKIMessageParser;
 import org.certificateservices.messages.pkimessages.constants.AvailableCredentialTypes;
+import org.certificateservices.messages.pkimessages.constants.Constants;
 import org.certificateservices.messages.pkimessages.jaxb.Credential;
 import org.certificateservices.messages.pkimessages.jaxb.CredentialRequest;
 import org.certificateservices.messages.pkimessages.jaxb.GetCredentialRequest;
@@ -71,10 +72,10 @@ public class DummyMessageManager implements MessageManager{
 					c.setValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
 
 
-					return messageParser.parseMessage(messageParser.genGetCredentialResponse(rm, c).getResponseData());
+					return messageParser.parseMessage(messageParser.genGetCredentialResponse(Constants.RELATED_END_ENTITY_UNKNOWN,rm, c).getResponseData());
 
 				}else{
-					return messageParser.parseMessage(messageParser.genPKIResponse(request, RequestStatus.ILLEGALARGUMENT, "some bad request").getResponseData());
+					return messageParser.parseMessage(messageParser.genPKIResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, RequestStatus.ILLEGALARGUMENT, "some bad request").getResponseData());
 				}
 			}
 			if(rm.getPayload().getIssueTokenCredentialsRequest() != null){
@@ -96,7 +97,7 @@ public class DummyMessageManager implements MessageManager{
 
 				List<Credential> credentials = new ArrayList<Credential>();
 				credentials.add(c);
-				return messageParser.parseMessage(messageParser.genIssueTokenCredentialsResponse(rm, credentials, null).getResponseData());
+				return messageParser.parseMessage(messageParser.genIssueTokenCredentialsResponse(Constants.RELATED_END_ENTITY_UNKNOWN,rm, credentials, null).getResponseData());
 			}
 
 		} catch (MessageException e) {

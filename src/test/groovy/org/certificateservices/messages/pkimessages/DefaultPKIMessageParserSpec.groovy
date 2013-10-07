@@ -135,12 +135,14 @@ class DefaultPKIMessageParserSpec extends Specification {
 	@Test
 	def "Test that signed PKIResponse message is populated correctly and signature is valid"(){
 		when: "  with default destinationId"
-          PKIMessageResponseData result = mp.genPKIResponse(TestMessages.testMessageWithResponse.getBytes(), RequestStatus.ERROR, "SomeMessage") 		  
+          PKIMessageResponseData result = mp.genPKIResponse("SomeEntity", TestMessages.testMessageWithResponse.getBytes(), RequestStatus.ERROR, "SomeMessage") 		  
 		  String message = new String(result.responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:		  
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg" ,"FailureResponse")
 		  verifySignature(message)
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "FailureResponse"
 		  assert result.messageId == xmlMessage.@ID.toString()
 		  assert result.isForwardableResponse == false
 		  assert result.destination == xmlMessage.destinationId.toString()
@@ -148,12 +150,14 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  assert xmlMessage.payload.failureResponse.status == "ERROR"
 		  assert xmlMessage.payload.failureResponse.failureMessage == "SomeMessage"		 
 		when: "  with custom destinationId"
-		  result= mp.genPKIResponse(TestMessages.testMessageWithResponse.getBytes(), RequestStatus.ERROR, "SomeMessage","SOMEOTHERDESTINATION")
+		  result= mp.genPKIResponse("SomeEntity",TestMessages.testMessageWithResponse.getBytes(), RequestStatus.ERROR, "SomeMessage","SOMEOTHERDESTINATION")
 		  message = new String(result.responseData,"UTF-8")
 		  xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEOTHERDESTINATION", "SomeOrg", "FailureResponse")
 		  verifySignature(message)
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "FailureResponse"
 		  assert xmlMessage.payload.failureResponse.inResponseTo == "59fa9386-c549-4f90-9e0e-b369c15d67f6"
 		  assert xmlMessage.payload.failureResponse.status == "ERROR"
 		  assert xmlMessage.payload.failureResponse.failureMessage == "SomeMessage"
@@ -223,11 +227,13 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID", "SomeOrg", payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
-		  PKIMessageResponseData result = mp.genIssueTokenCredentialsResponse(request, credentials, null)
+		  PKIMessageResponseData result = mp.genIssueTokenCredentialsResponse("SomeEntity", request, credentials, null)
 		  String message = new String(result.responseData,"UTF-8")		  
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  assert result.isForwardableResponse == true
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "IssueTokenCredentialsResponse"
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg", "IssueTokenCredentialsResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.issueTokenCredentialsResponse, request)
@@ -268,10 +274,12 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID", "SomeOrg", payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
-		  PKIMessageResponseData result = mp.genIssueTokenCredentialsResponse(request, credentials, revokedCredentials)
+		  PKIMessageResponseData result = mp.genIssueTokenCredentialsResponse("SomeEntity", request, credentials, revokedCredentials)
 		  String message = new String(result.responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "IssueTokenCredentialsResponse"
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg", "IssueTokenCredentialsResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.issueTokenCredentialsResponse, request)
@@ -299,17 +307,21 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  
 	}
 	
+
 	def "Test that signed ChangeCredentialStatusResponse message is populated correctly and signature is valid"(){
 		setup:
 		  ChangeCredentialStatusRequest payload = of.createChangeCredentialStatusRequest();		  
 		  PKIMessage request = mp.genPKIMessage(null, "SOMESOURCEID", "SomeOrg", payload);
 		  request.setSourceId("SOMEREQUESTER")		  
 		when:
-		  PKIMessageResponseData result = mp.genChangeCredentialStatusResponse(request, "SomeIssuerId", "SomeSerialNumber", 12, "SomeReasonInfo",new Date(1L))
+		  PKIMessageResponseData result = mp.genChangeCredentialStatusResponse("SomeEntity",request, "SomeIssuerId", "SomeSerialNumber", 12, "SomeReasonInfo",new Date(1L))
 		  String message = new String(result.responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
+		  println message
 		then:
 		  assert result.isForwardableResponse == true
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "ChangeCredentialStatusResponse"
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg", "ChangeCredentialStatusResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.changeCredentialStatusResponse, request)
@@ -340,11 +352,13 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  PKIMessage request = mp.genPKIMessage(null, "SOMESOURCEID","SomeOrg", payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
-		  PKIMessageResponseData result = mp.genGetCredentialResponse(request, createDummyCredentials()[0])
+		  PKIMessageResponseData result = mp.genGetCredentialResponse("SomeEntity",request, createDummyCredentials()[0])
 		  String message = new String(result.responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  assert result.isForwardableResponse == false
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "GetCredentialResponse"
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg","GetCredentialResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.getCredentialResponse, request)
@@ -386,10 +400,12 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  PKIMessage request = mp.genPKIMessage(null, "SOMESOURCEID", "SomeOrg",payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
-		  PKIMessageResponseData result = mp.genGetCredentialStatusListResponse(request, createDummyCredentialStatusList())
+		  PKIMessageResponseData result = mp.genGetCredentialStatusListResponse("SomeEntity", request, createDummyCredentialStatusList())
 		  String message = new String(result.responseData,"UTF-8")		  
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "GetCredentialStatusListResponse"
 		  assert result.isForwardableResponse == false
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg","GetCredentialStatusListResponse")
 		  verifySignature(message)
@@ -423,11 +439,13 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID","SomeOrg", payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
-		  PKIMessageResponseData result = mp.genGetIssuerCredentialsResponse(request, createDummyCredentials()[0])
+		  PKIMessageResponseData result = mp.genGetIssuerCredentialsResponse("SomeEntity",request, createDummyCredentials()[0])
 		  String message = new String(result.responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  assert result.isForwardableResponse == false
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "GetIssuerCredentialsResponse"
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER","SomeOrg", "GetIssuerCredentialsResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.getIssuerCredentialsResponse, request)
@@ -466,11 +484,13 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID","SomeOrg", payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
-		  PKIMessageResponseData result = mp.genIsIssuerResponse(request, true)
+		  PKIMessageResponseData result = mp.genIsIssuerResponse("SomeEntity",request, true)
 		  String message = new String(result.responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  assert result.isForwardableResponse == false
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "IsIssuerResponse"
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER","SomeOrg", "IsIssuerResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.isIssuerResponse, request)
@@ -500,11 +520,13 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID", "SomeOrg",payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
-		  PKIMessageResponseData result = mp.genIssueCredentialStatusListResponse(request, createDummyCredentialStatusList())
+		  PKIMessageResponseData result = mp.genIssueCredentialStatusListResponse("SomeEntity",request, createDummyCredentialStatusList())
 		  String message = new String(result.responseData,"UTF-8") 
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  assert result.isForwardableResponse == true
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "IssueCredentialStatusListResponse"
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg","IssueCredentialStatusListResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.issueCredentialStatusListResponse, request)
@@ -522,11 +544,13 @@ class DefaultPKIMessageParserSpec extends Specification {
 	def "Test that signed genIssueCredentialStatusListResponseWithoutRequest message is populated correctly and signature is valid"(){
 
 		when:
-		  PKIMessageResponseData result = mp.genIssueCredentialStatusListResponseWithoutRequest("SOMEDESTINATION","SOMENAME", "SomeOrg", createDummyCredentialStatusList())
+		  PKIMessageResponseData result = mp.genIssueCredentialStatusListResponseWithoutRequest("SomeEntity","SOMEDESTINATION","SOMENAME", "SomeOrg", createDummyCredentialStatusList())
 		  String message = new String(result.responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  assert result.isForwardableResponse == true
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "IssueCredentialStatusListResponse"
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEDESTINATION", "SomeOrg","IssueCredentialStatusListResponse")
 		  verifySignature(message)
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.inResponseTo == result.getMessageId()
@@ -561,10 +585,12 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID", "SomeOrg",payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
-		  PKIMessageResponseData result = mp.genRemoveCredentialResponse(request)
+		  PKIMessageResponseData result = mp.genRemoveCredentialResponse("SomeEntity",request)
 		  String message = new String(result.responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "RemoveCredentialResponse"
 		  assert result.isForwardableResponse == false
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg", "RemoveCredentialResponse")
 		  verifySignature(message)
@@ -606,11 +632,13 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID", "SomeOrg",payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
-		  PKIMessageResponseData result = mp.genFetchHardTokenDataResponse(request, "123456", "SomeData".getBytes())
+		  PKIMessageResponseData result = mp.genFetchHardTokenDataResponse("SomeEntity",request, "123456", "SomeData".getBytes())
 		  String message = new String(result.responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  assert result.isForwardableResponse == false
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "FetchHardTokenDataResponse"
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg","FetchHardTokenDataResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.fetchHardTokenDataResponse, request)
@@ -639,11 +667,13 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID", "SomeOrg", payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
-		  PKIMessageResponseData result = mp.genStoreHardTokenDataResponse(request)
+		  PKIMessageResponseData result = mp.genStoreHardTokenDataResponse("SomeEntity",request)
 		  String message = new String(result.responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  assert result.isForwardableResponse == false
+		  assert result.relatedEndEntity == "SomeEntity"
+		  assert result.messageName == "StoreHardTokenDataResponse"
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg","StoreHardTokenDataResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.storeHardTokenDataResponse, request)

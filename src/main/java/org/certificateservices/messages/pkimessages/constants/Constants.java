@@ -16,5 +16,10 @@ public class Constants {
 	 * doesn't know which organisation the CRL belongs to and it's up the the receiver to figure this out.
 	 */
 	public static final String ORGANISATION_UNKNOWN = "UNKNOWN";
+	
+	/**
+	 * Constant used when related end entity of CA name couldn't be determined.
+	 */
+	public static final String RELATED_END_ENTITY_UNKNOWN = "UNKNOWN";
 
 }
