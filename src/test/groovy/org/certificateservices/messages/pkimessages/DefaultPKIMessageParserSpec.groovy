@@ -26,6 +26,7 @@ import org.certificateservices.messages.pkimessages.jaxb.GetCredentialRequest
 import org.certificateservices.messages.pkimessages.jaxb.GetCredentialStatusListRequest
 import org.certificateservices.messages.pkimessages.jaxb.GetIssuerCredentialsRequest
 import org.certificateservices.messages.pkimessages.jaxb.IsIssuerRequest;
+import org.certificateservices.messages.pkimessages.jaxb.IsIssuerResponse
 import org.certificateservices.messages.pkimessages.jaxb.IssueCredentialStatusListRequest
 import org.certificateservices.messages.pkimessages.jaxb.IssueCredentialStatusListResponse
 import org.certificateservices.messages.pkimessages.jaxb.IssueTokenCredentialsRequest;
@@ -35,6 +36,7 @@ import org.certificateservices.messages.pkimessages.jaxb.RemoveCredentialRequest
 import org.certificateservices.messages.pkimessages.jaxb.RequestStatus;
 import org.certificateservices.messages.pkimessages.jaxb.StoreHardTokenDataRequest
 import org.certificateservices.messages.pkimessages.jaxb.TokenRequest
+import org.certificateservices.messages.pkimessages.manager.DefaultMessageManager;
 import org.certificateservices.messages.DummyMessageSecurityProvider;
 import org.certificateservices.messages.MessageException;
 import org.certificateservices.messages.pkimessages.DefaultPKIMessageParser;
@@ -67,6 +69,32 @@ class DefaultPKIMessageParserSpec extends Specification {
 	}
 	
 
+	@Test 
+	def "Verify that the init method creates all marshallers and unmarshallers"(){
+		when:
+		for(String version : DefaultPKIMessageParser.SUPPORTED_PKIMESSAGE_VERSIONS){
+		  assert mp.pkixMessageMarshallers.get(version) != null
+		  assert mp.pkixMessageUnmarshallers.get(version) != null
+		}
+		then:
+		assert true
+	}
+	
+	@Test
+	def "Verify verifyPKIMessageVersion checks the version agains supported versions"(){
+		when:
+		for(String version : DefaultPKIMessageParser.SUPPORTED_PKIMESSAGE_VERSIONS){
+			mp.verifyPKIMessageVersion(version) 
+		  }
+		then:
+		assert true
+		when:
+		mp.verifyPKIMessageVersion("999")
+		then:
+		thrown(IllegalArgumentException)
+		
+	}
+	
 	@Test
 	def "Test that unmarshaller validates against the schema"(){
 		when:
@@ -78,7 +106,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 	@Test
 	def "Test that marshaller validates against the schema"(){
 		when:
-		   mp.genIsIssuerRequest(null, null, null, null);		   
+		   mp.genIsIssuerRequest(null, null, null, null,null);		   
 		then:
 		  thrown(MessageException)
 	}
@@ -113,29 +141,44 @@ class DefaultPKIMessageParserSpec extends Specification {
 
 	}
 	
+
 	@Test
 	def "Test that unsigned basic PKI message header is populated correctly"(){
 		setup:
 		  mp.signMessages = false
 		when:
-		  PKIMessage m = mp.genPKIMessage("123","SOMEDESTINATION","SomeOrg",of.createIsIssuerRequest())
+		  PKIMessage m = mp.genPKIMessage("1.0","123","SOMEDESTINATION","SomeOrg", null, of.createIsIssuerRequest())
 		then:
-		  assert m.version == DefaultPKIMessageParser.THIS_PKIMESSAGE_VERSION
+		  assert m.version == "1.0"
 		  assert m.id == "123"
 		  assert m.sourceId == "SOMESOURCEID"
 		  assert m.destinationId == "SOMEDESTINATION"
 		  assert m.organisation == "SomeOrg"
 		  assert m.name == "IsIssuerRequest"
 		  assert m.payload != null
+		  assert m.originator == null
+		  assert m.signature == null
+		when:
+		  m = mp.genPKIMessage("1.0","123","SOMEDESTINATION","SomeOrg", createOriginatorCredential(), of.createIsIssuerRequest())
+		then:
+		  assert m.version == "1.0"
+		  assert m.id == "123"
+		  assert m.sourceId == "SOMESOURCEID"
+		  assert m.destinationId == "SOMEDESTINATION"
+		  assert m.organisation == "SomeOrg"
+		  assert m.name == "IsIssuerRequest"
+		  assert m.payload != null
+		  assert m.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert m.signature == null
 		cleanup:
 		  mp.signMessages = true
 	}
 	
+
 	@Test
 	def "Test that signed PKIResponse message is populated correctly and signature is valid"(){
 		when: "  with default destinationId"
-          PKIMessageResponseData result = mp.genPKIResponse("SomeEntity", TestMessages.testMessageWithResponse.getBytes(), RequestStatus.ERROR, "SomeMessage") 		  
+          PKIMessageResponseData result = mp.genPKIResponse("SomeEntity", TestMessages.testMessageWithResponse.getBytes(), RequestStatus.ERROR, "SomeMessage",null)   
 		  String message = new String(result.responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:		  
@@ -150,7 +193,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  assert xmlMessage.payload.failureResponse.status == "ERROR"
 		  assert xmlMessage.payload.failureResponse.failureMessage == "SomeMessage"		 
 		when: "  with custom destinationId"
-		  result= mp.genPKIResponse("SomeEntity",TestMessages.testMessageWithResponse.getBytes(), RequestStatus.ERROR, "SomeMessage","SOMEOTHERDESTINATION")
+		  result= mp.genPKIResponse("SomeEntity",TestMessages.testMessageWithVersion1_1.getBytes(), RequestStatus.ERROR, "SomeMessage","SOMEOTHERDESTINATION",createOriginatorCredential())
 		  message = new String(result.responseData,"UTF-8")
 		  xmlMessage = new XmlSlurper().parseText(message)
 		then:
@@ -167,7 +210,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 	@Test
 	def "Test that getSigningCertificate fetches certificate properly from signed request"(){
 		setup:
-		byte[] request = mp.genIsIssuerRequest(TEST_ID,"SomeDestination", "SomeOrg", "SomeIssuer");
+		byte[] request = mp.genIsIssuerRequest(TEST_ID,"SomeDestination", "SomeOrg", "SomeIssuer",null);
 		when:
 		X509Certificate cert = mp.getSigningCertificate(request);
 		then:
@@ -195,18 +238,20 @@ class DefaultPKIMessageParserSpec extends Specification {
 		mp.requireSignature = true
 	}
 	
+
 	@Test
 	def "Test that signed IssueTokenCredentialsRequest message is populated correctly and signature is valid"(){
 		setup:
 		  TokenRequest tokenRequest = createDummyTokenRequest()		  
 		when: 
-		  byte[] responseData = mp.genIssueTokenCredentialsRequest(TEST_ID, "SomeDestinationId", "SomeOrg", tokenRequest)
+		  byte[] responseData = mp.genIssueTokenCredentialsRequest(TEST_ID, "SomeDestinationId", "SomeOrg", tokenRequest, createOriginatorCredential())
 		  String message = new String(responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SomeDestinationId", "SomeOrg","IssueTokenCredentialsRequest")
 		  verifySignature(message)
 		  assert xmlMessage.@ID == TEST_ID
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.issueTokenCredentialsRequest.tokenRequest.credentialRequests[0].credentialRequest.credentialRequestId == 123
 		  assert xmlMessage.payload.issueTokenCredentialsRequest.tokenRequest.credentialRequests[0].credentialRequest.credentialType == "SomeCredentialType"
 		  assert xmlMessage.payload.issueTokenCredentialsRequest.tokenRequest.credentialRequests[0].credentialRequest.credentialSubType == "SomeCredentialSubType"
@@ -218,13 +263,14 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  assert xmlMessage.payload.issueTokenCredentialsRequest.tokenRequest.tokenClass == "SomeTokenClass"
 	}
 	
+
 	def "Test that signed IssueTokenCredentialsResponse message is populated correctly and signature is valid"(){
 		setup:
 		  TokenRequest tokenRequest = createDummyTokenRequest()
 		  List<Credential> credentials = createDummyCredentials()
 		  IssueTokenCredentialsRequest payload = of.createIssueTokenCredentialsRequest();
 		  payload.setTokenRequest(tokenRequest);
-		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID", "SomeOrg", payload);
+		  PKIMessage request = mp.genPKIMessage("1.1", null,"SOMESOURCEID", "SomeOrg", createOriginatorCredential(), payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
 		  PKIMessageResponseData result = mp.genIssueTokenCredentialsResponse("SomeEntity", request, credentials, null)
@@ -237,6 +283,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg", "IssueTokenCredentialsResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.issueTokenCredentialsResponse, request)
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.issueTokenCredentialsResponse.tokenRequest.credentialRequests[0].credentialRequest.credentialRequestId == 123
 		  assert xmlMessage.payload.issueTokenCredentialsResponse.tokenRequest.credentialRequests[0].credentialRequest.credentialType == "SomeCredentialType"
 		  assert xmlMessage.payload.issueTokenCredentialsResponse.tokenRequest.credentialRequests[0].credentialRequest.credentialSubType == "SomeCredentialSubType"
@@ -264,6 +311,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  
 	}
 	
+
 	def "Test that signed IssueTokenCredentialsResponse message is populated correctly with revoked credentials"(){
 		setup:
 		  TokenRequest tokenRequest = createDummyTokenRequest()
@@ -271,7 +319,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  List<Credential> revokedCredentials = createDummyCredentials(160)		  		  
 		  IssueTokenCredentialsRequest payload = of.createIssueTokenCredentialsRequest();
 		  payload.setTokenRequest(tokenRequest);
-		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID", "SomeOrg", payload);
+		  PKIMessage request = mp.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null,"SOMESOURCEID", "SomeOrg", createOriginatorCredential(), payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
 		  PKIMessageResponseData result = mp.genIssueTokenCredentialsResponse("SomeEntity", request, credentials, revokedCredentials)
@@ -283,6 +331,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg", "IssueTokenCredentialsResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.issueTokenCredentialsResponse, request)
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.issueTokenCredentialsResponse.tokenRequest.credentialRequests[0].credentialRequest.credentialRequestId == 123
 		  assert xmlMessage.payload.issueTokenCredentialsResponse.tokenRequest.user == "someuser"
 		  assert xmlMessage.payload.issueTokenCredentialsResponse.credentials.credential[0].status == 100
@@ -291,15 +340,17 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  
 	}
 	
+
 	def "Test that signed ChangeCredentialStatusRequest message is populated correctly and signature is valid"(){
 		when: 
-		  byte[] responseData = mp.genChangeCredentialStatusRequest(TEST_ID, "SomeDestinationId", "SomeOrg", "SomeIssuerId", "SomeSerialNumber", 12, "SomeReasonInfo")		
+		  byte[] responseData = mp.genChangeCredentialStatusRequest(TEST_ID, "SomeDestinationId", "SomeOrg", "SomeIssuerId", "SomeSerialNumber", 12, "SomeReasonInfo", createOriginatorCredential())		
 		  String message = new String(responseData,"UTF-8")		 
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SomeDestinationId", "SomeOrg", "ChangeCredentialStatusRequest")
 		  verifySignature(message)	
 		  assert xmlMessage.@ID == TEST_ID
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.changeCredentialStatusRequest.issuerId == "SomeIssuerId"
 		  assert xmlMessage.payload.changeCredentialStatusRequest.serialNumber == "SomeSerialNumber"
 		  assert xmlMessage.payload.changeCredentialStatusRequest.newCredentialStatus == "12"
@@ -311,7 +362,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 	def "Test that signed ChangeCredentialStatusResponse message is populated correctly and signature is valid"(){
 		setup:
 		  ChangeCredentialStatusRequest payload = of.createChangeCredentialStatusRequest();		  
-		  PKIMessage request = mp.genPKIMessage(null, "SOMESOURCEID", "SomeOrg", payload);
+		  PKIMessage request = mp.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null, "SOMESOURCEID", "SomeOrg", createOriginatorCredential(),payload);
 		  request.setSourceId("SOMEREQUESTER")		  
 		when:
 		  PKIMessageResponseData result = mp.genChangeCredentialStatusResponse("SomeEntity",request, "SomeIssuerId", "SomeSerialNumber", 12, "SomeReasonInfo",new Date(1L))
@@ -325,6 +376,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg", "ChangeCredentialStatusResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.changeCredentialStatusResponse, request)
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.changeCredentialStatusResponse.issuerId == "SomeIssuerId"
 		  assert xmlMessage.payload.changeCredentialStatusResponse.serialNumber == "SomeSerialNumber"
 		  assert xmlMessage.payload.changeCredentialStatusResponse.credentialStatus == "12"
@@ -332,24 +384,27 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  assert xmlMessage.payload.changeCredentialStatusResponse.revocationDate.toString().startsWith("1970")		  
 	}
 	
+
 	def "Test that signed GetCredentialRequest message is populated correctly and signature is valid"(){
 		when:
-		  byte[] responseData = mp.genGetCredentialRequest(TEST_ID,"SomeDestinationId", "SomeOrg","SomeCredentialSubType","SomeIssuerId", "SomeSerialNumber")
+		  byte[] responseData = mp.genGetCredentialRequest(TEST_ID,"SomeDestinationId", "SomeOrg","SomeCredentialSubType","SomeIssuerId", "SomeSerialNumber", createOriginatorCredential())
 		  String message = new String(responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SomeDestinationId",  "SomeOrg", "GetCredentialRequest")
 		  verifySignature(message)
 		  assert xmlMessage.@ID == TEST_ID
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.getCredentialRequest.credentialSubType == "SomeCredentialSubType"
 		  assert xmlMessage.payload.getCredentialRequest.issuerId == "SomeIssuerId"
 		  assert xmlMessage.payload.getCredentialRequest.serialNumber == "SomeSerialNumber"		  
 	}
 	
+
 	def "Test that signed GetCredentialResponse message is populated correctly and signature is valid"(){
 		setup:
 		  GetCredentialRequest payload = of.createGetCredentialRequest();
-		  PKIMessage request = mp.genPKIMessage(null, "SOMESOURCEID","SomeOrg", payload);
+		  PKIMessage request = mp.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null, "SOMESOURCEID","SomeOrg", createOriginatorCredential(), payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
 		  PKIMessageResponseData result = mp.genGetCredentialResponse("SomeEntity",request, createDummyCredentials()[0])
@@ -362,6 +417,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg","GetCredentialResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.getCredentialResponse, request)
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.getCredentialResponse.credential.credentialRequestId == 123
 		  assert xmlMessage.payload.getCredentialResponse.credential.uniqueId == "SomeUniqueId"
 		  assert xmlMessage.payload.getCredentialResponse.credential.displayName == "SomeDisplayName"
@@ -382,22 +438,23 @@ class DefaultPKIMessageParserSpec extends Specification {
 
 	def "Test that signed GetCredentialStatusListRequest message is populated correctly and signature is valid"(){
 		when:
-		  byte[] responseData = mp.genGetCredentialStatusListRequest(TEST_ID, "SomeDestinationId","SomeOrg", "SomeIssuerId", 16L, "SomeCredentialStatusListType")
+		  byte[] responseData = mp.genGetCredentialStatusListRequest(TEST_ID, "SomeDestinationId","SomeOrg", "SomeIssuerId", 16L, "SomeCredentialStatusListType", createOriginatorCredential())
 		  String message = new String(responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SomeDestinationId", "SomeOrg","GetCredentialStatusListRequest")
 		  verifySignature(message)
 		  assert xmlMessage.@ID == TEST_ID
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.getCredentialStatusListRequest.issuerId == "SomeIssuerId"
 		  assert xmlMessage.payload.getCredentialStatusListRequest.serialNumber == "16"
 		  assert xmlMessage.payload.getCredentialStatusListRequest.credentialStatusListType == "SomeCredentialStatusListType"
 	}
-	
+
 	def "Test that signed GetCredentialStatusListResponse message is populated correctly and signature is valid"(){
 		setup:
 		  GetCredentialStatusListRequest payload = of.createGetCredentialStatusListRequest();
-		  PKIMessage request = mp.genPKIMessage(null, "SOMESOURCEID", "SomeOrg",payload);
+		  PKIMessage request = mp.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null, "SOMESOURCEID", "SomeOrg", createOriginatorCredential(),payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
 		  PKIMessageResponseData result = mp.genGetCredentialStatusListResponse("SomeEntity", request, createDummyCredentialStatusList())
@@ -410,6 +467,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg","GetCredentialStatusListResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.getCredentialStatusListResponse, request)
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.getCredentialStatusListResponse.credentialStatusList.issuerId == "SomeIssuerId"
 		  assert xmlMessage.payload.getCredentialStatusListResponse.credentialStatusList.credentialStatusListType == "SomeCredentialStatusListType"
 		  assert xmlMessage.payload.getCredentialStatusListResponse.credentialStatusList.credentialType == "SomeCredentialType"
@@ -420,23 +478,24 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  assert xmlMessage.payload.getCredentialStatusListResponse.credentialStatusList.expireDate == "1970-01-01T01:00:01.234+01:00"
 		  assert xmlMessage.payload.getCredentialStatusListResponse.credentialStatusList.validFromDate == "1970-01-01T01:00:01.236+01:00"		  		  
 	}
-	
 	def "Test that signed GetIssuerCredentialsRequest message is populated correctly and signature is valid"(){
 		when:
-		  byte[] responseData = mp.genGetIssuerCredentialsRequest(TEST_ID,"SomeDestinationId", "SomeOrg","SomeIssuerId")
+		  byte[] responseData = mp.genGetIssuerCredentialsRequest(TEST_ID,"SomeDestinationId", "SomeOrg","SomeIssuerId", createOriginatorCredential())
 		  String message = new String(responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SomeDestinationId", "SomeOrg","GetIssuerCredentialsRequest")
 		  verifySignature(message)
 		  assert xmlMessage.@ID == TEST_ID
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.getIssuerCredentialsRequest.issuerId == "SomeIssuerId"
 	}
 	
+
 	def "Test that signed GetIssuerCredentialsResponse message is populated correctly and signature is valid"(){
 		setup:
 		  GetIssuerCredentialsRequest payload = of.createGetIssuerCredentialsRequest();
-		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID","SomeOrg", payload);
+		  PKIMessage request = mp.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null,"SOMESOURCEID","SomeOrg", createOriginatorCredential(), payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
 		  PKIMessageResponseData result = mp.genGetIssuerCredentialsResponse("SomeEntity",request, createDummyCredentials()[0])
@@ -449,6 +508,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER","SomeOrg", "GetIssuerCredentialsResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.getIssuerCredentialsResponse, request)
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.getIssuerCredentialsResponse.credential.credentialRequestId == 123
 		  assert xmlMessage.payload.getIssuerCredentialsResponse.credential.uniqueId == "SomeUniqueId"
 		  assert xmlMessage.payload.getIssuerCredentialsResponse.credential.displayName == "SomeDisplayName"
@@ -465,23 +525,24 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  assert xmlMessage.payload.getIssuerCredentialsResponse.credential.expireDate == "1970-01-01T01:00:02.234+01:00"
 		  assert xmlMessage.payload.getIssuerCredentialsResponse.credential.validFromDate == "1970-01-01T01:00:03.234+01:00"
 	}
-	
+
 	def "Test that signed IsIssuerRequest message is populated correctly and signature is valid"(){
 		when:
-		  byte[] responseData = mp.genIsIssuerRequest(TEST_ID,"SomeDestinationId","SomeOrg", "SomeIssuerId")
+		  byte[] responseData = mp.genIsIssuerRequest(TEST_ID,"SomeDestinationId","SomeOrg", "SomeIssuerId", createOriginatorCredential())
 		  String message = new String(responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SomeDestinationId", "SomeOrg","IsIssuerRequest")
 		  verifySignature(message)
 		  assert xmlMessage.@ID == TEST_ID
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.isIssuerRequest.issuerId == "SomeIssuerId"
 	}
-	
+
 	def "Test that signed IsIssuerResponse message is populated correctly and signature is valid"(){
 		setup:
 		  IsIssuerRequest payload = of.createIsIssuerRequest();
-		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID","SomeOrg", payload);
+		  PKIMessage request = mp.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null,"SOMESOURCEID","SomeOrg", createOriginatorCredential(), payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
 		  PKIMessageResponseData result = mp.genIsIssuerResponse("SomeEntity",request, true)
@@ -494,30 +555,32 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER","SomeOrg", "IsIssuerResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.isIssuerResponse, request)
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.isIssuerResponse.isIssuer == true
 		  
 	}
-	
+
 	def "Test that signed IssueCredentialStatusListRequest message is populated correctly and signature is valid"(){
 		when:
-		  byte[] responseData = mp.genIssueCredentialStatusListRequest(TEST_ID,"SomeDestinationId", "SomeOrg","SomeIssuerId", "SomeCredentialStatusListType", true, new Date(1), new Date(2))
+		  byte[] responseData = mp.genIssueCredentialStatusListRequest(TEST_ID,"SomeDestinationId", "SomeOrg","SomeIssuerId", "SomeCredentialStatusListType", true, new Date(1), new Date(2),createOriginatorCredential())
 		  String message = new String(responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SomeDestinationId", "SomeOrg","IssueCredentialStatusListRequest")
 		  verifySignature(message)
 		  assert xmlMessage.@ID == TEST_ID
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.issueCredentialStatusListRequest.issuerId == "SomeIssuerId"
 		  assert xmlMessage.payload.issueCredentialStatusListRequest.credentialStatusListType == "SomeCredentialStatusListType"
 		  assert xmlMessage.payload.issueCredentialStatusListRequest.force == "true"
 		  assert xmlMessage.payload.issueCredentialStatusListRequest.requestedValidFromDate.toString().startsWith("1970")
 		  assert xmlMessage.payload.issueCredentialStatusListRequest.requestedNotAfterDate.toString().startsWith("1970")
 	}
-	
+
 	def "Test that signed IssueCredentialStatusListResponse message is populated correctly and signature is valid"(){
 		setup:
 		  IssueCredentialStatusListRequest payload = of.createIssueCredentialStatusListRequest();
-		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID", "SomeOrg",payload);
+		  PKIMessage request = mp.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null,"SOMESOURCEID", "SomeOrg",createOriginatorCredential(),payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
 		  PKIMessageResponseData result = mp.genIssueCredentialStatusListResponse("SomeEntity",request, createDummyCredentialStatusList())
@@ -530,6 +593,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg","IssueCredentialStatusListResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.issueCredentialStatusListResponse, request)
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.issuerId == "SomeIssuerId"
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.credentialStatusListType == "SomeCredentialStatusListType"
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.credentialType == "SomeCredentialType"
@@ -540,11 +604,11 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.expireDate == "1970-01-01T01:00:01.234+01:00"
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.validFromDate == "1970-01-01T01:00:01.236+01:00"
 	}
-
+	
 	def "Test that signed genIssueCredentialStatusListResponseWithoutRequest message is populated correctly and signature is valid"(){
 
 		when:
-		  PKIMessageResponseData result = mp.genIssueCredentialStatusListResponseWithoutRequest("SomeEntity","SOMEDESTINATION","SOMENAME", "SomeOrg", createDummyCredentialStatusList())
+		  PKIMessageResponseData result = mp.genIssueCredentialStatusListResponseWithoutRequest("SomeEntity","SOMEDESTINATION","SOMENAME", "SomeOrg", createDummyCredentialStatusList(), createOriginatorCredential())
 		  String message = new String(result.responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
@@ -553,6 +617,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  assert result.messageName == "IssueCredentialStatusListResponse"
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEDESTINATION", "SomeOrg","IssueCredentialStatusListResponse")
 		  verifySignature(message)
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.inResponseTo == result.getMessageId()
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.status == "SUCCESS"
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.issuerId == "SomeIssuerId"
@@ -565,24 +630,25 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.expireDate == "1970-01-01T01:00:01.234+01:00"
 		  assert xmlMessage.payload.issueCredentialStatusListResponse.credentialStatusList.validFromDate == "1970-01-01T01:00:01.236+01:00"
 	}
-	
+
 	def "Test that signed RemoveCredentialRequest message is populated correctly and signature is valid"(){
 		when:
-		  byte[] responseData = mp.genRemoveCredentialRequest(TEST_ID,"SomeDestinationId","SomeOrg", "SomeIssuerId", "SomeCredentialSerialNumber")
+		  byte[] responseData = mp.genRemoveCredentialRequest(TEST_ID,"SomeDestinationId","SomeOrg", "SomeIssuerId", "SomeCredentialSerialNumber", createOriginatorCredential())
 		  String message = new String(responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SomeDestinationId","SomeOrg", "RemoveCredentialRequest")
 		  verifySignature(message)
 		  assert xmlMessage.@ID == TEST_ID
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.removeCredentialRequest.issuerId == "SomeIssuerId"
 		  assert xmlMessage.payload.removeCredentialRequest.serialNumber == "SomeCredentialSerialNumber"		  
 	}
-	
+
 	def "Test that signed RemoveCredentialResponse message is populated correctly and signature is valid"(){
 		setup:
 		  RemoveCredentialRequest payload = of.createRemoveCredentialRequest();
-		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID", "SomeOrg",payload);
+		  PKIMessage request = mp.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null,"SOMESOURCEID", "SomeOrg",createOriginatorCredential(),payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
 		  PKIMessageResponseData result = mp.genRemoveCredentialResponse("SomeEntity",request)
@@ -595,17 +661,19 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg", "RemoveCredentialResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.removeCredentialResponse, request)
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 	}
-	
+
 	def "Test that signed FetchHardTokenDataRequest message is populated correctly and signature is valid"(){
 		when:
-		  byte[] responseData = mp.genFetchHardTokenDataRequest(TEST_ID,"SomeDestinationId","SomeOrg", "SomeTokenSerial", "SomeCredentialSerialNumber", "SomeIssuerId", createDummyCredentials()[0])
+		  byte[] responseData = mp.genFetchHardTokenDataRequest(TEST_ID,"SomeDestinationId","SomeOrg", "SomeTokenSerial", "SomeCredentialSerialNumber", "SomeIssuerId", createDummyCredentials()[0], createOriginatorCredential())
 		  String message = new String(responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SomeDestinationId", "SomeOrg","FetchHardTokenDataRequest")
 		  verifySignature(message)
 		  assert xmlMessage.@ID == TEST_ID
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.fetchHardTokenDataRequest.tokenSerial == "SomeTokenSerial"
 	      assert xmlMessage.payload.fetchHardTokenDataRequest.relatedCredentialSerialNumber == "SomeCredentialSerialNumber"
   	      assert xmlMessage.payload.fetchHardTokenDataRequest.relatedCredentialIssuerId == "SomeIssuerId"
@@ -625,11 +693,11 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  assert xmlMessage.payload.fetchHardTokenDataRequest.adminCredential.expireDate == "1970-01-01T01:00:02.234+01:00"
 		  assert xmlMessage.payload.fetchHardTokenDataRequest.adminCredential.validFromDate == "1970-01-01T01:00:03.234+01:00"
 	}
-	
+
 	def "Test that signed FetchHardTokenDataResponse message is populated correctly and signature is valid"(){
 		setup:
 		  FetchHardTokenDataRequest payload = of.createFetchHardTokenDataRequest();
-		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID", "SomeOrg",payload);
+		  PKIMessage request = mp.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null,"SOMESOURCEID", "SomeOrg",createOriginatorCredential(),payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
 		  PKIMessageResponseData result = mp.genFetchHardTokenDataResponse("SomeEntity",request, "123456", "SomeData".getBytes())
@@ -642,29 +710,31 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg","FetchHardTokenDataResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.fetchHardTokenDataResponse, request)
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.fetchHardTokenDataResponse.tokenSerial == "123456"
 		  assert xmlMessage.payload.fetchHardTokenDataResponse.encryptedData == "U29tZURhdGE="		  
 	}
-	
+
 	def "Test that signed StoreHardTokenDataRequest message is populated correctly and signature is valid"(){
 		when:
-		  byte[] responseData = mp.genStoreHardTokenDataRequest(TEST_ID,"SomeDestinationId", "SomeOrg","SomeTokenSerial", "SomeCredentialSerialNumber", "SomeIssuerId", "SomeData".getBytes())
+		  byte[] responseData = mp.genStoreHardTokenDataRequest(TEST_ID,"SomeDestinationId", "SomeOrg","SomeTokenSerial", "SomeCredentialSerialNumber", "SomeIssuerId", "SomeData".getBytes(),createOriginatorCredential())
 		  String message = new String(responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
 		then:
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SomeDestinationId", "SomeOrg","StoreHardTokenDataRequest")
 		  verifySignature(message)
 		  assert xmlMessage.@ID == TEST_ID
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 		  assert xmlMessage.payload.storeHardTokenDataRequest.tokenSerial == "SomeTokenSerial"
 		  assert xmlMessage.payload.storeHardTokenDataRequest.relatedCredentialSerialNumber == "SomeCredentialSerialNumber"
 		  assert xmlMessage.payload.storeHardTokenDataRequest.relatedCredentialIssuerId == "SomeIssuerId"
 		  assert xmlMessage.payload.storeHardTokenDataRequest.encryptedData == "U29tZURhdGE="		  
 	}
-	
+
 	def "Test that signed StoreHardTokenDataResponse message is populated correctly and signature is valid"(){
 		setup:
 		  StoreHardTokenDataRequest payload = of.createStoreHardTokenDataRequest();
-		  PKIMessage request = mp.genPKIMessage(null,"SOMESOURCEID", "SomeOrg", payload);
+		  PKIMessage request = mp.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null,"SOMESOURCEID", "SomeOrg", createOriginatorCredential(),payload);
 		  request.setSourceId("SOMEREQUESTER")
 		when:
 		  PKIMessageResponseData result = mp.genStoreHardTokenDataResponse("SomeEntity",request)
@@ -677,13 +747,83 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg","StoreHardTokenDataResponse")
 		  verifySignature(message)
 		  verifyResponseHeader(xmlMessage.payload.storeHardTokenDataResponse, request)
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
 	}
+	
+	
+	def "Test that getVersionFromMessage parses the version attribute correctly."(){
+		
+		expect:
+		mp.getVersionFromMessage(TestMessages.testMessageWithResponse.getBytes("UTF-8")) == "1.0"
+		mp.getVersionFromMessage(TestMessages.testMessageWithVersion1_1.getBytes("UTF-8")) == "1.1"
+		when:
+		mp.getVersionFromMessage(TestMessages.testMessageWithNoVersion.getBytes("UTF-8"))
+		then:
+		thrown IllegalArgumentException
+		when:
+		mp.getVersionFromMessage(TestMessages.testMessageWithEmptyVersion.getBytes("UTF-8"))
+		then:
+		thrown IllegalArgumentException
+		
+		
+		
+		
+	}
+	
+	def "Test that a version 1.1 message with originator element validates"(){
+		expect:
+		mp.genIsIssuerRequest(TEST_ID,"SomeDestinationId","SomeOrg", "SomeIssuerId", createOriginatorCredential()) != null
+	}
+	
+	def "Test that a version 1.0 message with originator element is invalid"(){
+		setup:
+		mp.setDefaultVersion(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_0)
+		when:
+		mp.genIsIssuerRequest(TEST_ID,"SomeDestinationId","SomeOrg", "SomeIssuerId", createOriginatorCredential())
+		then:
+		thrown(MessageException)
+		cleanup:
+		mp.setDefaultVersion(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1)
+	}
+	
+	def "Test that getOriginatorFromRequest works as expected"(){
+		setup:
+		StoreHardTokenDataRequest payload = of.createStoreHardTokenDataRequest();		
+		PKIMessage withOriginator = mp.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null,"SOMESOURCEID", "SomeOrg", createOriginatorCredential(),payload);
+		PKIMessage withoutOriginator = mp.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null,"SOMESOURCEID", "SomeOrg", null,payload);
+		expect:
+		DefaultPKIMessageParser.getOriginatorFromRequest(withOriginator) != null
+		DefaultPKIMessageParser.getOriginatorFromRequest(withoutOriginator) == null
+		DefaultPKIMessageParser.getOriginatorFromRequest(null) == null
+	}
+	
+	def "Test that marshallAndSignPKIMessage signs and marshalls a request properly"(){
+		setup:
+		  IsIssuerResponse payload = of.createIsIssuerResponse()
+		  payload.isIssuer = true
+		  
+		  payload.status = RequestStatus.SUCCESS
+		  PKIMessage request = mp.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null,"SOMEREQUESTER", "SomeOrg",createOriginatorCredential(),payload);
+		  request.setSourceId("SOMESOURCEID")
+		  payload.inResponseTo = request.id
+		  
+		when:
+		  byte[] result = mp.marshallAndSignPKIMessage(request)
+		  String message = new String(result,"UTF-8")
+		  def xmlMessage = new XmlSlurper().parseText(message)
+		then:
+		  verifyPKIHeaderMessage(message, xmlMessage, "SOMESOURCEID", "SOMEREQUESTER", "SomeOrg","IsIssuerResponse")
+		  verifySignature(message)
+		  verifyResponseHeader(xmlMessage.payload.isIssuerResponse, request)
+		  assert xmlMessage.originator.credential.uniqueId == "SomeOriginatorUniqueId"
+	}
+
 	
 	private void verifyPKIHeaderMessage(String message, GPathResult xmlMessage, String expectedSourceId, String expectedDestinationId, String expectedOrganisation, String expectedName){
 		assert message.contains("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"")
 		assert message.contains("xmlns=\"http://certificateservices.org/xsd/pkimessages1_0\"")
-		assert message.contains("xsi:schemaLocation=\"http://certificateservices.org/xsd/pkimessages1_0 pkimessages_schema.xsd\"")
-		assert xmlMessage.@version == "1.0"
+		assert message.contains("xsi:schemaLocation=\"http://certificateservices.org/xsd/pkimessages1_0 pkimessages_schema1_0.xsd\"")
+		assert xmlMessage.@version == "1.1" || xmlMessage.@version == "1.0"
 		assert xmlMessage.@ID != null
 		assert xmlMessage.name == expectedName
 		assert xmlMessage.sourceId == expectedSourceId
@@ -785,6 +925,49 @@ class DefaultPKIMessageParserSpec extends Specification {
 		retval.add(c)
 
 		return retval
+	}
+	
+	private Credential createOriginatorCredential(){		
+		Credential c = of.createCredential();
+		
+
+		
+		c.credentialRequestId = 123
+		c.credentialType = "SomeCredentialType"
+		c.credentialSubType = "SomeCredentialSubType"
+		c.uniqueId = "SomeOriginatorUniqueId"
+		c.displayName = "SomeOrignatorDisplayName"
+		c.serialNumber = "SomeSerialNumber"
+		c.issuerId = "SomeIssuerId"
+		c.status = 100
+		c.credentialData = "12345ABCEF"
+		
+		GregorianCalendar gc = new GregorianCalendar();
+		gc.setTime(new Date(1234L));
+		
+		c.issueDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(gc);
+		c.issueDate.setTimezone(60)
+		
+		gc = new GregorianCalendar();
+		gc.setTime(new Date(2234L));
+		c.expireDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(gc);
+		c.expireDate.setTimezone(60)
+		gc = new GregorianCalendar();
+		gc.setTime(new Date(3234L));
+		c.validFromDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(gc);
+		c.validFromDate.setTimezone(60)
+		Attribute attr = of.createAttribute();
+		attr.setKey("someattrkey")
+		attr.setValue("someattrvalue")
+		
+		c.setAttributes(new Credential.Attributes())
+		c.getAttributes().getAttribute().add(attr)
+
+		c.setUsages(new Credential.Usages())
+		c.getUsages().getUsage().add("someusage")
+		
+
+		return c
 	}
 	
 	private CredentialStatusList createDummyCredentialStatusList(){

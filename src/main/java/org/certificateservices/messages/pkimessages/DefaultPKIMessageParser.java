@@ -29,7 +29,9 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.xml.XMLConstants;
@@ -92,7 +94,9 @@ import org.certificateservices.messages.pkimessages.jaxb.IssueCredentialStatusLi
 import org.certificateservices.messages.pkimessages.jaxb.IssueTokenCredentialsRequest;
 import org.certificateservices.messages.pkimessages.jaxb.IssueTokenCredentialsResponse;
 import org.certificateservices.messages.pkimessages.jaxb.ObjectFactory;
+import org.certificateservices.messages.pkimessages.jaxb.Originator;
 import org.certificateservices.messages.pkimessages.jaxb.PKIMessage;
+import org.certificateservices.messages.pkimessages.jaxb.PKIMessage.Payload;
 import org.certificateservices.messages.pkimessages.jaxb.PKIResponse;
 import org.certificateservices.messages.pkimessages.jaxb.RemoveCredentialRequest;
 import org.certificateservices.messages.pkimessages.jaxb.RemoveCredentialResponse;
@@ -100,7 +104,6 @@ import org.certificateservices.messages.pkimessages.jaxb.RequestStatus;
 import org.certificateservices.messages.pkimessages.jaxb.StoreHardTokenDataRequest;
 import org.certificateservices.messages.pkimessages.jaxb.StoreHardTokenDataResponse;
 import org.certificateservices.messages.pkimessages.jaxb.TokenRequest;
-import org.certificateservices.messages.pkimessages.jaxb.PKIMessage.Payload;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 import org.certificateservices.messages.utils.SettingsUtils;
 import org.w3c.dom.Document;
@@ -127,17 +130,35 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	public static final String SETTING_MESSAGE_NAME_CATALOGUE_IMPL = "pkimessage.messagenamecatalogue.impl";
 	public static final String DEFAULT_MESSAGE_NAME_CATALOGUE_IMPL = DefaultMessageNameCatalogue.class.getName();
 
-	private static final String PKIMESSAGE_XSD_SCHEMA_RESOURCE_LOCATION = "/pkimessages_schema.xsd";
+	private static final String PKIMESSAGE_VERSION_1_0 = "1.0";
+	private static final String PKIMESSAGE_VERSION_1_1 = "1.1";
+	
+	private static final String PKIMESSAGE_XSD_SCHEMA_1_0_RESOURCE_LOCATION = "/pkimessages_schema1_0.xsd";
+	private static final String PKIMESSAGE_XSD_SCHEMA_1_1_RESOURCE_LOCATION = "/pkimessages_schema1_1.xsd";
+	
+	private static final String PKIMESSAGE_XSD_SCHEMA_1_0_URI = "http://certificateservices.org/xsd/pkimessages1_0 pkimessages_schema1_0.xsd";	
+	
+	private static final Map<String,String> pkiMessageSchemaMap = new HashMap<String,String>();
+	static{
+		pkiMessageSchemaMap.put(PKIMESSAGE_VERSION_1_0, PKIMESSAGE_XSD_SCHEMA_1_0_RESOURCE_LOCATION);
+		pkiMessageSchemaMap.put(PKIMESSAGE_VERSION_1_1, PKIMESSAGE_XSD_SCHEMA_1_1_RESOURCE_LOCATION);
+	}
+	
+	private static final Map<String,String> pkiMessageSchemaUriMap = new HashMap<String,String>();
+	static{
+		pkiMessageSchemaUriMap.put(PKIMESSAGE_VERSION_1_0, PKIMESSAGE_XSD_SCHEMA_1_0_URI);
+		pkiMessageSchemaUriMap.put(PKIMESSAGE_VERSION_1_1, PKIMESSAGE_XSD_SCHEMA_1_0_URI);
+	}
+	
 	private static final String XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION = "/xmldsig-core-schema.xsd";
 	
 
-	private static final String[] SUPPORTED_PKIMESSAGE_VERSIONS = {"1.0"};
+	private static final String[] SUPPORTED_PKIMESSAGE_VERSIONS = {"1.0","1.1"};
 	
-	private static final String THIS_PKIMESSAGE_VERSION = "1.0";	
+
+	private Map<String,Marshaller> pkixMessageMarshallers = new HashMap<String, Marshaller>();
+	private Map<String,Unmarshaller> pkixMessageUnmarshallers = new HashMap<String, Unmarshaller>();
 	
-	
-	private Marshaller pkixMessageMarshaller;
-	private Unmarshaller pkixMessageUnmarshaller;
 	private ObjectFactory objectFactory = new ObjectFactory();
 	
 	private Properties properties = null;
@@ -145,6 +166,8 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	private MessageNameCatalogue messageNameCatalogue = null;
 	
 	private String sourceId = null;
+	
+	private String defaultVersion = PKIMESSAGE_VERSION_1_1;
 		
 	/**
 	 * @see org.certificateservices.messages.pkimessages.PKIMessageParser#init(org.certificateservices.messages.MessageSecurityProvider, java.util.Properties)
@@ -156,61 +179,24 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		this.securityProvider = securityProvider;
 		this.messageNameCatalogue = getMessageNameCatalogue(config);
 		
-		try{
-			URL xsdURL = getClass().getResource(PKIMESSAGE_XSD_SCHEMA_RESOURCE_LOCATION);
-			SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-			URL xsdURL2 = getClass().getResource(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION);
-			String xsdContent = null;
-			try {		
-				InputStream resourceAsStream = xsdURL2.openStream();
-				synchronized (resourceAsStream) {
-					byte[] i = new byte[resourceAsStream.available()];
-					resourceAsStream.read(i);
-					xsdContent = new String(i);
-				}
-			} catch (IOException e) {
-				throw new MessageException("Error reading DigSig XSD config");
-			}
-		    final String digSigXSD = xsdContent;
-		    // A Custom resolver for the dig-sig XSD to avoid time-out resolving external resources using HTTP.
-	        schemaFactory.setResourceResolver(new LSResourceResolver() {
-				
-				
-				public LSInput resolveResource(String type,
-                        String namespaceURI,
-                        String publicId,
-                        String systemId,
-                        String baseURI) {
-					if(systemId.contains("xmldsig-core-schema.xsd")){						
-						return new XSDLSInput(publicId, systemId, digSigXSD);
-					}
-					
-					return null;
-				}
-			});
-	        Schema schema = schemaFactory.newSchema(xsdURL);
-	        
-			JAXBContext jaxbContext = JAXBContext.newInstance("org.certificateservices.messages.pkimessages.jaxb");
-			pkixMessageMarshaller = createMarshaller(jaxbContext, "http://certificateservices.org/xsd/pkimessages1_0 pkimessages_schema.xsd");
-			pkixMessageMarshaller.setSchema(schema);
-			pkixMessageUnmarshaller = jaxbContext.createUnmarshaller();
-			pkixMessageUnmarshaller.setSchema(schema);
-			
-			sourceId = config.getProperty(SETTING_SOURCEID);
-			if(sourceId == null || sourceId.trim().equals("")){
-				throw new MessageException("Error setting " + SETTING_SOURCEID + " must be set.");
-			}
-			
-		}catch (JAXBException e){
-			throw new MessageException("Error occurred initializing the default message parser: " + e.getMessage(),e);
-		} catch (SAXException e) {
-			throw new MessageException("Error occurred initializing the default message parser: " + e.getMessage(),e);
+
+		// Initialize all marshallers for all supported version.
+		for(String version : SUPPORTED_PKIMESSAGE_VERSIONS){
+			getPKIMessageMarshaller(version);
+			getPKIMessageUnmarshaller(version);
 		}
+
+		sourceId = config.getProperty(SETTING_SOURCEID);
+		if(sourceId == null || sourceId.trim().equals("")){
+			throw new MessageException("Error setting " + SETTING_SOURCEID + " must be set.");
+		}
+
 		
 	}
 
 	Marshaller createMarshaller(JAXBContext jaxbContext, String schemaLocation) throws JAXBException{
 		Marshaller retval = jaxbContext.createMarshaller();
+		
 		retval.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, schemaLocation);
 		retval.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
 		return retval;
@@ -223,7 +209,13 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	public synchronized PKIMessage parseMessage(byte[] messageData)
 			throws IllegalArgumentException, MessageException {
 		try{
-			Object object = pkixMessageUnmarshaller.unmarshal(new ByteArrayInputStream(messageData));
+			
+			
+			String version = getVersionFromMessage(messageData);
+			verifyPKIMessageVersion(version);
+			
+			
+			Object object = getPKIMessageUnmarshaller(version).unmarshal(new ByteArrayInputStream(messageData));
 			validatePKIMessage(object, new String(messageData,"UTF-8"));
 			return (PKIMessage) object;
 		}catch(JAXBException e){
@@ -232,6 +224,24 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 			throw new IllegalArgumentException("Error parsing PKI Message: " + e.getMessage(),e);
 		}
 		
+	}
+	
+	/**
+	 * Verifies that the given version is supported.
+	 * @param version the version to check.
+	 * @throws IllegalArgumentException if version is unsupported.
+	 */
+	private void verifyPKIMessageVersion(String version) throws IllegalArgumentException{
+		boolean foundVersion = false;
+		for(String supportedVersion : SUPPORTED_PKIMESSAGE_VERSIONS){
+			if(supportedVersion.equals(version)){
+				foundVersion=true;
+				break;
+			}
+		}
+		if(!foundVersion){
+			throw new IllegalArgumentException("Error unsupported protocol version " + version);
+		}
 	}
 
 	/**
@@ -259,16 +269,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	 */
 	private void validatePKIMessageHeader(PKIMessage pkiMessage, String message) throws IllegalArgumentException, MessageException{
 		
-		boolean foundVersion = false;
-		for(String supportedVersion : SUPPORTED_PKIMESSAGE_VERSIONS){
-			if(supportedVersion.equals(pkiMessage.getVersion())){
-				foundVersion=true;
-				break;
-			}
-		}
-		if(!foundVersion){
-			throw new IllegalArgumentException("Error unsupported protocol version " + pkiMessage.getVersion());
-		}
+
 		
 		validateSignature(message);
 		
@@ -313,12 +314,12 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	 * @see org.certificateservices.messages.pkimessages.PKIMessageParser#genIssueTokenCredentialsRequest(String, String, TokenRequest)
 	 */
 	public byte[] genIssueTokenCredentialsRequest(String requestId, String destinationId, String organisation, 
-			TokenRequest tokenRequest) throws IllegalArgumentException,
+			TokenRequest tokenRequest, Credential originator) throws IllegalArgumentException,
 			MessageException {
 		IssueTokenCredentialsRequest payload = objectFactory.createIssueTokenCredentialsRequest();
 		payload.setTokenRequest(tokenRequest);
-		PKIMessage pkiMessage = genPKIMessage(requestId, destinationId, organisation, payload);		
-		return marshallAndSignPKIMessage(pkiMessage);
+		PKIMessage pkiMessage = genPKIMessage(defaultVersion, requestId, destinationId, organisation, originator, payload);		
+		return marshallAndSignPKIMessage( pkiMessage);
 	}
 
 	/**
@@ -347,7 +348,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 			}
 		}
 		
-		PKIMessage pkiMessage = genPKIMessage(request.getName(),null, request.getSourceId(), request.getOrganisation(),payload);		
+		PKIMessage pkiMessage = genPKIMessage(request.getVersion(), request.getName(),null, request.getSourceId(), request.getOrganisation(), getOriginatorFromRequest(request), payload);		
 		byte[] responseData = marshallAndSignPKIMessage(pkiMessage);
 		return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getName(), relatedEndEntity, pkiMessage.getDestinationId(),responseData, true);
 	}
@@ -358,14 +359,14 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	
 	public byte[] genChangeCredentialStatusRequest(String requestId, String destinationId,String organisation, 
 			String issuerId, String serialNumber, int newCredentialStatus,
-			String reasonInformation) throws IllegalArgumentException,
+			String reasonInformation, Credential originator) throws IllegalArgumentException,
 			MessageException {
 		ChangeCredentialStatusRequest payload = objectFactory.createChangeCredentialStatusRequest();
 		payload.setIssuerId(issuerId);
 		payload.setSerialNumber(serialNumber);
 		payload.setNewCredentialStatus(newCredentialStatus);
 		payload.setReasonInformation(reasonInformation);
-		PKIMessage pkiMessage = genPKIMessage(requestId, destinationId, organisation, payload);		
+		PKIMessage pkiMessage = genPKIMessage(defaultVersion, requestId, destinationId, organisation, originator, payload);		
 		return marshallAndSignPKIMessage(pkiMessage);
 	}
 
@@ -389,8 +390,8 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		payload.setCredentialStatus(credentialStatus);
 		payload.setReasonInformation(reasonInformation);
 		payload.setRevocationDate(MessageGenerateUtils.dateToXMLGregorianCalendar(revocationDate));
-		PKIMessage pkiMessage = genPKIMessage(request.getName(),null, request.getSourceId(), request.getOrganisation(), payload);		
-		byte[] responseData = marshallAndSignPKIMessage(pkiMessage);
+		PKIMessage pkiMessage = genPKIMessage(request.getVersion(), request.getName(),null, request.getSourceId(), request.getOrganisation(), getOriginatorFromRequest(request), payload);		
+		byte[] responseData = marshallAndSignPKIMessage( pkiMessage);
 		return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getName(), relatedEndEntity, pkiMessage.getDestinationId(),responseData, true);
 	}
 
@@ -399,13 +400,13 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	 */
 	
 	public byte[] genGetCredentialRequest(String requestId, String destinationId, String organisation, String credentialSubType, String issuerId,
-			String serialNumber) throws IllegalArgumentException,
+			String serialNumber, Credential originator) throws IllegalArgumentException,
 			MessageException {
 		GetCredentialRequest payload = objectFactory.createGetCredentialRequest();
 		payload.setCredentialSubType(credentialSubType);
 		payload.setIssuerId(issuerId);
 		payload.setSerialNumber(serialNumber);
-		PKIMessage pkiMessage = genPKIMessage(requestId, destinationId, organisation, payload);		
+		PKIMessage pkiMessage = genPKIMessage(defaultVersion, requestId, destinationId, organisation, originator, payload);		
 		return marshallAndSignPKIMessage(pkiMessage);
 	}
 
@@ -424,7 +425,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		GetCredentialResponse payload = objectFactory.createGetCredentialResponse();
 		populateSuccessfulResponse(payload, request);
 		payload.setCredential(credential);		
-		PKIMessage pkiMessage = genPKIMessage(request.getName(),null, request.getSourceId(), request.getOrganisation(), payload);		
+		PKIMessage pkiMessage = genPKIMessage(request.getVersion(),request.getName(),null, request.getSourceId(), request.getOrganisation(), getOriginatorFromRequest(request), payload);		
 		byte[] responseData = marshallAndSignPKIMessage(pkiMessage);
 		return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getName(), relatedEndEntity, pkiMessage.getDestinationId(),responseData);
 	}
@@ -434,13 +435,13 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	 */
 	
 	public byte[] genGetCredentialStatusListRequest(String requestId, String destinationId,String organisation, 
-			String issuerId, Long serialNumber, String credentialStatusListType)
+			String issuerId, Long serialNumber, String credentialStatusListType, Credential originator)
 			throws IllegalArgumentException, MessageException {
 		GetCredentialStatusListRequest payload = objectFactory.createGetCredentialStatusListRequest();
 		payload.setIssuerId(issuerId);
 		payload.setSerialNumber(serialNumber);
 		payload.setCredentialStatusListType(credentialStatusListType);
-		PKIMessage pkiMessage = genPKIMessage(requestId, destinationId, organisation, payload);		
+		PKIMessage pkiMessage = genPKIMessage(defaultVersion, requestId, destinationId, organisation, originator, payload);		
 		return marshallAndSignPKIMessage(pkiMessage);
 	}
 
@@ -459,7 +460,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		GetCredentialStatusListResponse payload = objectFactory.createGetCredentialStatusListResponse();
 		populateSuccessfulResponse(payload, request);
 		payload.setCredentialStatusList(credentialStatusList);	
-		PKIMessage pkiMessage = genPKIMessage(request.getName(),null, request.getSourceId(), request.getOrganisation(), payload);		
+		PKIMessage pkiMessage = genPKIMessage(request.getVersion(),request.getName(),null, request.getSourceId(), request.getOrganisation(), getOriginatorFromRequest(request), payload);		
 		byte[] responseData = marshallAndSignPKIMessage(pkiMessage);
 		return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getName(), relatedEndEntity, pkiMessage.getDestinationId(),responseData);
 	}
@@ -469,11 +470,11 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	 */
 	
 	public byte[] genGetIssuerCredentialsRequest(String requestId,String destinationId,String organisation, 
-			String issuerId) throws IllegalArgumentException,
+			String issuerId, Credential originator) throws IllegalArgumentException,
 			MessageException {
 		GetIssuerCredentialsRequest payload = objectFactory.createGetIssuerCredentialsRequest();
 		payload.setIssuerId(issuerId);
-		PKIMessage pkiMessage = genPKIMessage(requestId, destinationId, organisation, payload);		
+		PKIMessage pkiMessage = genPKIMessage(defaultVersion, requestId, destinationId, organisation, originator, payload);		
 		return marshallAndSignPKIMessage(pkiMessage);
 	}
 
@@ -492,7 +493,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		GetIssuerCredentialsResponse payload = objectFactory.createGetIssuerCredentialsResponse();
 		populateSuccessfulResponse(payload, request);
 		payload.setCredential(issuerCredential);		
-		PKIMessage pkiMessage = genPKIMessage(request.getName(),null, request.getSourceId(), request.getOrganisation(), payload);		
+		PKIMessage pkiMessage = genPKIMessage(request.getVersion(),request.getName(),null, request.getSourceId(), request.getOrganisation(), getOriginatorFromRequest(request), payload);		
 		byte[] responseData = marshallAndSignPKIMessage(pkiMessage);
 		return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getName(), relatedEndEntity,pkiMessage.getDestinationId(),responseData);
 	}
@@ -501,11 +502,11 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	 * @see org.certificateservices.messages.pkimessages.PKIMessageParser#genIsIssuerRequest(String, String, String)
 	 */
 	
-	public byte[] genIsIssuerRequest(String requestId,String destinationId, String organisation,  String issuerId)
+	public byte[] genIsIssuerRequest(String requestId,String destinationId, String organisation,  String issuerId, Credential originator)
 			throws IllegalArgumentException, MessageException {
 		IsIssuerRequest payload = objectFactory.createIsIssuerRequest();
 		payload.setIssuerId(issuerId);
-		PKIMessage pkiMessage = genPKIMessage(requestId,destinationId, organisation, payload);		
+		PKIMessage pkiMessage = genPKIMessage(defaultVersion,requestId,destinationId, organisation, originator, payload);		
 		return marshallAndSignPKIMessage(pkiMessage);
 	}
 
@@ -523,7 +524,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		IsIssuerResponse payload = objectFactory.createIsIssuerResponse();
 		populateSuccessfulResponse(payload, request);
 		payload.setIsIssuer(isIssuer);		
-		PKIMessage pkiMessage = genPKIMessage(request.getName(),null, request.getSourceId(), request.getOrganisation(), payload);		
+		PKIMessage pkiMessage = genPKIMessage(request.getVersion(),request.getName(),null, request.getSourceId(), request.getOrganisation(), getOriginatorFromRequest(request), payload);		
 		byte[] responseData = marshallAndSignPKIMessage(pkiMessage);
 		return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getName(), relatedEndEntity,pkiMessage.getDestinationId(),responseData);
 	}
@@ -534,7 +535,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	
 	public byte[] genIssueCredentialStatusListRequest(String requestId,String destinationId,String organisation, 
 			String issuerId, String credentialStatusListType, Boolean force,
-			Date requestedValidFromDate, Date requestedNotAfterDate)
+			Date requestedValidFromDate, Date requestedNotAfterDate, Credential originator )
 			throws IllegalArgumentException, MessageException {
 		IssueCredentialStatusListRequest payload = objectFactory.createIssueCredentialStatusListRequest();
 		payload.setIssuerId(issuerId);
@@ -542,7 +543,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		payload.setForce(force);
 		payload.setRequestedNotAfterDate(MessageGenerateUtils.dateToXMLGregorianCalendar(requestedNotAfterDate));
 		payload.setRequestedValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(requestedValidFromDate));
-		PKIMessage pkiMessage = genPKIMessage(requestId, destinationId, organisation, payload);		
+		PKIMessage pkiMessage = genPKIMessage(defaultVersion,requestId, destinationId, organisation, originator, payload);		
 		return marshallAndSignPKIMessage(pkiMessage);
 	}
 
@@ -561,7 +562,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		IssueCredentialStatusListResponse payload = objectFactory.createIssueCredentialStatusListResponse();
 		populateSuccessfulResponse(payload, request);
 		payload.setCredentialStatusList(credentialStatusList);
-		PKIMessage pkiMessage = genPKIMessage(request.getName(),null, request.getSourceId(), request.getOrganisation(), payload);		
+		PKIMessage pkiMessage = genPKIMessage(request.getVersion(),request.getName(),null, request.getSourceId(), request.getOrganisation(), getOriginatorFromRequest(request), payload);		
 		byte[] responseData = marshallAndSignPKIMessage(pkiMessage);
 		return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getName(), relatedEndEntity, pkiMessage.getDestinationId(),responseData, true);
 	}
@@ -571,7 +572,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	 */
 	
 	public PKIMessageResponseData genIssueCredentialStatusListResponseWithoutRequest(String relatedEndEntity, String destination, String name, String organisation,
-			CredentialStatusList credentialStatusList)
+			CredentialStatusList credentialStatusList, Credential originator)
 			throws IllegalArgumentException, MessageException {
 		String responseId = MessageGenerateUtils.generateRandomUUID();
 		IssueCredentialStatusListResponse payload = objectFactory.createIssueCredentialStatusListResponse();
@@ -579,7 +580,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		payload.setStatus(RequestStatus.SUCCESS);
 		payload.setInResponseTo(responseId);
 		payload.setCredentialStatusList(credentialStatusList);
-		PKIMessage pkiMessage = genPKIMessage(name,responseId, destination, organisation, payload);		
+		PKIMessage pkiMessage = genPKIMessage(defaultVersion,name,responseId, destination, organisation, originator, payload);		
 		byte[] responseData = marshallAndSignPKIMessage(pkiMessage);
 		return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getName(), relatedEndEntity, pkiMessage.getDestinationId(),responseData, true);
 	}
@@ -589,12 +590,12 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	 */
 	
 	public byte[] genRemoveCredentialRequest(String requestId,String destinationId,String organisation, 
-			String issuerId, String serialNumber)
+			String issuerId, String serialNumber, Credential originator)
 			throws IllegalArgumentException, MessageException {
 		RemoveCredentialRequest payload = objectFactory.createRemoveCredentialRequest();
 		payload.setIssuerId(issuerId);
 		payload.setSerialNumber(serialNumber);
-		PKIMessage pkiMessage = genPKIMessage(requestId, destinationId, organisation, payload);		
+		PKIMessage pkiMessage = genPKIMessage(defaultVersion, requestId, destinationId, organisation, originator, payload);		
 		return marshallAndSignPKIMessage(pkiMessage);
 	}
 
@@ -611,7 +612,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		
 		RemoveCredentialResponse payload = objectFactory.createRemoveCredentialResponse();
 		populateSuccessfulResponse(payload, request);
-		PKIMessage pkiMessage = genPKIMessage(request.getName(),null, request.getSourceId(), request.getOrganisation(), payload);		
+		PKIMessage pkiMessage = genPKIMessage(request.getVersion(),request.getName(),null, request.getSourceId(), request.getOrganisation(), getOriginatorFromRequest(request), payload);		
 		byte[] responseData = marshallAndSignPKIMessage(pkiMessage);
 		return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getName(), relatedEndEntity,pkiMessage.getDestinationId(),responseData);
 	}
@@ -622,14 +623,14 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	
 	public byte[] genFetchHardTokenDataRequest(String requestId,String destinationId, String organisation,
 			String tokenSerial, String relatedCredentialSerialNumber,
-			String relatedCredentialIssuerId, Credential adminCredential)
+			String relatedCredentialIssuerId, Credential adminCredential, Credential originator)
 			throws IllegalArgumentException, MessageException {
 		FetchHardTokenDataRequest payload = objectFactory.createFetchHardTokenDataRequest();
 		payload.setTokenSerial(tokenSerial);
 		payload.setRelatedCredentialSerialNumber(relatedCredentialSerialNumber);
 		payload.setRelatedCredentialIssuerId(relatedCredentialIssuerId);
 		payload.setAdminCredential(adminCredential);
-		PKIMessage pkiMessage = genPKIMessage(requestId, destinationId, organisation, payload);		
+		PKIMessage pkiMessage = genPKIMessage(defaultVersion, requestId, destinationId, organisation, originator, payload);		
 		return marshallAndSignPKIMessage(pkiMessage);
 	}
 
@@ -649,7 +650,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		populateSuccessfulResponse(payload, request);
 		payload.setTokenSerial(tokenSerial);
 		payload.setEncryptedData(encryptedData);
-		PKIMessage pkiMessage = genPKIMessage(request.getName(),null,request.getSourceId(), request.getOrganisation(), payload);		
+		PKIMessage pkiMessage = genPKIMessage(request.getVersion(),request.getName(),null,request.getSourceId(), request.getOrganisation(), getOriginatorFromRequest(request), payload);		
 		byte[] responseData = marshallAndSignPKIMessage(pkiMessage);
 		return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getName(), relatedEndEntity,pkiMessage.getDestinationId(),responseData);
 	}
@@ -660,14 +661,15 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	
 	public byte[] genStoreHardTokenDataRequest(String requestId, String destinationId, String organisation,
 			String tokenSerial, String relatedCredentialSerialNumber,
-			String relatedCredentialIssuerId, byte[] encryptedData)
+			String relatedCredentialIssuerId, byte[] encryptedData, 
+			Credential originator)
 			throws IllegalArgumentException, MessageException {
 		StoreHardTokenDataRequest payload = objectFactory.createStoreHardTokenDataRequest();
 		payload.setTokenSerial(tokenSerial);
 		payload.setRelatedCredentialSerialNumber(relatedCredentialSerialNumber);
 		payload.setRelatedCredentialIssuerId(relatedCredentialIssuerId);
 		payload.setEncryptedData(encryptedData);
-		PKIMessage pkiMessage = genPKIMessage(requestId,destinationId, organisation, payload);		
+		PKIMessage pkiMessage = genPKIMessage(defaultVersion, requestId,destinationId, organisation, originator, payload);		
 		return marshallAndSignPKIMessage(pkiMessage);
 	}
 
@@ -684,10 +686,12 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		
 		StoreHardTokenDataResponse payload = objectFactory.createStoreHardTokenDataResponse();
 		populateSuccessfulResponse(payload, request);
-		PKIMessage pkiMessage = genPKIMessage(request.getName(),null,request.getSourceId(), request.getOrganisation(), payload);		
+		PKIMessage pkiMessage = genPKIMessage(request.getVersion(),request.getName(),null,request.getSourceId(), request.getOrganisation(), getOriginatorFromRequest(request), payload);		
 		byte[] responseData = marshallAndSignPKIMessage(pkiMessage);
 		return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getName(), relatedEndEntity,pkiMessage.getDestinationId(),responseData);
 	}
+
+
 
 
 
@@ -696,10 +700,10 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	 */
 	
 	public PKIMessageResponseData genPKIResponse(String relatedEndEntity,byte[] request, RequestStatus status,
-			String failureMessage) throws IllegalArgumentException,
+			String failureMessage, Credential originator) throws IllegalArgumentException,
 			MessageException {
 
-		return genPKIResponse(relatedEndEntity,request, status, failureMessage, null);
+		return genPKIResponse(relatedEndEntity,request, status, failureMessage, null,originator);
 
 	}
 	/**
@@ -707,13 +711,25 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	 */
 	
 	public PKIMessageResponseData genPKIResponse(String relatedEndEntity,byte[] request, RequestStatus status,
-			String failureMessage, String destinationID) throws IllegalArgumentException,
+			String failureMessage, String destinationID, Credential originator) throws IllegalArgumentException,
 			MessageException {
 		try {
 			DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
 			domFactory.setNamespaceAware(true);
 			DocumentBuilder builder = domFactory.newDocumentBuilder();
 			Document doc = builder.parse(new ByteArrayInputStream(request));
+			
+    		Node pkiMessageNode = doc.getFirstChild();
+    		String version=null;
+    		if(pkiMessageNode != null){
+    			Node versionNode = pkiMessageNode.getAttributes().getNamedItem("version");
+    			if(versionNode != null){
+    				version = versionNode.getNodeValue();
+    			}
+    		}  
+    		if(version == null || version.trim().equals("")){
+    			throw new IllegalArgumentException("Error unsupported protocol version when generating PKIResponse, version: " + version);
+    		}
 
 			XPathFactory factory = XPathFactory.newInstance();
 			XPath xpath = factory.newXPath();
@@ -746,7 +762,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 			payload.setFailureMessage(failureMessage);
 			payload.setInResponseTo(responseToRequestID);
 
-			PKIMessage pkiMessage = genPKIMessage(requestName, null,destinationID, organisation, payload);
+			PKIMessage pkiMessage = genPKIMessage(version,requestName, null,destinationID, organisation, originator, payload);
 
 			byte[] responseData = marshallAndSignPKIMessage(pkiMessage);
 			return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getName(), relatedEndEntity, pkiMessage.getDestinationId(),responseData, false );
@@ -805,19 +821,36 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	}
 		return retval;
 	}
+	
+	/**
+	 * Method to return the default version.
+	 * @return the version used to generate requests by default.
+	 */
+	public String getDefaultVersion(){
+		return defaultVersion;
+	}
 
+	/**
+	 * Method the set the version to set in generated requests.
+	 * 
+	 * @param defaultVersion the version.
+	 */
+	public void setDefaultVersion(String defaultVersion){
+		this.defaultVersion = defaultVersion;
+	}
 	
 	/**
 	 * Method that populates all fields except the signature of a PKI message
 	 * @param messageId the id of the message, if null is a random id generated.
 	 * @param destinationID the destination Id to use.
 	 * @param organisation the related organisation
+	 * @param originator the originator of the message if applicable.
 	 * @param payload the payload object to set in the object
 	 * @throws IllegalArgumentException if input data contained invalid format.
 	 * @throws MessageException if internal problems occurred processing the pki message.
 	 */
-	private PKIMessage genPKIMessage(String messageId, String destinationID, String organisation, Object payload) throws IllegalArgumentException, MessageException{
-		return genPKIMessage(null, messageId, destinationID, organisation, payload);
+	private PKIMessage genPKIMessage(String version, String messageId, String destinationID, String organisation, Credential originator, Object payload) throws IllegalArgumentException, MessageException{
+		return genPKIMessage(version,null, messageId, destinationID, organisation, originator, payload);
 	}
 	
 	/**
@@ -827,13 +860,14 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	 * @param messageId the id of the message, if null is a random id generated.
 	 * @param destinationID the destination Id to use.
 	 * @param organisation the related organisation
+	 * @param originator the originator of the message if applicable.
 	 * @param payload the payload object to set in the object
 	 * @throws IllegalArgumentException if input data contained invalid format.
 	 * @throws MessageException if internal problems occurred processing the pki message.
 	 */
-	private PKIMessage genPKIMessage(String requestName, String messageId, String destinationID, String organisation, Object payload) throws IllegalArgumentException, MessageException{
+	private PKIMessage genPKIMessage(String version, String requestName, String messageId, String destinationID, String organisation, Credential originator, Object payload) throws IllegalArgumentException, MessageException{
 		PKIMessage retval = objectFactory.createPKIMessage();
-		retval.setVersion(THIS_PKIMESSAGE_VERSION);
+		retval.setVersion(version);
 		if(messageId == null){
 		  retval.setID(MessageGenerateUtils.generateRandomUUID());
 		}else{
@@ -844,6 +878,11 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		retval.setDestinationId(destinationID);
 		retval.setSourceId(sourceId);
 		retval.setOrganisation(organisation);
+		if(originator != null){
+			Originator originatorElement = objectFactory.createOriginator();
+			originatorElement.setCredential(originator);
+		    retval.setOriginator(originatorElement);
+		}
 		retval.setPayload(getPayLoadObject(payload));
 			
 		return retval;
@@ -884,14 +923,15 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	 * @return a marshalled and signed message.
 	 * @throws MessageException if problems occurred when processing the message.
 	 */
-	private synchronized byte[] marshallAndSignPKIMessage(PKIMessage pkiMessage) throws MessageException{
+	public synchronized byte[] marshallAndSignPKIMessage(PKIMessage pkiMessage) throws MessageException{
 		if(pkiMessage == null){
 			throw new MessageException("Error marshalling PKI Message, message cannot be null.");
 		}
 
 		try {
-			Document doc = getDocumentBuilder().newDocument();			
-			pkixMessageMarshaller.marshal(pkiMessage, doc);
+			Document doc = getDocumentBuilder().newDocument();		
+			String version = pkiMessage.getVersion();
+			getPKIMessageMarshaller(version).marshal(pkiMessage, doc);
 			if(signMessages()){
 	
 				XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM",new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
@@ -1008,4 +1048,152 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
     		throw new MessageException("Error creating creating name catalogue " + e.getClass().getName() + ": " + e.getMessage());
     	}
     }
+    
+    /**
+     * Method that tries to parse the xml version from a message
+     * @param messageData the messageData to extract version from.
+     * @return the version in the version attribute of the message.
+     * @throws IllegalArgumentException didn't contains a valid version attribute.
+     * @throws MessageException if internal problems occurred.
+     */
+    private String getVersionFromMessage(byte[] messageData) throws IllegalArgumentException, MessageException{
+    	String retval=null;
+    	try{
+    		Document doc = getDocumentBuilder().parse(new ByteArrayInputStream(messageData));
+    		
+    		Node pkiMessage = doc.getFirstChild();
+    		if(pkiMessage != null){
+    			Node versionNode = pkiMessage.getAttributes().getNamedItem("version");
+    			if(versionNode != null){
+    				retval = versionNode.getNodeValue();
+    			}
+    		}    		
+
+    	}catch(Exception e){
+    		throw new IllegalArgumentException("Error parsing XML data: " + e.getMessage(),e);
+    	}
+
+    	if(retval == null || retval.trim().equals("")){
+    	  throw new IllegalArgumentException("Error no version attribute found in PKI Message.");
+    	}
+    	return retval;
+    }
+    
+    /**
+     * Method that returns a marshaller for a given version,
+     * @param version the version of the PKI Message protocol to fetch.
+     * @return related marshaller
+     * @throws MessageException if problems occurred creating the PKI Message Marshaller for the given version.
+     */
+    private Marshaller getPKIMessageMarshaller(String version) throws MessageException{
+    	if(version == null){
+    		throw new IllegalArgumentException("Invalid PKI Message, version is missing.");
+    	}
+    	
+    	Marshaller retval = pkixMessageMarshallers.get(version);
+    	if(retval == null){
+    		String schemaURL = pkiMessageSchemaUriMap.get(version);
+    		try{
+    			retval = createMarshaller(getJAXBContext(), schemaURL);
+    			retval.setSchema(generatePKIMessageSchema(version)); 
+    			pkixMessageMarshallers.put(version, retval);
+    		}catch(Exception e){
+    			throw new MessageException("Error creating XML Marshaller for PKI Message version: " + version);
+    		}
+    	}
+    	return retval;
+    	
+    }
+    
+	public static Credential getOriginatorFromRequest(PKIMessage request) {
+		Credential retval = null;
+		if(request!= null && request.getOriginator() != null){
+			retval = request.getOriginator().getCredential();
+		}
+		return retval;
+	}
+    
+    /**
+     * Method that returns a unmarshaller for a given version,
+     * @param version the version of the PKI Message protocol to fetch.
+     * @return related unmarshaller
+     * @throws MessageException if problems occurred creating the PKI Message Marshaller for the given version.
+     */
+    private Unmarshaller getPKIMessageUnmarshaller(String version) throws MessageException{
+    	if(version == null){
+    		throw new IllegalArgumentException("Invalid PKI Message, version is missing.");
+    	}
+    	
+    	Unmarshaller retval = pkixMessageUnmarshallers.get(version);
+    	if(retval == null){
+    		try{
+    			retval = jaxbContext.createUnmarshaller();
+    			retval.setSchema(generatePKIMessageSchema(version));
+    			pkixMessageUnmarshallers.put(version, retval);
+    		}catch(Exception e){
+    			throw new MessageException("Error creating XML Unmarshaller for PKI Message version: " + version);
+    		}
+    	}
+    	return retval;
+    	
+    }
+    
+    /**
+     * Help method to generate a PKIMessage Schema for a given version.
+     * @param version the version to look up.
+     * @return
+     * @throws IllegalArgumentException
+     * @throws SAXException
+     * @throws MessageException
+     */
+    private Schema generatePKIMessageSchema(String version) throws IllegalArgumentException, SAXException, MessageException{
+    	String schemaLocation = pkiMessageSchemaMap.get(version);
+		URL xsdURL = getClass().getResource(schemaLocation);
+		SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+		URL xsdURL2 = getClass().getResource(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION);
+		String xsdContent = null;
+		try {		
+			InputStream resourceAsStream = xsdURL2.openStream();
+			synchronized (resourceAsStream) {
+				byte[] i = new byte[resourceAsStream.available()];
+				resourceAsStream.read(i);
+				xsdContent = new String(i);
+			}
+		} catch (IOException e) {
+			throw new MessageException("Error reading DigSig XSD config");
+		}
+	    final String digSigXSD = xsdContent;
+	    // A Custom resolver for the dig-sig XSD to avoid time-out resolving external resources using HTTP.
+        schemaFactory.setResourceResolver(new LSResourceResolver() {
+			
+			
+			public LSInput resolveResource(String type,
+                    String namespaceURI,
+                    String publicId,
+                    String systemId,
+                    String baseURI) {
+				if(systemId.contains("xmldsig-core-schema.xsd")){						
+					return new XSDLSInput(publicId, systemId, digSigXSD);
+				}
+				
+				return null;
+			}
+		});        
+        Schema schema = schemaFactory.newSchema(xsdURL);
+        
+        return schema;
+    }
+    
+    /**
+     * Help method maintaining the PKI Message JAXB Context.
+     */
+    private JAXBContext jaxbContext = null;
+    private JAXBContext getJAXBContext() throws JAXBException{
+    	if(jaxbContext== null){
+    		jaxbContext = JAXBContext.newInstance("org.certificateservices.messages.pkimessages.jaxb");
+    	}
+    	return jaxbContext;
+    }
+    
+
 }

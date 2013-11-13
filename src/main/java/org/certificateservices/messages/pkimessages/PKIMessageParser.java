@@ -60,11 +60,12 @@ public interface PKIMessageParser {
 	 * @param destination the destinationId used in the PKIMessage.
 	 * @param organisation the related organisation
 	 * @param tokenRequest the tokenRequest to add to the PKIRequest.
+	 * @param originator the original requester of a message, null if not applicable
 	 * @return generated and signed PKIMessage in byte[] format.
 	 * @throws IllegalArgumentException if PKI message contained invalid data not conforming to the standard.
 	 * @throws MessageException if internal state occurred when processing the PKIMessage
 	 */
-	byte[] genIssueTokenCredentialsRequest(String requestId, String destination, String organisation, TokenRequest tokenRequest) throws IllegalArgumentException, MessageException;
+	byte[] genIssueTokenCredentialsRequest(String requestId, String destination, String organisation, TokenRequest tokenRequest, Credential originator) throws IllegalArgumentException, MessageException;
 	
 	/**
 	 * Method to a IssueTokenCredentialResponse message and populating it with the tokenRequest and the
@@ -90,11 +91,12 @@ public interface PKIMessageParser {
 	 * @param serialNumber The serial number of the credential in hexadecimal encoding lowercase (for X509 certificates).
 	 * @param newCredentialStatus The new credential status to set.
 	 * @param reasonInformation More detailed information about the revocation status
+	 * @param originator the original requester of a message, null if not applicable
 	 * @return a generated message.
 	 * @throws IllegalArgumentException if PKI message contained invalid data not conforming to the standard.
 	 * @throws MessageException if internal state occurred when processing the PKIMessage
 	 */
-	byte[] genChangeCredentialStatusRequest(String requestId, String destination, String organisation, String issuerId, String serialNumber, int newCredentialStatus, String reasonInformation)  throws IllegalArgumentException, MessageException;
+	byte[] genChangeCredentialStatusRequest(String requestId, String destination, String organisation, String issuerId, String serialNumber, int newCredentialStatus, String reasonInformation, Credential originator)  throws IllegalArgumentException, MessageException;
 	
 	/**
 	 * Method to generate a ChangeCredentialStatusResponse
@@ -121,11 +123,12 @@ public interface PKIMessageParser {
 	 * @param credentialSubType the credential sub type of the credential.
 	 * @param issuerId The unique id of the issuer, usually the subject DN name of the issuer.
 	 * @param serialNumber The serial number of the credential in hexadecimal encoding lowercase (for X509 certificates).
+	 * @param originator the original requester of a message, null if not applicable.
 	 * @return a generated message.
 	 * @throws IllegalArgumentException if PKI message contained invalid data not conforming to the standard.
 	 * @throws MessageException if internal state occurred when processing the PKIMessage
 	 */
-	byte[] genGetCredentialRequest(String requestId, String destination, String organisation, String credentialSubType, String issuerId, String serialNumber)  throws IllegalArgumentException, MessageException;
+	byte[] genGetCredentialRequest(String requestId, String destination, String organisation, String credentialSubType, String issuerId, String serialNumber, Credential originator)  throws IllegalArgumentException, MessageException;
 	
 	/**
 	 * Method to generate a GetCredentialResponse
@@ -148,11 +151,12 @@ public interface PKIMessageParser {
 	 * @param issuerId The unique id of the issuer, usually the subject DN name of the issuer.
 	 * @param serialNumber The number of the credential status list in the request (Optional)
 	 * @param credentialStatusListType The type of status list to fetch
+	 * @param originator the original requester of a message, null if not applicable.
 	 * @return a generated message.
 	 * @throws IllegalArgumentException if PKI message contained invalid data not conforming to the standard.
 	 * @throws MessageException if internal state occurred when processing the PKIMessage
 	 */
-	byte[] genGetCredentialStatusListRequest(String requestId, String destination, String organisation, String issuerId, Long serialNumber, String credentialStatusListType) throws IllegalArgumentException, MessageException;
+	byte[] genGetCredentialStatusListRequest(String requestId, String destination, String organisation, String issuerId, Long serialNumber, String credentialStatusListType, Credential originator) throws IllegalArgumentException, MessageException;
 	
 	/**
 	 * Method to generate a GetCredentialStatusListResponse
@@ -173,11 +177,12 @@ public interface PKIMessageParser {
 	 * @param destination the destinationId used in the PKIMessage.
 	 * @param organisation the related organisation
 	 * @param issuerId The unique id of the issuer, usually the subject DN name of the issuer.
+	 * @param originator the original requester of a message, null if not applicable.
 	 * @return a generated message.
 	 * @throws IllegalArgumentException if PKI message contained invalid data not conforming to the standard.
 	 * @throws MessageException if internal state occurred when processing the PKIMessage
 	 */
-	byte[] genGetIssuerCredentialsRequest(String requestId, String destination, String organisation, String issuerId) throws IllegalArgumentException, MessageException;
+	byte[] genGetIssuerCredentialsRequest(String requestId, String destination, String organisation, String issuerId, Credential originator) throws IllegalArgumentException, MessageException;
 	
 	/**
 	 * Method to generate a GetIssuerCredentialsResponse
@@ -198,11 +203,12 @@ public interface PKIMessageParser {
 	 * @param destination the destinationId used in the PKIMessage.
 	 * @param organisation the related organisation
 	 * @param issuerId The unique id of the issuer, usually the subject DN name of the issuer.
+	 * @param originator the original requester of a message, null if not applicable.
 	 * @return a generated message.
 	 * @throws IllegalArgumentException if PKI message contained invalid data not conforming to the standard.
 	 * @throws MessageException if internal state occurred when processing the PKIMessage
 	 */
-	byte[] genIsIssuerRequest(String requestId, String destination, String organisation, String issuerId) throws IllegalArgumentException, MessageException;
+	byte[] genIsIssuerRequest(String requestId, String destination, String organisation, String issuerId, Credential originator) throws IllegalArgumentException, MessageException;
 	
 	/**
 	 * Method to generate a IsIssuerResponse
@@ -225,11 +231,12 @@ public interface PKIMessageParser {
 	 * @param issuerId The unique id of the issuer, usually the subject DN name of the issuer.
 	 * @param serialNumber The number of the credential status list in the request (Optional)
 	 * @param credentialStatusListType The type of status list to fetch
+	 * @param originator the original requester of a message, null if not applicable.
 	 * @return a generated message.
 	 * @throws IllegalArgumentException
 	 * @throws MessageException
 	 */
-	byte[] genIssueCredentialStatusListRequest(String requestId, String destination, String organisation, String issuerId, String credentialStatusListType, Boolean force, Date requestedValidFromDate, Date requestedNotAfterDate) throws IllegalArgumentException, MessageException;
+	byte[] genIssueCredentialStatusListRequest(String requestId, String destination, String organisation, String issuerId, String credentialStatusListType, Boolean force, Date requestedValidFromDate, Date requestedNotAfterDate, Credential originator) throws IllegalArgumentException, MessageException;
 	
 	/**
 	 * Method to generate a IssueCredentialStatusListResponse
@@ -253,11 +260,12 @@ public interface PKIMessageParser {
 	 * @param requestName the name of the request message this response whould normally reply to.
 	 * @param organisation the organisation set in the response message.
 	 * @param credentialStatusList the new credential status list
+	 * @param originator the original requester of a message, null if not applicable.
 	 * @return a generated message.
 	 * @throws IllegalArgumentException if PKI message contained invalid data not conforming to the standard.
 	 * @throws MessageException if internal state occurred when processing the PKIMessage
 	 */
-	PKIMessageResponseData genIssueCredentialStatusListResponseWithoutRequest(String relatedEndEntity, String destination, String requestName, String organisation, CredentialStatusList credentialStatusList) throws IllegalArgumentException, MessageException;
+	PKIMessageResponseData genIssueCredentialStatusListResponseWithoutRequest(String relatedEndEntity, String destination, String requestName, String organisation, CredentialStatusList credentialStatusList, Credential originator) throws IllegalArgumentException, MessageException;
 	
 	/**
 	 * Method to generate a RemoveCredentialRequest
@@ -267,11 +275,12 @@ public interface PKIMessageParser {
 	 * @param organisation the related organisation
 	 * @param issuerId The unique id of the issuer, usually the subject DN name of the issuer.
 	 * @param serialNumber The serial number of the credential in hexadecimal encoding lowercase (for X509 certificates).
+	 * @param originator the original requester of a message, null if not applicable.
 	 * @return a generated message.
 	 * @throws IllegalArgumentException if PKI message contained invalid data not conforming to the standard.
 	 * @throws MessageException if internal state occurred when processing the PKIMessage
 	 */
-	byte[] genRemoveCredentialRequest(String requestId, String destination, String organisation, String issuerId, String serialNumber)  throws IllegalArgumentException, MessageException;
+	byte[] genRemoveCredentialRequest(String requestId, String destination, String organisation, String issuerId, String serialNumber, Credential originator)  throws IllegalArgumentException, MessageException;
 	
 	/**
 	 * Method to generate a RemoveCredentialResponse
@@ -294,11 +303,12 @@ public interface PKIMessageParser {
 	 * @param relatedCredentialSerialNumber The serial number of the most related credential in hexadecimal encoding lowercase (for X509 certificates).
 	 * @param relatedCredentialIssuerId The unique id of the issuer of the related credential, usually the subject DN name of the issuer.
 	 * @param adminCredential the credential of the requesting card administrator that need the hard token data. The response data is encrypted with this administrator as recipient.
+	 * @param originator the original requester of a message, null if not applicable.
 	 * @return a generated message.
 	 * @throws IllegalArgumentException if PKI message contained invalid data not conforming to the standard.
 	 * @throws MessageException if internal state occurred when processing the PKIMessage
 	 */
-	byte[] genFetchHardTokenDataRequest(String requestId, String destination, String organisation, String tokenSerial, String relatedCredentialSerialNumber, String relatedCredentialIssuerId, Credential adminCredential)  throws IllegalArgumentException, MessageException;
+	byte[] genFetchHardTokenDataRequest(String requestId, String destination, String organisation, String tokenSerial, String relatedCredentialSerialNumber, String relatedCredentialIssuerId, Credential adminCredential, Credential originator)  throws IllegalArgumentException, MessageException;
 	
 	
 	/**
@@ -324,11 +334,12 @@ public interface PKIMessageParser {
 	 * @param relatedCredentialSerialNumber The serial number of the most related credential in hexadecimal encoding lowercase (for X509 certificates).
 	 * @param relatedCredentialIssuerId The unique id of the issuer of the related credential, usually the subject DN name of the issuer.
 	 * @param encryptedData The token data encrypted with a credential provided out-of-bands by the PKI administrator to protect the data during transport.
+	 * @param originator the original requester of a message, null if not applicable.
 	 * @return a generated message.
 	 * @throws IllegalArgumentException if PKI message contained invalid data not conforming to the standard.
 	 * @throws MessageException if internal state occurred when processing the PKIMessage
 	 */
-	byte[] genStoreHardTokenDataRequest(String requestId, String destination, String organisation, String tokenSerial, String relatedCredentialSerialNumber, String relatedCredentialIssuerId, byte[] encryptedData)  throws IllegalArgumentException, MessageException;
+	byte[] genStoreHardTokenDataRequest(String requestId, String destination, String organisation, String tokenSerial, String relatedCredentialSerialNumber, String relatedCredentialIssuerId, byte[] encryptedData, Credential originator)  throws IllegalArgumentException, MessageException;
 	
 	
 	/**
@@ -353,11 +364,12 @@ public interface PKIMessageParser {
 	 * @param request the PKI Request data to generate a response for.
 	 * @param status the status to set in the request.
 	 * @param failureMessage the failure message sent in the request.
+	 * @param originator the original requester of a message, null if not applicable.
 	 * @return generated and signed PKIMessage in byte[] format.
 	 * @throws IllegalArgumentException if PKI message contained invalid data not conforming to the standard.
 	 * @throws MessageException if internal state occurred when processing the PKIMessage
 	 */
-	PKIMessageResponseData genPKIResponse(String relatedEndEntity, byte[] request, RequestStatus status, String failureMessage) throws IllegalArgumentException, MessageException;
+	PKIMessageResponseData genPKIResponse(String relatedEndEntity, byte[] request, RequestStatus status, String failureMessage, Credential originator) throws IllegalArgumentException, MessageException;
 	
 	/**
 	 * Method to generate a basic PKI Response used when sending a message with status of ILLEGALARGUMENT or ERROR
@@ -368,11 +380,12 @@ public interface PKIMessageParser {
 	 * @param status the status to set in the request.
 	 * @param failureMessage the failure message sent in the request.
 	 * @param destinationId the destinationId to use.
+	 * @param originator the original requester of a message, null if not applicable.
 	 * @return generated and signed PKIMessage in byte[] format.
 	 * @throws IllegalArgumentException if PKI message contained invalid data not conforming to the standard.
 	 * @throws MessageException if internal state occurred when processing the PKIMessage
 	 */
-	PKIMessageResponseData genPKIResponse(String relatedEndEntity, byte[] request, RequestStatus status, String failureMessage, String destinationId) throws IllegalArgumentException, MessageException;
+	PKIMessageResponseData genPKIResponse(String relatedEndEntity, byte[] request, RequestStatus status, String failureMessage, String destinationId, Credential originator) throws IllegalArgumentException, MessageException;
 	
 	/**
 	 * Fetches the signing certificate from the request.
@@ -384,4 +397,11 @@ public interface PKIMessageParser {
 	 */
 	X509Certificate getSigningCertificate(byte[] request) throws IllegalArgumentException, MessageException;
 
+	/**
+	 * Method that generates the signature and marshalls the message to byte array in UTF-8 format.
+	 * @param pkiMessage the PKIMessage to sign and marshall, never null.
+	 * @return a marshalled and signed message.
+	 * @throws MessageException if problems occurred when processing the message.
+	 */
+	byte[] marshallAndSignPKIMessage(PKIMessage pkiMessage) throws MessageException;
 }

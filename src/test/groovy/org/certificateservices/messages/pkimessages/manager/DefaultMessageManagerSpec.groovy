@@ -45,7 +45,7 @@ class DefaultMessageManagerSpec extends Specification{
 	@Test
 	def "Test to send a simple get credential request message and expect a get credential response"(){
 		setup:
-		byte[] request = parser.genGetCredentialRequest(TEST_ID, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678")
+		byte[] request = parser.genGetCredentialRequest(TEST_ID, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678",null)
 		when:
 		PKIMessage response = mm.sendMessage(TEST_ID, request)
 		then:
@@ -61,7 +61,7 @@ class DefaultMessageManagerSpec extends Specification{
 		
 		for(int i=0;i<numberOfConcurrentRequests;i++){
 			String requestId = MessageGenerateUtils.generateRandomUUID();
-			byte[] request = parser.genGetCredentialRequest(requestId, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678")
+			byte[] request = parser.genGetCredentialRequest(requestId, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678",null)
 			new Thread(new SendRandomRequest(mm,requestId,request, 100,4000)).start()
 		}
 		
@@ -82,7 +82,7 @@ class DefaultMessageManagerSpec extends Specification{
 		setup:
 		((DummyMessageHandler) mm.messageHandler).waitTime = 10000
 		mm.timeout = 200
-		byte[] request = parser.genGetCredentialRequest(TEST_ID, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678")
+		byte[] request = parser.genGetCredentialRequest(TEST_ID, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678",null)
 		when:
 		mm.sendMessage(TEST_ID, request)
 		then:
@@ -97,7 +97,7 @@ class DefaultMessageManagerSpec extends Specification{
 		setup:
 		((DummyMessageHandler) mm.messageHandler).waitTime = 1000
 		mm.timeout = 200
-		byte[] request = parser.genIssueTokenCredentialsRequest(TEST_ID, "somedestination", "someorg", createDummyTokenRequest())
+		byte[] request = parser.genIssueTokenCredentialsRequest(TEST_ID, "somedestination", "someorg", createDummyTokenRequest(),null)
 		when:
 		mm.sendMessage(TEST_ID, request)
 		then:
@@ -123,29 +123,29 @@ class DefaultMessageManagerSpec extends Specification{
 		when:
 		PKIResponse response = of.createPKIResponse();
 		response.setInResponseTo(TEST_ID);		
-		PKIMessage pkiMessage = parser.genPKIMessage(null, "somedest", "someorg", response)
+		PKIMessage pkiMessage = parser.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null, "somedest", "someorg", null,response)
 		then:
 		assert mm.findRequestId(pkiMessage) == TEST_ID
 		when:
 		response = of.createIssueTokenCredentialsResponse();
 		response.setInResponseTo(TEST_ID);
-		pkiMessage = parser.genPKIMessage(null, "somedest", "someorg", response)
+		pkiMessage = parser.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null, "somedest", "someorg", null,response)
 		then:
 		assert mm.findRequestId(pkiMessage) == TEST_ID
 		when:
 		response = of.createGetCredentialResponse();
 		response.setInResponseTo(TEST_ID);
-		pkiMessage = parser.genPKIMessage(null, "somedest", "someorg", response)
+		pkiMessage = parser.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null, "somedest", "someorg", null,response)
 		then:
 		assert mm.findRequestId(pkiMessage) == TEST_ID
 		when:
 		response = of.createIsIssuerResponse();
 		response.setInResponseTo(TEST_ID);
-		pkiMessage = parser.genPKIMessage(null, "somedest", "someorg", response)
+		pkiMessage = parser.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null, "somedest", "someorg", null,response)
 		then:
 		assert mm.findRequestId(pkiMessage) == TEST_ID
 		when:
-		pkiMessage = parser.genPKIMessage(null, "somedest", "someorg", of.createIsIssuerRequest())
+		pkiMessage = parser.genPKIMessage(DefaultPKIMessageParser.PKIMESSAGE_VERSION_1_1,null, "somedest", "someorg", null,of.createIsIssuerRequest())
 		then:
 		assert mm.findRequestId(pkiMessage) == null
 

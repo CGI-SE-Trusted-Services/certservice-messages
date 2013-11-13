@@ -152,4 +152,30 @@ WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
 ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
 ZLCP64EJEfE1mGxCJg==</X509Certificate></X509Data></KeyInfo></ds:Signature></PKIMessage>"""
 
+public  static String testMessageWithVersion1_1= """<?xml version="1.0" encoding="UTF-8" standalone="no"?><PKIMessage xmlns="http://certificateservices.org/xsd/pkimessages1_1" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="59fa9386-c549-4f90-9e0e-b369c15d67f6" version="1.1" xsi:schemaLocation="http://certificateservices.org/xsd/pkimessages1_0 pkimessages_schema.xsd"><name>IssueTokenCredentialsRequest</name><sourceId>SOMEREQUESTER</sourceId><destinationId>SomeDestinationId</destinationId><organisation>SomeOrg</organisation><payload><issueTokenCredentialsRequest><tokenRequest><credentialRequests><credentialRequest><credentialRequestId>123</credentialRequestId><credentialType>SomeCredentialType</credentialType><credentialSubType>SomeCredentialSubType</credentialSubType><x509RequestType>SomeX509RequestType</x509RequestType><credentialRequestData>MTIzNDVBQkM=</credentialRequestData></credentialRequest></credentialRequests><user>someuser</user><tokenContainer>SomeTokenContainer</tokenContainer><tokenType>SomeTokenType</tokenType><tokenClass>SomeTokenClass</tokenClass></tokenRequest></issueTokenCredentialsRequest></payload><ds:Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI="#59fa9386-c549-4f90-9e0e-b369c15d67f6"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>baU/12YkrEwSrmfHIfJHqCngu+04DJczIHkGcrv056E=</DigestValue></Reference></SignedInfo><SignatureValue>OkmAUdnYINYB7kU9mluXbQpxm+Aj49K2Ajuy4yysZIFnCnw0p+eIL4L8z6UNE+1FLVoAD564F5N4
+0pdZJsT3Li4UoBGvC8i+YNb2VEBCpOC2ZPHiljwDTsTDPKiwmSfUm7VwwRkgOzMJ93WIVb5esRy3
+nptv5kKsT6zL1us67607f0Dom7LHp5et1TYT3+p/dQFXQj1+bu36wh+3NAf1ILI83Z3TKfRLtSxh
+RwrgejXqCXtqoX2tGr4m+BHk1j+L2EQ/eWFaoNorith1M5Nn/ea/FKRiJsIJ/Ka18F+31Vxso3sQ
+cqEfBm5K+ZeO22tdYTi2maXKGXUkP6QSyy5Bsg==</SignatureValue><KeyInfo><X509Data><X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBD
+dXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAx
+MDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBD
+dXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/
+y3i/mT7WwtpW18/QfyUGpYPPxQ4bvPPn61y3jJg/dAbGHvnyQSHfIvrIJUN83q6evvk0bNZNVSEN
+UEP29isE4D+KjD3PFtAzQq18P8m/8mSXMva5VTooEUSDX+VJ/6el6tnyZdc85AlIJkkkvyiDKcjh
+f10yllaiVCHLunGMDXAec4DapPi5GdmSMMXyPOhRx5e+oy6b5q9XmT3C29VNVFf+tkAt3ew3BoQb
+d+VrlBI4oRYq+mfbgkXU6dSKr9DRqhsbu5rU4Jdst2KClXsxaxvC0rVeKQ8iXCDKFH5glzhSYoeW
+l7CI15CdQM6/so7EisSvAgMBAAGjgeMwgeAwHQYDVR0OBBYEFLpidyp0Pc46cUpJf1neFnq/rLJB
+MAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUgEn+Hp9+Yxe4lOhaIPmf++Wu7SYwGAYDVR0gBBEw
+DzANBgsrBgEEAYH1fgMDCTBABgNVHR8EOTA3MDWgM6Axhi9odHRwOi8vYXQtY3JsLndtLm5ldC9k
+ZW1vY3VzdG9tZXIxX3NlcnZlcmNhLmNybDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYB
+BQUHAwEwDwYDVR0RBAgwBoIEdGVzdDANBgkqhkiG9w0BAQUFAAOCAQEAZxGls/mNT4GyAf9u9lg7
+8sSA27sc3xFvHNogrT4yUCbYAOhLXO4HJ9XuKaFyz4bKz6JGdLaQDknDI1GUvpJLpiPTXk4cq1pp
+HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
+WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
+ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
+ZLCP64EJEfE1mGxCJg==</X509Certificate></X509Data></KeyInfo></ds:Signature></PKIMessage>"""
+
+public  static String testMessageWithNoVersion= """<?xml version="1.0" encoding="UTF-8" standalone="no"?><PKIMessage xmlns="http://certificateservices.org/xsd/pkimessages1_1" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="59fa9386-c549-4f90-9e0e-b369c15d67f6"  xsi:schemaLocation="http://certificateservices.org/xsd/pkimessages1_0 pkimessages_schema.xsd"></PKIMessage>"""
+public  static String testMessageWithEmptyVersion= """<?xml version="1.0" encoding="UTF-8" standalone="no"?><PKIMessage xmlns="http://certificateservices.org/xsd/pkimessages1_1" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="59fa9386-c549-4f90-9e0e-b369c15d67f6" version="" xsi:schemaLocation="http://certificateservices.org/xsd/pkimessages1_0 pkimessages_schema.xsd"></PKIMessage>"""
+
 }

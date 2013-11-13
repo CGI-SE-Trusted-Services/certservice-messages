@@ -79,6 +79,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "sourceId",
     "destinationId",
     "organisation",
+    "originator",
     "payload",
     "signature"
 })
@@ -93,6 +94,7 @@ public class PKIMessage {
     protected String destinationId;
     @XmlElement(required = true)
     protected String organisation;
+    protected Originator originator;
     @XmlElement(required = true)
     protected PKIMessage.Payload payload;
     @XmlElement(name = "Signature", namespace = "http://www.w3.org/2000/09/xmldsig#")
@@ -198,6 +200,30 @@ public class PKIMessage {
      */
     public void setOrganisation(String value) {
         this.organisation = value;
+    }
+    
+    /**
+     * Gets the value of the Originator property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link Originator }
+     *     
+     */
+    public Originator getOriginator() {
+        return originator;
+    }
+
+    /**
+     * Sets the value of the Originator property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link Originator }
+     *     
+     */
+    public void setOriginator(Originator originator) {
+        this.originator = originator;
     }
 
     /**

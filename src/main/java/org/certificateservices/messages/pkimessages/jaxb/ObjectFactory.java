@@ -133,6 +133,14 @@ public class ObjectFactory {
     public Attribute createAttribute() {
         return new Attribute();
     }
+    
+    /**
+     * Create an instance of {@link Originator }
+     * 
+     */
+    public Originator createOriginator() {
+        return new Originator();
+    }
 
     /**
      * Create an instance of {@link GetCredentialStatusListResponse }

@@ -75,7 +75,7 @@ public class DummyMessageManager implements MessageManager{
 					return messageParser.parseMessage(messageParser.genGetCredentialResponse(Constants.RELATED_END_ENTITY_UNKNOWN,rm, c).getResponseData());
 
 				}else{
-					return messageParser.parseMessage(messageParser.genPKIResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, RequestStatus.ILLEGALARGUMENT, "some bad request").getResponseData());
+					return messageParser.parseMessage(messageParser.genPKIResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, RequestStatus.ILLEGALARGUMENT, "some bad request", null).getResponseData());
 				}
 			}
 			if(rm.getPayload().getIssueTokenCredentialsRequest() != null){

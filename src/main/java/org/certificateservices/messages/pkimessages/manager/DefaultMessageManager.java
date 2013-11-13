@@ -7,6 +7,7 @@ import java.util.Properties;
 
 import org.apache.log4j.Logger;
 import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.pkimessages.DefaultPKIMessageParser;
 import org.certificateservices.messages.pkimessages.PKIMessageParser;
 import org.certificateservices.messages.pkimessages.constants.AvailableCredentialStatuses;
 import org.certificateservices.messages.pkimessages.jaxb.Credential;
@@ -120,7 +121,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 								// Send revocation request
 								try {
 									String messageId = MessageGenerateUtils.generateRandomUUID();
-									byte[] revokeMessage = parser.genChangeCredentialStatusRequest(messageId,destination, responseMessage.getOrganisation(), c.getIssuerId(), c.getSerialNumber(), AvailableCredentialStatuses.REVOKED, REVOKE_REASON_REASONINFORMATION_CESSATIONOFOPERATION);
+									byte[] revokeMessage = parser.genChangeCredentialStatusRequest(messageId,destination, responseMessage.getOrganisation(), c.getIssuerId(), c.getSerialNumber(), AvailableCredentialStatuses.REVOKED, REVOKE_REASON_REASONINFORMATION_CESSATIONOFOPERATION, DefaultPKIMessageParser.getOriginatorFromRequest(responseMessage));
 									messageHandler.sendMessage(messageId, revokeMessage);
 								} catch (IOException e) {
 									log.error("Error revoking timed-out certificate, io exception: " + e.getMessage());
