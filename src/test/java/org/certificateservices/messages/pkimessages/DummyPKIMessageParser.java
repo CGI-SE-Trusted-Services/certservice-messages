@@ -221,7 +221,7 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 
-	@Override
+
 	public PKIMessageResponseData genChangeCredentialStatusResponse(
 			String relatedEndEntity, PKIMessage request, String issuerId,
 			String serialNumber, int credentialStatus,
@@ -232,7 +232,6 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 
-	@Override
 	public PKIMessageResponseData genIssueCredentialStatusListResponseWithoutRequest(
 			String relatedEndEntity, String destination, String requestName,
 			String organisation, CredentialStatusList credentialStatusList,
@@ -243,7 +242,6 @@ public class DummyPKIMessageParser  implements PKIMessageParser{
 	}
 
 
-	@Override
 	public byte[] marshallAndSignPKIMessage(PKIMessage pkiMessage)
 			throws MessageException {
 		return null;
