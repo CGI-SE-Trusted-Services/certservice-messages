@@ -1,9 +1,20 @@
-/**
- * 
- */
+/************************************************************************
+*                                                                       *
+*  Certificate Service - PKI Messages                                   *
+*                                                                       *
+*  This software is free software; you can redistribute it and/or       *
+*  modify it under the terms of the GNU Affero General Public License   *
+*  License as published by the Free Software Foundation; either         *
+*  version 3   of the License, or any later version.                    *
+*                                                                       *
+*  See terms of license at gnu.org.                                     *
+*                                                                       *
+*************************************************************************/
 package org.certificateservices.messages.pkimessages;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.certificateservices.messages.pkimessages.constants.Constants;
@@ -24,6 +35,7 @@ public class PKIMessageResponseData {
 	private String destination;
 	private byte[] responseData;
 	private boolean isForwardableResponse = false;
+	private Map<String,String> messageProperties = new HashMap<String,String>();
 	
 	
 	/**
@@ -186,6 +198,15 @@ public class PKIMessageResponseData {
 	 */
 	public void setMessageName(String messageName) {
 		this.messageName = messageName;
+	}
+	
+	/**
+	 * Gets a map of extra properties related to a message, for specific purposes, for example
+	 * JMS properties in a MQ environment.
+	 * @return a map of properties, never null.
+	 */
+	public Map<String,String> getMessageProperties(){
+		return messageProperties;
 	}
 
 	@Override

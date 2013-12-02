@@ -38,6 +38,11 @@ class PKIMessageResponseDataSpec extends Specification {
 		new PKIMessageResponseData(null,null,"SomeEntity", null, null, true).getRelatedEndEntity() == "SomeEntity"
 	}
 	
+	def "Test getMessageProperties doesn't return null"(){
+		expect:
+		new PKIMessageResponseData(null,null,null, null, null, true).getMessageProperties() != null		
+	}
+	
 
 
 

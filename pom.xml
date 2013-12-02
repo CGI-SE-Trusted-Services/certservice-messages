@@ -4,7 +4,7 @@
 
 	<groupId>org.certificateservices.messages</groupId>
 	<artifactId>certservice-messages</artifactId>
-	<version>1.0.18${versionAppend}</version>
+	<version>1.0.19${versionAppend}</version>
 
 	<packaging>jar</packaging>
 	<description>See README for more details.</description>
