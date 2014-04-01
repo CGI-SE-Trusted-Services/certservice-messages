@@ -62,5 +62,11 @@ class MessageGenerateUtilsSpec extends Specification{
 		 then:
 		 result.getTime() == 0L
 	 }
+	 
+	 def "Test bytesToHex converts to hex encoding correclty"(){
+		 expect:
+		 MessageGenerateUtils.bytesToHex(null) == null
+		 MessageGenerateUtils.bytesToHex("123".getBytes()) == "313233"
+	 }
 
 }

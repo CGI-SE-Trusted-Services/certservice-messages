@@ -72,7 +72,9 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.bouncycastle.util.encoders.Base64;
+
+import org.apache.xml.security.exceptions.Base64DecodingException;
+import org.apache.xml.security.utils.Base64;
 import org.certificateservices.messages.MessageException;
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.pkimessages.jaxb.ChangeCredentialStatusRequest;
@@ -812,6 +814,8 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 				throw new IllegalArgumentException("Error reading signing certificate found in PKI Message request: " + e.getMessage(),e);
 			} catch (XPathExpressionException e) {
 				throw new MessageException("Error building XPath Expression when fetching signing certificate: " + e.getMessage(),e);
+			} catch (Base64DecodingException e) {
+				throw new MessageException("Error reading signing certificate base 64 decoding exception: " + e.getMessage(),e);
 			}
 			
 			

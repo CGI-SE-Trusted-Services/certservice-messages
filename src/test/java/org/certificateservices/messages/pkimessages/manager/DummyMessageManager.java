@@ -9,7 +9,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
-import org.bouncycastle.util.encoders.Base64;
+
+import org.apache.xml.security.exceptions.Base64DecodingException;
+import org.apache.xml.security.utils.Base64;
 import org.certificateservices.messages.DummyMessageSecurityProvider;
 import org.certificateservices.messages.MessageException;
 import org.certificateservices.messages.MessageSecurityProvider;
@@ -101,6 +103,8 @@ public class DummyMessageManager implements MessageManager{
 			}
 
 		} catch (MessageException e) {
+			throw new MessageException(e.getMessage(),e);
+		} catch (Base64DecodingException e) {
 			throw new MessageException(e.getMessage(),e);
 		}
 		return null;

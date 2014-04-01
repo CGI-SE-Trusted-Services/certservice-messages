@@ -9,7 +9,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
-import org.bouncycastle.util.encoders.Base64;
+import org.apache.xml.security.exceptions.Base64DecodingException;
+import org.apache.xml.security.utils.Base64;
 import org.certificateservices.messages.MessageException;
 import org.certificateservices.messages.pkimessages.PKIMessageParser;
 import org.certificateservices.messages.pkimessages.constants.AvailableCredentialStatuses;
@@ -61,7 +62,7 @@ public class DummyMessageHandler implements MessageHandler{
 
 
 			Credential c = of.createCredential();
-			c.setCredentialData(Base64.decode(base64Cert));
+			c.setCredentialData(base64Decode(base64Cert));
 			c.setCredentialSubType(gcr.getCredentialSubType());
 			c.setCredentialType(AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE);
 			c.setDisplayName("SomeDisplayName");
@@ -81,7 +82,7 @@ public class DummyMessageHandler implements MessageHandler{
 
 			CredentialRequest cr = itr.getTokenRequest().getCredentialRequests().getCredentialRequest().get(0);
 			Credential c = of.createCredential();
-			c.setCredentialData(Base64.decode(base64Cert));
+			c.setCredentialData(base64Decode(base64Cert));
 			c.setCredentialSubType(cr.getCredentialSubType());
 			c.setCredentialType(AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE);
 			c.setDisplayName("SomeDisplayName");
@@ -172,6 +173,14 @@ public class DummyMessageHandler implements MessageHandler{
 
 	public boolean isConnected() {
 		return true;
+	}
+	
+	private byte[] base64Decode(byte[] data) throws MessageException{
+		try {
+			return Base64.decode(base64Cert);
+		} catch (Base64DecodingException e) {
+			throw new MessageException("Base64 Decoding Exception: " + e.getMessage(),e);
+		}
 	}
 
 }

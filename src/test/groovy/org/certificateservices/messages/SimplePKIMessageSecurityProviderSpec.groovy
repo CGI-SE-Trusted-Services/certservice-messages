@@ -5,7 +5,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 
-import org.bouncycastle.util.encoders.Base64;
+
+import org.apache.xml.security.utils.Base64;
 import org.certificateservices.messages.DummyMessageSecurityProvider;
 import org.certificateservices.messages.SimpleMessageSecurityProvider;
 import org.junit.BeforeClass;

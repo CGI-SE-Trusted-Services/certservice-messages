@@ -20,7 +20,6 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.messages.MessageException;
 
 /**
@@ -43,7 +42,7 @@ public class MessageGenerateUtils {
 	public static String generateRandomUUID(){
 		byte[] randomData = new byte[15];
 		secureRandom.nextBytes(randomData);
-		String hexData = new String(Hex.encode(randomData));
+		String hexData = new String(bytesToHex(randomData));
 		String specialChar = specialCharSet[secureRandom.nextInt(4)];
 		
 		return hexData.substring(0, 8) + "-" + hexData.substring(8,12) + "-4" + hexData.substring(12,15) + "-" + specialChar + hexData.substring(15,18) + "-" + hexData.substring(18);  
@@ -81,6 +80,20 @@ public class MessageGenerateUtils {
 		}
 
 		return calendarDate.toGregorianCalendar().getTime();
+	}
+	
+	final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
+	public static String bytesToHex(byte[] bytes) {
+		if(bytes == null){
+			return null;
+		}
+	    char[] hexChars = new char[bytes.length * 2];
+	    for ( int j = 0; j < bytes.length; j++ ) {
+	        int v = bytes[j] & 0xFF;
+	        hexChars[j * 2] = hexArray[v >>> 4];
+	        hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+	    }
+	    return new String(hexChars);
 	}
 
 }
