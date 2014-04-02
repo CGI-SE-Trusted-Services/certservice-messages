@@ -72,14 +72,14 @@
 		<repository>
 			<id>oss.sonatype.org</id>
 			<name>Spock FrameworkSnapshot Repository</name>
-			<url>http://oss.sonatype.org/content/repositories/snapshots/</url>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 		</repository>
 	</repositories>
 	<pluginRepositories>
 		<pluginRepository>
 			<id>oss.sonatype.org</id>
 			<name>Spock FrameworkSnapshot Repository</name>
-			<url>http://oss.sonatype.org/content/repositories/snapshots/</url>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 		</pluginRepository>
 	</pluginRepositories>
 	<build>
