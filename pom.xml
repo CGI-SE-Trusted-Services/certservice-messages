@@ -4,7 +4,7 @@
 
 	<groupId>org.certificateservices.messages</groupId>
 	<artifactId>certservice-messages</artifactId>
-	<version>1.0.20${versionAppend}</version>
+	<version>1.0.21${versionAppend}</version>
 
 	<packaging>jar</packaging>
 	<description>See README for more details.</description>
@@ -241,7 +241,8 @@
 								  <versionRange> [1.4,) </versionRange> 
 								  <goals> 
 								    <goal>testCompile</goal> 
-								    </goals> 
+								    <goal>compile</goal>
+								  </goals> 
 								    
 								    </pluginExecutionFilter> 
 									<action>

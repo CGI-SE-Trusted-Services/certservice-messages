@@ -23,6 +23,7 @@ src/main/java/org/certificateservices/messages/pkimessages/MessageNameCatalogue.
 src/main/java/org/certificateservices/messages/pkimessages/PKIMessageParser.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/PKIMessageParserFactory.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/PKIMessageResponseData.java -text svneol=unset#text/plain
+src/main/java/org/certificateservices/messages/pkimessages/PKIMessageUtils.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/X509DataOnlyKeySelector.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/X509KeySelector.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/pkimessages/XSDLSInput.java -text svneol=unset#text/plain
@@ -94,6 +95,7 @@ src/test/groovy/org/certificateservices/messages/pkimessages/DefaultMessageNameC
 src/test/groovy/org/certificateservices/messages/pkimessages/DefaultPKIMessageParserSpec.groovy -text
 src/test/groovy/org/certificateservices/messages/pkimessages/PKIMessageParserFactorySpec.groovy -text
 src/test/groovy/org/certificateservices/messages/pkimessages/PKIMessageResponseDataSpec.groovy -text
+src/test/groovy/org/certificateservices/messages/pkimessages/PKIMessageUtilsSpec.groovy -text
 src/test/groovy/org/certificateservices/messages/pkimessages/TestMessages.groovy -text
 src/test/groovy/org/certificateservices/messages/pkimessages/manager/DefaultMessageManagerSpec.groovy -text
 src/test/groovy/org/certificateservices/messages/receipts/ReceiptStatusSpec.groovy -text
