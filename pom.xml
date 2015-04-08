@@ -4,16 +4,13 @@
 
 	<groupId>org.certificateservices.messages</groupId>
 	<artifactId>certservice-messages</artifactId>
-	<version>1.0.21${versionAppend}</version>
+	<version>${build.version}${versionAppend}</version>
 
 	<packaging>jar</packaging>
 	<description>See README for more details.</description>
 
 	<name>certservice-messages</name>
 	<url>http://www.certificateservice.org</url>
-	<scm>
-		<connection>scm:svn:https://certificateservices.org/project/certserv/svn/certservice-messages/trunk</connection>
-	</scm>
 	<licenses>
 		<license>
 			<name>GNU AFFERO GENERAL PUBLIC LICENSE, Version 3.0</name>
@@ -35,6 +32,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+                <build.version>1.0.22</build.version>
 		<versionAppend></versionAppend>
 	</properties>
 
