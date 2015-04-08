@@ -75,12 +75,19 @@ src/main/java/org/certificateservices/messages/utils/DefaultSystemTime.java -tex
 src/main/java/org/certificateservices/messages/utils/MessageGenerateUtils.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/utils/SettingsUtils.java -text svneol=unset#text/plain
 src/main/java/org/certificateservices/messages/utils/SystemTime.java -text svneol=unset#text/plain
+src/main/resources/credmanagement_schema2_0.xsd -text svneol=unset#text/plain
+src/main/resources/csmessages_schema2_0.xsd -text svneol=unset#text/plain
 src/main/resources/dummykeystore.jks -text
+src/main/resources/keystoremgmt_schema2_0.xsd -text svneol=unset#text/plain
 src/main/resources/pkimessages_1_0.zip -text
+src/main/resources/pkimessages_1_0/pkimessages_examplerequest.xml -text svneol=unset#text/plain
+src/main/resources/pkimessages_1_0/pkimessages_exampleresponse.xml -text svneol=unset#text/plain
+src/main/resources/pkimessages_1_0/pkimessages_schema.xsd -text svneol=unset#text/plain
 src/main/resources/pkimessages_examplerequest.xml -text svneol=unset#text/plain
 src/main/resources/pkimessages_exampleresponse.xml -text svneol=unset#text/plain
 src/main/resources/pkimessages_schema1_0.xsd -text svneol=unset#text/plain
 src/main/resources/pkimessages_schema1_1.xsd -text svneol=unset#text/plain
+src/main/resources/sysconfig_schema2_0.xsd -text svneol=unset#text/plain
 src/main/resources/test.cer -text
 src/main/resources/xmldsig-core-schema.xsd -text svneol=unset#text/plain
 src/site/markdown/README.md -text
