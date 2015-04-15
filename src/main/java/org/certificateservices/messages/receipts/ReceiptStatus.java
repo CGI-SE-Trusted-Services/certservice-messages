@@ -15,9 +15,13 @@ public enum ReceiptStatus {
 	 */
 	SENT(0),
 	/**
-	 * Indicating that message have processed the message OK, and receipt received.
+	 * Indicating that message have received the message OK, and receipt received.
 	 */
 	RECIEVED_OK(1),
+	/**
+	 * Indicating that message have processed the message OK, and completed the transaction, this step is not required in some workflows..
+	 */
+	VERIFIED_OK(2),
 	/**
 	 * Indicating that message was received but resulted in an error in the header on the receiving side.
 	 */

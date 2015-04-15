@@ -41,7 +41,8 @@ public class ReceiptStatusSpec extends Specification{
 		-1  | ReceiptStatus.RECIEVED_WITH_HEADER_ERROR
 		0   | ReceiptStatus.SENT
 		1   | ReceiptStatus.RECIEVED_OK
-		2   | null
+		2   | ReceiptStatus.VERIFIED_OK
+		3   | null
 	}
 	
 }
