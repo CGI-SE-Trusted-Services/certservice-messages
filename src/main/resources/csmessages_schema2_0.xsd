@@ -48,6 +48,8 @@
 			</xs:sequence>
 			<xs:attribute name="version" type="tns:notemptystring"
 				use="required" />
+			<xs:attribute name="payLoadVersion" type="tns:notemptystring"
+				use="required" />
 			<xs:attribute name="ID" type="tns:uuid" use="required" />
 			<xs:attribute name="timeStamp" type="xs:dateTime" />
 		</xs:complexType>
@@ -212,6 +214,84 @@
 				name="revocationInformation" type="xs:string" />
 			<xs:element maxOccurs="1" minOccurs="0" name="issuerCredential"
 				type="tns:Credential" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="Token">
+		<xs:sequence>
+			<xs:element minOccurs="1" maxOccurs="1" name="serialNumber"
+				type="xs:int" />
+			<xs:element minOccurs="1" maxOccurs="1" name="tokenContainer"
+				type="tns:notemptystring" />
+			<xs:element minOccurs="1" maxOccurs="1" name="tokenType"
+				type="tns:notemptystring" />
+			<xs:element minOccurs="1" maxOccurs="1" name="tokenClass"
+				type="tns:notemptystring" />
+			<xs:element minOccurs="1" maxOccurs="1" name="status"
+				type="xs:int" />
+			<xs:element minOccurs="0" maxOccurs="1" name="attributes">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element maxOccurs="unbounded" minOccurs="0" name="attribute"
+							type="tns:Attribute" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element minOccurs="0" maxOccurs="1" name="credentials">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element maxOccurs="unbounded" minOccurs="0" name="credential"
+							type="tns:Credential" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element minOccurs="0" name="description" type="xs:string" />
+			<xs:element minOccurs="1" maxOccurs="1" name="issueDate"
+				type="xs:dateTime" />
+			<xs:element minOccurs="1" maxOccurs="1" name="expireDate"
+				type="xs:dateTime" />
+			<xs:element minOccurs="1" maxOccurs="1" name="validFromDate"
+				type="xs:dateTime" />
+			<xs:element minOccurs="0" maxOccurs="1" name="requestDate"
+				type="xs:dateTime" />
+			<xs:element minOccurs="0" maxOccurs="1" name="returnDate"
+				type="xs:dateTime" />
+			<xs:element minOccurs="1" maxOccurs="1" name="dateCreated"
+				type="xs:dateTime" />
+			<xs:element minOccurs="1" maxOccurs="1" name="lastUpdated"
+				type="xs:dateTime" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="User">
+		<xs:sequence>
+			<xs:element minOccurs="1" maxOccurs="1" name="uniqueId"
+				type="tns:notemptystring" />
+			<xs:element minOccurs="1" maxOccurs="1" name="displayName"
+				type="tns:notemptystring" />
+			<xs:element minOccurs="1" maxOccurs="1" name="status"
+				type="tns:notemptystring" />
+			<xs:element minOccurs="0" name="description" type="xs:string" />
+			<xs:element minOccurs="1" maxOccurs="1" name="dateCreated"
+				type="xs:dateTime" />
+			<xs:element minOccurs="1" maxOccurs="1" name="lastUpdated"
+				type="xs:dateTime" />
+			<xs:element minOccurs="0" maxOccurs="1" name="attributes">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element maxOccurs="unbounded" minOccurs="0" name="attribute"
+							type="tns:Attribute" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element minOccurs="0" maxOccurs="1" name="tokens">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element maxOccurs="unbounded" minOccurs="0" name="token"
+							type="tns:Token" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
 

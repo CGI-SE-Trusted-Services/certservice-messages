@@ -15,14 +15,14 @@
 			<xs:element minOccurs="1" maxOccurs="1" name="value" type="xs:string" />
 		</xs:sequence>
 	</xs:complexType>
-	
+
 	<xs:complexType name="ConfigurationData">
 		<xs:sequence>
 			<xs:element minOccurs="0" maxOccurs="unbounded" name="property"
 				type="tns:Property" />
 		</xs:sequence>
 	</xs:complexType>
-	
+
 
 	<xs:complexType name="SystemConfiguration">
 		<xs:sequence>
@@ -41,47 +41,52 @@
 		</xs:sequence>
 	</xs:complexType>
 
-	<xs:complexType name="GetActiveConfigurationRequest">
-		<xs:complexContent>
-			<xs:extension base="cs:CSRequest">
-				<xs:sequence>
-					<xs:element minOccurs="1" maxOccurs="1" name="application"
-						type="cs:notemptystring" />
-					<xs:element minOccurs="1" maxOccurs="1" name="organisationShortName"
-						type="cs:notemptystring" />
-				</xs:sequence>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+	<xs:element name="GetActiveConfigurationRequest">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cs:CSRequest">
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="1" name="application"
+							type="cs:notemptystring" />
+						<xs:element minOccurs="1" maxOccurs="1"
+							name="organisationShortName" type="cs:notemptystring" />
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
 
-	<xs:complexType name="GetActiveConfigurationResponse">
-		<xs:complexContent>
-			<xs:extension base="cs:CSResponse">
-				<xs:sequence>
-					<xs:element minOccurs="1" maxOccurs="1"
-						name="systemConfiguration" type="tns:SystemConfiguration" />
-				</xs:sequence>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
-
-	<xs:complexType name="PublishConfigurationRequest">
-		<xs:complexContent>
-			<xs:extension base="cs:CSRequest">
-				<xs:sequence>
-					<xs:element minOccurs="1" maxOccurs="1"
-						name="systemConfiguration" type="tns:SystemConfiguration" />
-				</xs:sequence>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
-
-	<xs:complexType name="PublishConfigurationResponse">
-		<xs:complexContent>
-			<xs:extension base="cs:CSResponse">
-				<xs:sequence />
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
-
+	<xs:element name="GetActiveConfigurationResponse">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cs:CSResponse">
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="1"
+							name="systemConfiguration" type="tns:SystemConfiguration" />
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="PublishConfigurationRequest">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cs:CSRequest">
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="1"
+							name="systemConfiguration" type="tns:SystemConfiguration" />
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="PublishConfigurationResponse">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cs:CSResponse">
+					<xs:sequence />
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
 </xs:schema>

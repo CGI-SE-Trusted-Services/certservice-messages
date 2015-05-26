@@ -99,6 +99,50 @@
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
+	<xs:complexType name="GetUsersRequest">
+		<xs:complexContent>
+			<xs:extension base="cs:CSRequest">
+				<xs:sequence>
+					<xs:element minOccurs="1" maxOccurs="1" name="uniqueId"
+				        type="cs:notemptystring" />
+					<xs:element minOccurs="1" maxOccurs="1" name="exactMatch"
+						type="xs:boolean" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="GetUsersResponse">
+		<xs:complexContent>
+			<xs:extension base="cs:CSResponse">
+				<xs:sequence>
+					<xs:element minOccurs="0" name="user"
+						type="cs:User" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="GetTokensRequest">
+		<xs:complexContent>
+			<xs:extension base="cs:CSRequest">
+				<xs:sequence>
+					<xs:element minOccurs="1" maxOccurs="1" name="serialNumber"
+				        type="cs:notemptystring" />
+					<xs:element minOccurs="1" maxOccurs="1" name="exactMatch"
+						type="xs:boolean" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="GetTokensResponse">
+		<xs:complexContent>
+			<xs:extension base="cs:CSResponse">
+				<xs:sequence>
+					<xs:element minOccurs="0" name="token"
+						type="cs:Token" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
 	<xs:complexType name="GetCredentialRequest">
 		<xs:complexContent>
 			<xs:extension base="cs:CSRequest">
