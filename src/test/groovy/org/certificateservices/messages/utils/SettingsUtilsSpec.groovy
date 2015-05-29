@@ -6,7 +6,7 @@ import java.io.File;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.utils.SettingsUtils;
 import org.junit.Test;
 
@@ -53,7 +53,7 @@ class SettingsUtilsSpec extends Specification{
 		 Boolean result =SettingsUtils.parseBoolean(config,"somekey", true)
 		 
 		then:
-		  thrown(MessageException)
+		  thrown(MessageProcessingException)
 		 
 		 where:
 		 value     << ["untrue","maybe","", null]
@@ -142,12 +142,12 @@ class SettingsUtilsSpec extends Specification{
 		String[] result =SettingsUtils.parseStringArray(config,"somekey", ",", true)
 		
 		then:
-		thrown(MessageException)
+		thrown(MessageProcessingException)
 		
 		when:
 		String[] altResult =SettingsUtils.parseStringArray(config,"nonexisting", "somekey", ",", true)
 		then:
-		thrown(MessageException)
+		thrown(MessageProcessingException)
 		
 	 }
 	 
@@ -159,27 +159,27 @@ class SettingsUtilsSpec extends Specification{
 		SettingsUtils.getRequiredProperty(config,"somekey")
 
 		then:
-		thrown(MessageException)
+		thrown(MessageProcessingException)
 		
 		when:
 		config.setProperty("somekey"," ")
 		SettingsUtils.getRequiredProperty(config,"somekey")
 
 		then:
-		thrown(MessageException)
+		thrown(MessageProcessingException)
 		
 		when:
 		SettingsUtils.getRequiredProperty(config,"somekey", "someotherkey")
 
 		then:
-		thrown(MessageException)
+		thrown(MessageProcessingException)
 		
 		when:
 		config.setProperty("someotherkey"," ")
 		SettingsUtils.getRequiredProperty(config,"somekey", "someotherkey")
 
 		then:
-		thrown(MessageException)
+		thrown(MessageProcessingException)
 				 
 	 }
 	 

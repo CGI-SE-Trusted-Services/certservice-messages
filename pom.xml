@@ -32,7 +32,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-                <build.version>1.0.22</build.version>
+		<build.version>1.0.22</build.version>
 		<versionAppend></versionAppend>
 	</properties>
 
@@ -48,7 +48,6 @@
 			<artifactId>log4j</artifactId>
 			<version>1.2.8</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.santuario</groupId>
 			<artifactId>xmlsec</artifactId>
@@ -220,29 +219,29 @@
 						<lifecycleMappingMetadata>
 							<pluginExecutions>
 								<pluginExecution>
-								<pluginExecutionFilter> 
-								   <groupId>org.spockframework</groupId> 
-								   <artifactId> spock-maven </artifactId> 
-								   <versionRange> [1.0-groovy-2.0-SNAPSHOT,)</versionRange> 
-								   <goals> 
-								     <goal>find-specs</goal> 
-								   </goals>
-								   </pluginExecutionFilter>
+									<pluginExecutionFilter>
+										<groupId>org.spockframework</groupId>
+										<artifactId> spock-maven </artifactId>
+										<versionRange> [1.0-groovy-2.0-SNAPSHOT,)</versionRange>
+										<goals>
+											<goal>find-specs</goal>
+										</goals>
+									</pluginExecutionFilter>
 									<action>
 										<ignore></ignore>
 									</action>
 								</pluginExecution>
 								<pluginExecution>
-								  <pluginExecutionFilter>
-								  <groupId>org.codehaus.gmaven</groupId> 
-								  <artifactId> gmaven-plugin </artifactId> 
-								  <versionRange> [1.4,) </versionRange> 
-								  <goals> 
-								    <goal>testCompile</goal> 
-								    <goal>compile</goal>
-								  </goals> 
-								    
-								    </pluginExecutionFilter> 
+									<pluginExecutionFilter>
+										<groupId>org.codehaus.gmaven</groupId>
+										<artifactId> gmaven-plugin </artifactId>
+										<versionRange> [1.4,) </versionRange>
+										<goals>
+											<goal>testCompile</goal>
+											<goal>compile</goal>
+										</goals>
+
+									</pluginExecutionFilter>
 									<action>
 										<ignore></ignore>
 									</action>
@@ -269,7 +268,7 @@
 							</pluginExecutions>
 						</lifecycleMappingMetadata>
 					</configuration>
-				</plugin> 
+				</plugin>
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>build-helper-maven-plugin</artifactId>
@@ -295,9 +294,9 @@
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>2.6</version>
 					<configuration>
-					    <includes>
-                           <include>**/*Spec.java</include>
-                        </includes>
+						<includes>
+							<include>**/*Spec.java</include>
+						</includes>
 						<excludes>
 							<exclude>**/*IT.java</exclude>
 							<exclude>**/*IT.groovy</exclude>

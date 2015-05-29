@@ -26,6 +26,7 @@ import org.certificateservices.messages.pkimessages.PKIMessageParser;
  * @author Philip Vendil
  *
  */
+@SuppressWarnings({ "deprecation" })
 public interface MessageHandler {
 	
 	/**

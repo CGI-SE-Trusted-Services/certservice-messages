@@ -14,6 +14,8 @@ package org.certificateservices.messages.heartbeat;
 
 import java.util.Date;
 
+import org.certificateservices.messages.MessageContentException;
+
 /**
  * Value object of a monitored object, indicating it's status and optional descriptive
  * message.
@@ -42,16 +44,16 @@ public class MonitoringPoint {
 	 * @throws IllegalArgumentException  if constructor parameters contained invalid data.
 	 */
 	public MonitoringPoint(String monitoringPointId, Date timestamp,
-			HealthStatus status) throws IllegalArgumentException {
+			HealthStatus status) throws MessageContentException {
 		super();
 		if(monitoringPointId == null || monitoringPointId.equals("")){
-			throw new IllegalArgumentException("Error creating monitoring point in heart beat message, the monitoring point id cannot be null or empty");
+			throw new MessageContentException("Error creating monitoring point in heart beat message, the monitoring point id cannot be null or empty");
 		}
 		if(timestamp == null){
-			throw new IllegalArgumentException("Error creating monitoring point in heart beat message, time stamp cannot be null.");
+			throw new MessageContentException("Error creating monitoring point in heart beat message, time stamp cannot be null.");
 		}
 		if(status == null){
-			throw new IllegalArgumentException("Error creating monitoring point in heart beat message, status cannot be null.");
+			throw new MessageContentException("Error creating monitoring point in heart beat message, status cannot be null.");
 		}
 		this.monitoringPointId = monitoringPointId;
 		this.timestamp = timestamp;
@@ -68,7 +70,7 @@ public class MonitoringPoint {
 	 * @throws IllegalArgumentException  if constructor parameters contained invalid data.
 	 */
 	public MonitoringPoint(String monitoringPointId, Date timestamp,
-			HealthStatus status, String description) throws IllegalArgumentException {
+			HealthStatus status, String description) throws MessageContentException {
 		this(monitoringPointId, timestamp, status);
 		this.description = description;
 	}
@@ -89,7 +91,7 @@ public class MonitoringPoint {
 	 */
 	public MonitoringPoint(String monitoringPointId, Date timestamp,
 			HealthStatus status, String description, Long currentThroughput,
-			Long maxThroughput, String throughputUnits) throws IllegalArgumentException {
+			Long maxThroughput, String throughputUnits) throws MessageContentException {
 		this(monitoringPointId, timestamp, status, description);
 		this.currentThroughput = currentThroughput;
 		this.maxThroughput = maxThroughput;

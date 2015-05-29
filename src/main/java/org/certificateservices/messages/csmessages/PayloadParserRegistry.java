@@ -106,7 +106,9 @@ public class PayloadParserRegistry {
 	 */
 	public static void register(String namespace, Class<? extends PayloadParser> payLoadParser) throws MessageProcessingException{
 		payloadParserRegistry.put(namespace, payLoadParser);
-		configurationCallback.updateContext();
+		if(configurationCallback != null){
+		  configurationCallback.updateContext();
+		}
 	}
 	
 	/**
@@ -118,7 +120,9 @@ public class PayloadParserRegistry {
 	public static void deregister(String namespace) throws MessageProcessingException{
 		payloadParserCache.remove(namespace);
 		payloadParserRegistry.remove(namespace);
-		configurationCallback.updateContext();
+		if(configurationCallback != null){
+		  configurationCallback.updateContext();
+		}
 	}
 	
 	

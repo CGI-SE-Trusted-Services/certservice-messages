@@ -211,7 +211,7 @@ public class CSMessageResponseData {
 
 	@Override
 	public String toString() {
-		return "PKIMessageProcessResult [messageId=" + messageId
+		return "CSMessageProcessResult [messageId=" + messageId
 				+ ", destination=" + destination
 				+ ", responseData=" + Arrays.toString(responseData)
 				+ ", isForwardableResponse=" + isForwardableResponse + "]";

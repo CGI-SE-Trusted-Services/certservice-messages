@@ -14,6 +14,8 @@ package org.certificateservices.messages.heartbeat;
 
 import java.util.List;
 
+import org.certificateservices.messages.MessageContentException;
+
 /**
  * Value object containing all the information about a receipt message.
  * 
@@ -32,17 +34,17 @@ public class HeartBeatMessage {
 	 * @param systemId the id of the system sending the heart beat, never null
 	 * @param monitoringPoints a list of monitoring points in the heart beat, at least one message should exists
 	 * @param overallStatus summary status of the system, never null.  
-	 * @throws IllegalArgumentException if invalid parameters where sent to the constructor.
+	 * @throws MessageContentException if invalid parameters where sent to the constructor.
 	 */
-	public HeartBeatMessage(String systemId, List<MonitoringPoint> monitoringPoints, HealthStatus overallStatus) throws IllegalArgumentException{
+	public HeartBeatMessage(String systemId, List<MonitoringPoint> monitoringPoints, HealthStatus overallStatus) throws MessageContentException{
 		if(systemId == null || systemId.equals("")){
-			throw new IllegalArgumentException("Error creating heart beat message, the system id cannot be null or empty");
+			throw new MessageContentException("Error creating heart beat message, the system id cannot be null or empty");
 		}
 		if(monitoringPoints == null || monitoringPoints.size() <1){
-			throw new IllegalArgumentException("Error creating heart beat message, at least one monitoring point must exist in the message.");
+			throw new MessageContentException("Error creating heart beat message, at least one monitoring point must exist in the message.");
 		}
 		if(overallStatus == null){
-			throw new IllegalArgumentException("Error creating heart beat message, overall status cannot be null.");
+			throw new MessageContentException("Error creating heart beat message, overall status cannot be null.");
 		}
 		this.systemId = systemId;
 		this.monitoringPoints = monitoringPoints;

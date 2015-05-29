@@ -20,7 +20,7 @@
 			<xs:minLength value="1" />
 		</xs:restriction>
 	</xs:simpleType>
-	
+
 	<xs:simpleType name="descriptionstring">
 		<xs:restriction base="xs:string">
 			<xs:minLength value="0" />
@@ -43,7 +43,8 @@
 					type="tns:Originator" />
 				<xs:element minOccurs="0" maxOccurs="1" name="assertions"
 					type="tns:Assertions" />
-				<xs:element name="payload" type="tns:Payload" minOccurs="1" maxOccurs="1" />
+				<xs:element name="payload" type="tns:Payload" minOccurs="1"
+					maxOccurs="1" />
 				<xs:element ref="ds:Signature" minOccurs="0" maxOccurs="1" />
 			</xs:sequence>
 			<xs:attribute name="version" type="tns:notemptystring"
@@ -55,13 +56,13 @@
 		</xs:complexType>
 	</xs:element>
 
-    <xs:complexType name="Assertions">
+	<xs:complexType name="Assertions">
 		<xs:sequence>
 			<xs:any namespace="##any" processContents="lax" minOccurs="1"
 				maxOccurs="unbounded" />
-		</xs:sequence>    
-    </xs:complexType>
-    
+		</xs:sequence>
+	</xs:complexType>
+
 	<xs:complexType name="Payload">
 		<xs:sequence>
 			<xs:any namespace="##any" processContents="lax" minOccurs="1"
@@ -93,6 +94,8 @@
 				type="xs:string" />
 		</xs:sequence>
 	</xs:complexType>
+	
+	<xs:element name="FailureResponse" type="tns:CSResponse" />
 
 	<xs:simpleType name="RequestStatus">
 		<xs:restriction base="xs:string">
@@ -103,17 +106,19 @@
 			<xs:enumeration value="NOTAUTHORIZED" />
 		</xs:restriction>
 	</xs:simpleType>
-	
-	<xs:complexType name="GetApprovalRequest">
-		<xs:complexContent>
+
+	<xs:element name="GetApprovalRequest">
+		<xs:complexType >
+			<xs:complexContent>
 				<xs:extension base="tns:CSRequest">
-				<xs:sequence>
-					<xs:element minOccurs="1" maxOccurs="1" name="requestData"
-						type="tns:CSRequest" />
-				</xs:sequence>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="1" name="requestPayload"
+							type="tns:Payload" />
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
 
 	<xs:simpleType name="ApprovalStatus">
 		<xs:restriction base="xs:string">
@@ -123,40 +128,40 @@
 			<xs:enumeration value="EXPIRED" />
 		</xs:restriction>
 	</xs:simpleType>
-	
-	<xs:complexType name="IsApprovedRequest">
-		<xs:complexContent>
+
+	<xs:element name="IsApprovedRequest">
+		<xs:complexType>
+			<xs:complexContent>
 				<xs:extension base="tns:CSRequest">
-				<xs:sequence>
-					<xs:element minOccurs="1" maxOccurs="1" name="approvalId"
-					type="tns:notemptystring" />
-				</xs:sequence>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
-	
-	<xs:complexType name="GetApprovalResponse">
-		<xs:complexContent>
-			<xs:extension base="tns:IsApprovedResponse">
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
-	
-	<xs:complexType name="IsApprovedResponse">
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="1" name="approvalId"
+							type="tns:notemptystring" />
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:complexType name="IsApprovedResponseType">
 		<xs:complexContent>
 			<xs:extension base="tns:CSResponse">
 				<xs:sequence>
 					<xs:element minOccurs="1" maxOccurs="1" name="approvalId"
 						type="tns:notemptystring" />
 					<xs:element minOccurs="1" maxOccurs="1" name="approvalStatus"
-				        type="tns:ApprovalStatus" />
+						type="tns:ApprovalStatus" />
 					<xs:element minOccurs="0" maxOccurs="unbounded" name="assertions"
 						type="tns:Assertions" />
 				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
-	
+
+	<xs:element name="GetApprovalResponse" type="tns:IsApprovedResponseType" />
+
+	<xs:element name="IsApprovedResponse" type="tns:IsApprovedResponseType" />
+
+
 	<xs:complexType name="Attribute">
 		<xs:sequence>
 			<xs:element minOccurs="1" maxOccurs="1" name="key"
@@ -164,7 +169,7 @@
 			<xs:element minOccurs="1" maxOccurs="1" name="value" type="xs:string" />
 		</xs:sequence>
 	</xs:complexType>
-	
+
 	<xs:complexType name="Credential">
 		<xs:sequence>
 			<xs:element minOccurs="0" maxOccurs="1" name="credentialRequestId"
@@ -240,8 +245,8 @@
 			<xs:element minOccurs="0" maxOccurs="1" name="credentials">
 				<xs:complexType>
 					<xs:sequence>
-						<xs:element maxOccurs="unbounded" minOccurs="0" name="credential"
-							type="tns:Credential" />
+						<xs:element maxOccurs="unbounded" minOccurs="0"
+							name="credential" type="tns:Credential" />
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
@@ -308,7 +313,7 @@
 			<xs:element minOccurs="1" maxOccurs="1" name="user"
 				type="tns:notemptystring" />
 			<xs:element minOccurs="0" maxOccurs="1" name="userDisplayName"
-				type="tns:notemptystring" />				
+				type="tns:notemptystring" />
 			<xs:element minOccurs="0" maxOccurs="1" name="relatedTokenId"
 				type="xs:long" />
 			<xs:element minOccurs="0" maxOccurs="1" name="serialNumber"
@@ -361,8 +366,8 @@
 				type="xs:dateTime" />
 			<xs:element minOccurs="0" maxOccurs="1"
 				name="requestedValidFromDate" type="xs:dateTime" />
-			<xs:element minOccurs="0" maxOccurs="1" name="includeIssuerCredentials"
-				default="false" type="xs:boolean" />
+			<xs:element minOccurs="0" maxOccurs="1"
+				name="includeIssuerCredentials" default="false" type="xs:boolean" />
 		</xs:sequence>
 	</xs:complexType>
 
@@ -388,7 +393,7 @@
 				type="xs:dateTime" />
 		</xs:sequence>
 	</xs:complexType>
-	
+
 	<xs:complexType name="Organisation">
 		<xs:sequence>
 			<xs:element minOccurs="1" maxOccurs="1" name="shortName"
@@ -401,8 +406,8 @@
 				type="tns:descriptionstring" />
 			<xs:element minOccurs="0" maxOccurs="1" name="matchAdminWith"
 				type="xs:integer" />
-			<xs:element minOccurs="0" maxOccurs="1" name="issuerDistinguishedName"
-				type="tns:notemptystring" />
+			<xs:element minOccurs="0" maxOccurs="1"
+				name="issuerDistinguishedName" type="tns:notemptystring" />
 		</xs:sequence>
 	</xs:complexType>
 

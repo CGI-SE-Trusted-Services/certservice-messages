@@ -15,7 +15,7 @@ package org.certificateservices.messages.csmessages.manager;
 import java.io.IOException;
 import java.util.Properties;
 
-import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.csmessages.CSMessageParser;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 
@@ -38,17 +38,17 @@ public interface MessageManager {
 	 * 
 	 * @throws IllegalArgumentException if arguments sent to the method were illegal or the given property file contained bad configuration.
 	 * @throws IOException if communication problems occurred with underlying systems, such as time-out.
-	 * @throws MessageException if there were an critical internal error at the server side, that wasn't related to communication problems.
+	 * @throws MessageProcessingException if there were an critical internal error at the server side, that wasn't related to communication problems.
 	 */
-	void init(Properties config, CSMessageParser parser, String destination) throws IllegalArgumentException, IOException, MessageException;
+	void init(Properties config, CSMessageParser parser, String destination) throws IllegalArgumentException, IOException, MessageProcessingException;
 	
 	
 	/**
 	 * Method called by service if the underlying MessageHandler should connect to the MessageQueue server and start processing incoming calls.
-	 * @throws MessageException if configuration problems or other internal problems occurred connecting to the MQ server.
+	 * @throws MessageProcessingException if configuration problems or other internal problems occurred connecting to the MQ server.
 	 * @throws IOException if communication problems occurred connecting from the message server.
 	 */
-	void connect() throws MessageException, IOException;	
+	void connect() throws MessageProcessingException, IOException;	
 	
 	/**
 	 * Method returning the JMS connection factory used in underlying classes.
@@ -58,10 +58,10 @@ public interface MessageManager {
 	 *
 	 * 
 	 * @return a connection factory to use to set up the message processing environment, never null.
-	 * @throws MessageException if internal error or configuration problems occurred.
+	 * @throws MessageProcessingException if internal error or configuration problems occurred.
 	 * @throws IOException if communication problems occurred with the message service.
 	 */
-	Object getConnectionFactory() throws MessageException, IOException;
+	Object getConnectionFactory() throws MessageProcessingException, IOException;
 	
 	/**
 	 * Method to return a reference to the underlying message handler used.
@@ -76,9 +76,9 @@ public interface MessageManager {
 	 * @returns the response message, never null, if timeout happened is an IOException thrown.
 	 * @throws IllegalArgumentException if request contained invalid data.
 	 * @throws IOException if communication problems occurred with underlying systems, such as time-out.
-	 * @throws MessageException if there were an critical internal error at the server side, that wasn't related to communication problems.
+	 * @throws MessageProcessingException if there were an critical internal error at the server side, that wasn't related to communication problems.
 	 */
-	CSMessage sendMessage(String requestId, byte[] request) throws IllegalArgumentException, IOException, MessageException;
+	CSMessage sendMessage(String requestId, byte[] request) throws IllegalArgumentException, IOException, MessageProcessingException;
 	
 	/**
 	 * Method returning if the underlying message handler is currently connected.

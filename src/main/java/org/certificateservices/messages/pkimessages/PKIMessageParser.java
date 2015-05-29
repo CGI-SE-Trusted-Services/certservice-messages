@@ -31,6 +31,7 @@ import org.certificateservices.messages.pkimessages.jaxb.TokenRequest;
  * @author Philip Vendil
  *
  */
+@SuppressWarnings({ "deprecation" })
 public interface PKIMessageParser {
 	
 	/**

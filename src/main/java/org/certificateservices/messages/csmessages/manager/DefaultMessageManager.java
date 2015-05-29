@@ -18,12 +18,11 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
-import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.csmessages.CSMessageParser;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.csmessages.jaxb.CSResponse;
-import org.certificateservices.messages.csmessages.constants.AvailableCredentialStatuses;
-import org.certificateservices.messages.utils.MessageGenerateUtils;
+import org.certificateservices.messages.pkimessages.PKIMessageParser;
 
 /**
  * Message manager in charge of sending a request and waiting for the response for
@@ -67,7 +66,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	 * @see org.certificateservices.custom.vcc.vccpieclient.mq.MessageManager#init(Properties, PKIMessageParser, String, String)
 	 */	
 	public void init(Properties config, CSMessageParser parser, String destination) throws IllegalArgumentException,
-			IOException, MessageException {
+			IOException, MessageProcessingException {
 		this.destination = destination;
 		this.parser = parser;
 		
@@ -82,7 +81,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	 * for a given time before a time-out IO exception is thrown.
 	 */
 	public CSMessage sendMessage(String requestId, byte[] request) throws IllegalArgumentException,
-			IOException, MessageException {
+			IOException, MessageProcessingException {
 		CSMessage retval = null;
 		
 		registerWaitForRequestId(requestId);
@@ -263,11 +262,11 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	/**
 	 * Returns the message handler to use, if not configured is the default message handler created and returned.
 	 */
-	protected MessageHandler getMessageHandler(Properties config, CSMessageParser parser) throws MessageException, IllegalArgumentException, IOException{
+	protected MessageHandler getMessageHandler(Properties config, CSMessageParser parser) throws MessageProcessingException, IllegalArgumentException, IOException{
 		try{
 			String classPath = config.getProperty(SETTING_MESSAGEHANDLER_CLASSPATH);
 			if(classPath == null){
-				throw new MessageException("Error no message handler configured with setting: " + SETTING_MESSAGEHANDLER_CLASSPATH);
+				throw new MessageProcessingException("Error no message handler configured with setting: " + SETTING_MESSAGEHANDLER_CLASSPATH);
 			}			
 			Class<?> c = Thread.currentThread().getContextClassLoader().loadClass(classPath);
 			
@@ -275,8 +274,8 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 			retval.init(config, parser, this);
 			return retval;
 		}catch(Exception e){
-			if(e instanceof MessageException){
-				throw (MessageException) e;
+			if(e instanceof MessageProcessingException){
+				throw (MessageProcessingException) e;
 			}
 			if(e instanceof IllegalArgumentException){
 				throw (IllegalArgumentException) e;
@@ -284,26 +283,26 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 			if(e instanceof IOException){
 				throw (IOException) e;
 			}
-			throw new MessageException("Error creating Message Handler: " + e.getMessage(),e);
+			throw new MessageProcessingException("Error creating Message Handler: " + e.getMessage(),e);
 		}
 	}
 	
 	
-	public static long getTimeOutInMillis(Properties config) throws MessageException{
+	public static long getTimeOutInMillis(Properties config) throws MessageProcessingException{
 		String timeout = config.getProperty(SETTING_MESSAGE_TIMEOUT_MILLIS, DEFAULT_MESSAGE_TIMEOUT_MILLIS);
 		try{
 			return Long.parseLong(timeout);
 		}catch(Exception e){
-			throw new MessageException("Invalid timout value in configuration, check setting: " + SETTING_MESSAGE_TIMEOUT_MILLIS);
+			throw new MessageProcessingException("Invalid timout value in configuration, check setting: " + SETTING_MESSAGE_TIMEOUT_MILLIS);
 		}
 	}
 
-	public Object getConnectionFactory() throws MessageException,
+	public Object getConnectionFactory() throws MessageProcessingException,
 			IOException {
 		return messageHandler.getConnectionFactory();		
 	}
 
-	public void connect() throws MessageException, IOException {
+	public void connect() throws MessageProcessingException, IOException {
 		messageHandler.connect();
 		
 	}

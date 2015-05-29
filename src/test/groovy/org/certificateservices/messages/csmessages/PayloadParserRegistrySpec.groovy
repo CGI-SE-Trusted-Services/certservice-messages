@@ -1,3 +1,15 @@
+/************************************************************************
+ *                                                                       *
+ *  Certificate Service - Messages                                       *
+ *                                                                       *
+ *  This software is free software; you can redistribute it and/or       *
+ *  modify it under the terms of the GNU Affero General Public License   *
+ *  License as published by the Free Software Foundation; either         *
+ *  version 3   of the License, or any later version.                    *
+ *                                                                       *
+ *  See terms of license at gnu.org.                                     *
+ *                                                                       *
+ *************************************************************************/
 package org.certificateservices.messages.csmessages;
 
 import java.util.Properties;
@@ -10,6 +22,7 @@ import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.csmessages.PayloadParserRegistry.ConfigurationCallback;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
+import org.certificateservices.messages.dummy.DummyPayloadParser;
 import org.certificateservices.messages.sysconfig.SysConfigPayloadParser;
 import org.certificateservices.messages.sysconfig.jaxb.GetActiveConfigurationRequest;
 import org.certificateservices.messages.sysconfig.jaxb.Property;
@@ -68,6 +81,19 @@ public class PayloadParserRegistrySpec extends Specification{
 		then:
 		PayloadParserRegistry.payloadParserRegistry.get(DummyPayloadParser.NAMESPACE) == null
 		PayloadParserRegistry.payloadParserCache.get(DummyPayloadParser.NAMESPACE) == null
+	}
+	
+	def "Verify that register adds payload parser to registry and deregisters doesn't call updateContext on callback  if no callback is configured yet."(){
+		setup:
+		PayloadParserRegistry.configure(null, true)
+		
+		DummyPayloadParser pp = new DummyPayloadParser();
+		
+		when:
+		PayloadParserRegistry.register(DummyPayloadParser.NAMESPACE,DummyPayloadParser.class)
+		PayloadParserRegistry.deregister(DummyPayloadParser.NAMESPACE)
+		then:
+		true
 	}
 	
 	def "Verify that getParser first initializes the configured payload parser and then calls the initizalise method to the callback."(){

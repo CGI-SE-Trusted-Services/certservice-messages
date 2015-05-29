@@ -13,17 +13,18 @@
 
 package org.certificateservices.messages.csmessages;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Properties;
 
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-
 import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
+import org.certificateservices.messages.csmessages.jaxb.ApprovalStatus;
+import org.certificateservices.messages.csmessages.jaxb.CSMessage;
+import org.certificateservices.messages.csmessages.jaxb.CSRequest;
+import org.certificateservices.messages.csmessages.jaxb.Credential;
+import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
 
 public interface CSMessageParser {
 	
@@ -38,7 +39,183 @@ public interface CSMessageParser {
 	 */
 	void init(MessageSecurityProvider securityProvider, Properties config) throws MessageProcessingException;
 	
+	/**
+	 * Method used to generate a CS Request message without any originator, i.e the signer of this message is the originator.
+	 * 
+	 * @param requestId id of request to send.
+	 * @param destinationId the destination Id to use.
+	 * @param organisation the related organisation (short name)
+	 * @param payLoadVersion version of the pay load structure.
+	 * @param payload the payload object 
+	 * @param assertions a list of authorization assertions or null if no assertions should be inserted.
+	 * @return a generated and signed (if configured) message. 
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public byte[] generateCSRequestMessage(String requestId, String destinationId, String organisation, String payLoadVersion, Object payload, List<Object> assertions)  throws MessageContentException, MessageProcessingException;
 	
-	byte[] genMessage(String messageId, Object payLoad) throws MessageContentException, MessageProcessingException;
+	
+	/**
+	 * Method used to generate a CS Request message with any originator, used with relying a request message from another system.
+	 * 
+	 * @param requestId id of request to send.
+	 * @param destinationId the destination Id to use.
+	 * @param organisation the related organisation (short name)
+	 * @param payLoadVersion version of the pay load structure.
+	 * @param payload the payload object 
+	 * @param orginator the credential of the original requester.
+	 * @param assertions a list of authorization assertions or null if no assertions should be inserted.
+	 * @return a generated and signed (if configured) message. 
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public byte[] generateCSRequestMessage(String requestId, String destinationId, String organisation, String payLoadVersion, Object payload, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException;
+	
+	/**
+	 * Method to generate a CS Respone message from a request. CS Response message will be marked as non forwardable, which means not for use in data syncronization applications.
+	 * 
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the related request 
+	 * @param payLoadVersion version of the pay load structure.
+	 * @param payload the payload object 
+	 * @return  a generated and signed (if configured) message.
+	 *  
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public CSMessageResponseData generateCSResponseMessage(String relatedEndEntity, CSMessage request, String payLoadVersion, Object payload) throws MessageContentException, MessageProcessingException;
+	
+	/**
+	 * Method to generate a CS Respone message from a request.
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the related request 
+	 * @param payLoadVersion version of the pay load structure.
+	 * @param payload the payload object 
+	 * @param isForwarable if message will be marked as non forwardable, i.e. for use in data syncronization applications.
+	 * @return  a generated and signed (if configured) message.
+	 *  
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public CSMessageResponseData generateCSResponseMessage(String relatedEndEntity, CSMessage request, String payLoadVersion, Object payload, boolean isForwarable) throws MessageContentException, MessageProcessingException;
+	
+	
+	/**
+	 * Method generate a Get Approval Request, 
+	 * 
+	 * @param requestId  id of request to send.
+	 * @param destinationId the destination Id to use.
+	 * @param organisation the related organisation (short name)
+	 * @param request the request data to get approval for.
+	 * @param requestPayloadVersion the payload version of the CSRequest object what approval is requested for.
+	 * @param originator the credential of the original requester, null if this is the origin of the request.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return  a generated and signed (if configured) message.
+	 *  
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public byte[] generateGetApprovalRequest(String requestId, String destinationId, String organisation, CSRequest request, String requestPayloadVersion,Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException;
+	
+	/**
+	 * Method generate a Is Approved Request, 
+	 * 
+	 * @param requestId  id of request to send.
+	 * @param destinationId the destination Id to use.
+	 * @param organisation the related organisation (short name)
+	 * @param approvalId the approval id to check.
+	 * @param originator the credential of the original requester, null if this is the origin of the request.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return  a generated and signed (if configured) message.
+	 *  
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public byte[] generateIsApprovedRequest(String requestId, String destinationId, String organisation, String approvalId, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException;
+	
+	/**
+	 * Method generate a Is Approved Response, 
+	 * 
+	 * @param requestId  id of request to send.
+	 * @param destinationId the destination Id to use.
+	 * @param organisation the related organisation (short name)
+	 * @param approvalStatus the status of the related approval Id.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return  a generated and signed (if configured) message.
+	 *  
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public CSMessageResponseData generateIsApprovedResponse(String relatedEndEntity, CSMessage request, ApprovalStatus approvalStatus, List<Object> assertions) throws MessageContentException, MessageProcessingException;
+	
+	/**
+	 * Method generate a Get Approved Response, 
+	 * 
+	 * @param requestId  id of request to send.
+	 * @param destinationId the destination Id to use.
+	 * @param organisation the related organisation (short name)
+	 * @param approvalId the approval id that was generated for the request
+	 * @param approvalStatus the approval status
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return  a generated and signed (if configured) message.
+	 *  
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public CSMessageResponseData generateGetApprovalResponse(String relatedEndEntity, CSMessage request, String approvalId, ApprovalStatus approvalStatus, List<Object> assertions) throws MessageContentException, MessageProcessingException;
+	
+	/**
+	 * Method to generate a failure message response to a given request.
+	 * @param relatedEndEntity the user name of related user in system.
+	 * @param request the request data.
+	 * @param status the request status of the response
+	 * @param failureMessage a readable failure message.
+	 * @param destinationID the destination id of the message.
+	 * @param originator originator of the request, null if no originator could be found.
+	 * @return
+	 * @throws MessageContentException, if no signer certificate was found and parser required it.
+	 * @throws MessageProcessingException if internal error occurred parsing the certificate.
+	 */
+	public CSMessageResponseData genCSFailureResponse(String relatedEndEntity,byte[] request, RequestStatus status,
+			String failureMessage, String destinationID, Credential originator) throws MessageContentException,
+			MessageProcessingException;
+	
+	/**
+	 * Fetches the signing certificate from the request.
+	 * 
+	 * @param request the request to parse the certificate from.
+	 * @return the signer certificate of null if no certificate is required by the parser.
+	 * @throws MessageContentException, if no signer certificate was found and parser required it.
+	 * @throws MessageProcessingException if internal error occurred parsing the certificate.
+	 */
+	X509Certificate getSigningCertificate(byte[] request) throws MessageContentException, MessageProcessingException;
+
+	/**
+	 * Method that generates the signature and marshalls the message to byte array in UTF-8 format.
+	 * @param csMessage the CSMessage to sign and marshall, never null.
+	 * @return a marshalled and signed message.
+	 * @throws MessageProcessingException if problems occurred when processing the message.
+	 */
+	byte[] marshallAndSignCSMessage(CSMessage csMessage) throws MessageProcessingException, MessageContentException;
+	
+	/**
+	 * Method to validate a payload object separately, used for special cases such when validating GetApprovalRequest requestData etc.
+	 * 
+	 * @param version the versions of a CS message.
+	 * @param payLoadObject the pay load object to validate schema for.
+	 * 
+	 * @throws MessageProcessingException
+	 * @throws MessageContentException if the message contained invalid XML.
+	 */
+    public void validatePayloadObject(CSMessageVersion version, Object payLoadObject) throws MessageContentException;
+    
+    /**
+     * Method that tries to parse the xml version from a message
+     * @param messageData the messageData to extract version from.
+     * @return the version in the version and payLoadVersion attributes of the message.
+     * @throws MessageContentException didn't contains a valid version attribute.
+     * @throws MessageProcessingException if internal problems occurred.
+     */
+    public CSMessageVersion getVersionFromMessage(byte[] messageData) throws MessageContentException, MessageProcessingException;
 
 }

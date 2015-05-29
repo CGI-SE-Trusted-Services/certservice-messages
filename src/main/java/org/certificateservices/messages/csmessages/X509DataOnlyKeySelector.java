@@ -31,7 +31,7 @@ import javax.xml.crypto.dsig.keyinfo.X509Data;
 import javax.xml.crypto.dsig.keyinfo.X509IssuerSerial;
 
 import org.apache.log4j.Logger;
-import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -173,7 +173,7 @@ public class X509DataOnlyKeySelector extends KeySelector {
 					}
 				}catch(IllegalArgumentException e){
 					throw new KeySelectorException(e.getMessage(),e);
-				}catch(MessageException e){
+				}catch(MessageProcessingException e){
 					throw new KeySelectorException(e.getMessage(),e);	
 				}			
 			} else if (o instanceof X509IssuerSerial) {

@@ -25,6 +25,7 @@ import org.certificateservices.messages.csmessages.CSMessageResponseData;
  * @author Philip Vendil
  *
  */
+
 public class PKIMessageResponseData extends CSMessageResponseData{
 	
 

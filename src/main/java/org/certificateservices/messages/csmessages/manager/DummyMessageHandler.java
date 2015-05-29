@@ -20,19 +20,19 @@ import java.util.Properties;
 
 import org.apache.xml.security.exceptions.Base64DecodingException;
 import org.apache.xml.security.utils.Base64;
-import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.csmessages.CSMessageParser;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 
 
-
+@SuppressWarnings("all")
 public class DummyMessageHandler implements MessageHandler{
 
 	private MessageResponseCallback callback;
-	private CSMessageParser parser;
-	private ObjectFactory of = new ObjectFactory();
+//	private CSMessageParser parser;
+//	private ObjectFactory of = new ObjectFactory();
 	private long waitTime;	
 	
 	public boolean revokeMessageRecieved = false;
@@ -40,20 +40,20 @@ public class DummyMessageHandler implements MessageHandler{
 	public static final String SETTING_WAITTIME = "dummy.waittime";
 	
 	public void init(Properties config, CSMessageParser parser,
-			MessageResponseCallback callback) throws MessageException {
-		this.parser = parser;
+			MessageResponseCallback callback) throws MessageProcessingException {
+		//this.parser = parser;
 		this.callback = callback;
 		
 		waitTime = Long.parseLong(config.getProperty(SETTING_WAITTIME));
 		
 	}
 
-	public void connect() throws MessageException, IOException {
+	public void connect() throws MessageProcessingException, IOException {
 		
 		
 	}
 
-	public void sendMessage(String messageId, byte[] messageData) throws MessageException,
+	public void sendMessage(String messageId, byte[] messageData) throws MessageProcessingException,
 	IOException {
 		CSMessage response = null;	
 		assert false;
@@ -169,21 +169,21 @@ public class DummyMessageHandler implements MessageHandler{
 			"+xMeZX1KyiL4Dpo2rocZAvdL/C8qkt/uEgOjwOTdmoRVxkFWcm+DRNa26cclBQ4t" +
 			"Vw==").getBytes();
 
-	public Object getConnectionFactory() throws MessageException,
+	public Object getConnectionFactory() throws MessageProcessingException,
 			IOException {
-		throw new MessageException("Not implemented");
+		throw new MessageProcessingException("Not implemented");
 	}
 
 	public boolean isConnected() {
 		return true;
 	}
 	
-	private byte[] base64Decode(byte[] data) throws MessageException{
-		try {
-			return Base64.decode(base64Cert);
-		} catch (Base64DecodingException e) {
-			throw new MessageException("Base64 Decoding Exception: " + e.getMessage(),e);
-		}
-	}
+//	private byte[] base64Decode(byte[] data) throws MessageProcessingException{
+//		try {
+//			return Base64.decode(base64Cert);
+//		} catch (Base64DecodingException e) {
+//			throw new MessageProcessingException("Base64 Decoding Exception: " + e.getMessage(),e);
+//		}
+//	}
 
 }

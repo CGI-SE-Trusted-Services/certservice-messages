@@ -39,6 +39,7 @@ import org.certificateservices.messages.utils.MessageGenerateUtils;
  * @author Philip Vendil
  *
  */
+@SuppressWarnings({ "deprecation" })
 public class DefaultMessageManager implements MessageManager, MessageResponseCallback{
 	
 	private static Logger log = Logger.getLogger(DefaultMessageManager.class);

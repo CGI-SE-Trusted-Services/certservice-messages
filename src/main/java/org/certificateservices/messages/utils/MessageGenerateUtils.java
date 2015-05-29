@@ -20,7 +20,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageProcessingException;
 
 /**
  * Class containing help utils when populating data in messages.
@@ -54,7 +54,7 @@ public class MessageGenerateUtils {
 	 * @return a XMLGregorianCalendar object or null if date is null.
 	 * @throws MessageException if internal problems occurred converting the date.
 	 */
-	public static XMLGregorianCalendar dateToXMLGregorianCalendar(Date date) throws MessageException{
+	public static XMLGregorianCalendar dateToXMLGregorianCalendar(Date date) throws MessageProcessingException{
 		if(date == null){
 			return null;
 		}
@@ -64,7 +64,7 @@ public class MessageGenerateUtils {
 		try {
 			return DatatypeFactory.newInstance().newXMLGregorianCalendar(c);
 		} catch (DatatypeConfigurationException e) {
-			throw new MessageException("Error generating XMLGregorianDate from Date : " + e.getMessage(),e);
+			throw new MessageProcessingException("Error generating XMLGregorianDate from Date : " + e.getMessage(),e);
 		}
 	}
 	
@@ -74,7 +74,7 @@ public class MessageGenerateUtils {
 	 * @return a Date object or null if calendarDate is null.
 	 * @throws MessageException if internal problems occurred converting the date.
 	 */
-	public static Date xMLGregorianCalendarToDate(XMLGregorianCalendar calendarDate) throws MessageException{
+	public static Date xMLGregorianCalendarToDate(XMLGregorianCalendar calendarDate) throws MessageProcessingException{
 		if(calendarDate == null){
 			return null;
 		}

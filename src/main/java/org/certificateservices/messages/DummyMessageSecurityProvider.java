@@ -32,13 +32,13 @@ public class DummyMessageSecurityProvider implements
 	private boolean validCallDone = false;
 	private String organisationCalled = null;
 	
-	private KeyStore getDummyKeystore() throws MessageException{
+	private KeyStore getDummyKeystore() throws MessageProcessingException{
 		if(dummyKS == null){
 			try {
 				dummyKS = KeyStore.getInstance("JKS");
 				dummyKS.load(this.getClass().getResourceAsStream("/dummykeystore.jks"), "tGidBq0Eep".toCharArray());
 			} catch (Exception e) {
-				throw new MessageException("Error loading dummy key store: " + e.getMessage(),e);
+				throw new MessageProcessingException("Error loading dummy key store: " + e.getMessage(),e);
 			}
 			
 		}
@@ -50,12 +50,12 @@ public class DummyMessageSecurityProvider implements
 	 * 
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getSigningKey()
 	 */
-	public PrivateKey getSigningKey() throws MessageException {
+	public PrivateKey getSigningKey() throws MessageProcessingException {
 	
 		try {
 			return (PrivateKey) getDummyKeystore().getKey("test", "tGidBq0Eep".toCharArray());
 		} catch (Exception e) {
-			throw new MessageException("Error fetching dummy signing key: " + e.getMessage(),e);
+			throw new MessageProcessingException("Error fetching dummy signing key: " + e.getMessage(),e);
 		}
 	}
 
@@ -64,11 +64,11 @@ public class DummyMessageSecurityProvider implements
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getSigningCertificate()
 	 */
 	public X509Certificate getSigningCertificate()
-			throws IllegalArgumentException, MessageException {
+			throws IllegalArgumentException, MessageProcessingException {
 		try {
 			return (X509Certificate) getDummyKeystore().getCertificate("test");
 		} catch (Exception e) {
-			throw new MessageException("Error fetching dummy signing certificate: " + e.getMessage(),e);
+			throw new MessageProcessingException("Error fetching dummy signing certificate: " + e.getMessage(),e);
 		}
 	}
 
@@ -77,7 +77,7 @@ public class DummyMessageSecurityProvider implements
 	 * @see org.certificateservices.messages.MessageSecurityProvider#isValidAndAuthorized(X509Certificate)
 	 */
 	public boolean isValidAndAuthorized(X509Certificate signCertificate, String organisation)
-			throws IllegalArgumentException, MessageException {
+			throws IllegalArgumentException, MessageProcessingException {
 
 		if(signCertificate == null){
 			throw new IllegalArgumentException("Error sign certificate cannot be null when validating.");

@@ -14,17 +14,20 @@ package org.certificateservices.messages.csmessages;
 
 import java.util.Properties;
 
-import org.certificateservices.messages.MessageException;
+import javax.xml.bind.JAXBElement;
+
+import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.utils.SettingsUtils;
 
 /**
  * Class in charge of looking up the name of a specific PKI messages.  
  * <p>
  * The main method is lookupName and by default is the simple name of the payload class (with the exception if a PKIResponse object which 
  * generates a name of "FailureResponse").
- * returned. But this can be overloaded by the setting  "pkimessage.name" + the name of the payload element in lowercase. 
+ * returned. But this can be overloaded by the setting  "csmessage.name" + the name of the payload element in lowercase. 
  * <p>
  * For example to overload the name of a message with payload isIssuerRequest should the setting
- * be "pkimessage.name.isissuerrequest"
+ * be "csmessage.name.isissuerrequest"
  * @author Philip Vendil
  *
  */
@@ -39,7 +42,16 @@ public class DefaultMessageNameCatalogue implements MessageNameCatalogue {
 	 * For example to overload the name of a message with payload isIssuerRequest should the setting
 	 * be "pkimessage.name.isissuerrequest"
 	 */
-	public static final String SETTING_MESSAGE_NAME_PREFIX = "pkimessage.name.";
+	public static final String SETTING_MESSAGE_NAME_PREFIX = "csmessage.name.";
+	
+	/**
+	 * The prefix for overloading pkimessage names, all settings should start with this and append
+	 * the name of the payload element in lowercase. 
+	 * <p>
+	 * For example to overload the name of a message with payload isIssuerRequest should the setting
+	 * be "pkimessage.name.isissuerrequest"
+	 */
+	public static final String OLD_SETTING_MESSAGE_NAME_PREFIX = "pkimessage.name.";
 
 	/**
 	 * Default constructor
@@ -59,17 +71,23 @@ public class DefaultMessageNameCatalogue implements MessageNameCatalogue {
 	 * @return the name of the message to use.
 	 * @throws MessageException if name lookup failed etc.
 	 */
-	public String lookupName(String requestName, Object payLoadObject) throws MessageException, IllegalArgumentException{
+	public String lookupName(String requestName, Object payLoadObject) throws MessageProcessingException, IllegalArgumentException{
 		if(payLoadObject == null){
-			throw new MessageException("Payload element cannot be null.");
+			throw new MessageProcessingException("Payload element cannot be null.");
 		}
 		String retval =  payLoadObject.getClass().getSimpleName();
-		if(retval.equals("PKIResponse")){
+		if(payLoadObject instanceof JAXBElement<?>){
+			retval = ((JAXBElement<?>) payLoadObject).getName().getLocalPart();
+		}
+		if(retval.equals("CSResponse")){
 			retval = "FailureResponse";
 		}
+		
 		String setting = SETTING_MESSAGE_NAME_PREFIX + payLoadObject.getClass().getSimpleName().toLowerCase();
-		if(properties.getProperty(setting) != null){
-			retval = properties.getProperty(setting);
+		String altSetting = OLD_SETTING_MESSAGE_NAME_PREFIX + payLoadObject.getClass().getSimpleName().toLowerCase();
+		String configuredValue = SettingsUtils.getProperty(properties, setting, altSetting);
+		if( configuredValue!= null){
+			retval = configuredValue;
 		}
 		
 		return retval;

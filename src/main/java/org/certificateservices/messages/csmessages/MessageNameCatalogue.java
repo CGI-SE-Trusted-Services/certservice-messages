@@ -14,7 +14,7 @@ package org.certificateservices.messages.csmessages;
 
 import java.util.Properties;
 
-import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageProcessingException;
 
 public interface MessageNameCatalogue {
 	
@@ -30,7 +30,7 @@ public interface MessageNameCatalogue {
 	 * @param properties the properties file of the PKI message parser.
 	 * @throws MessageException if 
 	 */
-	public void init(Properties config) throws MessageException;
+	public void init(Properties config) throws MessageProcessingException;
 
 	/**
 	 * Method that looks up the name for a specific setting used to populate the 'name' attribute
@@ -42,5 +42,5 @@ public interface MessageNameCatalogue {
 	 * @throws MessageException if name lookup failed due to internal connection problems.
 	 * @throws IllegalArgumentException if name lookup failed due to bad request data
 	 */
-	public String lookupName(String requestName, Object payLoadObject) throws MessageException, IllegalArgumentException;
+	public String lookupName(String requestName, Object payLoadObject) throws MessageProcessingException, IllegalArgumentException;
 }

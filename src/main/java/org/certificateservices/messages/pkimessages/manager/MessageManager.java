@@ -25,6 +25,7 @@ import org.certificateservices.messages.pkimessages.jaxb.PKIMessage;
  * @author Philip Vendil
  *
  */
+@SuppressWarnings({ "deprecation" })
 public interface MessageManager {
 
 	

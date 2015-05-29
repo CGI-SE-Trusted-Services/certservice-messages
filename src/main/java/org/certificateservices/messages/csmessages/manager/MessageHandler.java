@@ -15,7 +15,7 @@ package org.certificateservices.messages.csmessages.manager;
 import java.io.IOException;
 import java.util.Properties;
 
-import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.csmessages.CSMessageParser;
 
 
@@ -35,9 +35,9 @@ public interface MessageHandler {
 	 * @param config the configuration.
 	 * @param parser the message parser configuration.
 	 * @param callback the callback interface where response messages are sent.
-	 * @throws MessageException if configuration problems or other internal problems occurred.
+	 * @throws MessageProcessingException if configuration problems or other internal problems occurred.
 	 */
-	void init(Properties config, CSMessageParser parser, MessageResponseCallback callback) throws MessageException;
+	void init(Properties config, CSMessageParser parser, MessageResponseCallback callback) throws MessageProcessingException;
 	
 	/**
 	 * Method returning the connection factory used to set-up the message queues. Used only
@@ -47,27 +47,27 @@ public interface MessageHandler {
 	 * to use when connecting to the message server.
 	 * 
 	 * @return a connection factory to use to set up the message processing environment, never null.
-	 * @throws MessageException if internal error or configuration problems occurred.
+	 * @throws MessageProcessingException if internal error or configuration problems occurred.
 	 * @throws IOException if communication problems occurred with the message service.
 	 */
-	Object getConnectionFactory() throws MessageException, IOException;
+	Object getConnectionFactory() throws MessageProcessingException, IOException;
 	
 	/**
 	 * Method called by service if the MessageHandler should connect to the MessageQueue server and start processing incoming calls.
-	 * @throws MessageException if configuration problems or other internal problems occurred connecting to the MQ server.
+	 * @throws MessageProcessingException if configuration problems or other internal problems occurred connecting to the MQ server.
 	 * @throws IOException if communication problems occurred connecting from the message server.
 	 */
-	void connect() throws MessageException, IOException;	
+	void connect() throws MessageProcessingException, IOException;	
 	
 	/**
 	 * Method to send a message to the MQ server out queue.
 	 * 
 	 * @param messageId the id of the message
 	 * @param the message data to send
-	 * @throws MessageException if configuration problems or other internal problems occurred connecting to the MQ server.
+	 * @throws MessageProcessingException if configuration problems or other internal problems occurred connecting to the MQ server.
 	 * @throws IOException if communication problems occurred connecting and sending to the message server.
 	 */
-	void sendMessage(String messageId, byte[] message)  throws MessageException, IOException;	
+	void sendMessage(String messageId, byte[] message)  throws MessageProcessingException, IOException;	
 
 	/**
 	 * Method returning if the handler is currently connected to the JMS broker.

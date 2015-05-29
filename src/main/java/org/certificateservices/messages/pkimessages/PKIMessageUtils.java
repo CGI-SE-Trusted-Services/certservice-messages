@@ -24,6 +24,7 @@ import org.certificateservices.messages.pkimessages.jaxb.PKIResponse;
  * @author Philip Vendil
  *
  */
+@SuppressWarnings({ "deprecation" })
 public class PKIMessageUtils {
 
 	/**

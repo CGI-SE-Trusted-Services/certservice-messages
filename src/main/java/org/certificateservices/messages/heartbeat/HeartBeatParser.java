@@ -14,7 +14,8 @@ package org.certificateservices.messages.heartbeat;
 
 import java.util.Properties;
 
-import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageContentException;
+import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
 
 /**
@@ -30,9 +31,9 @@ public interface HeartBeatParser {
 	 * 
 	 * @param securityProvider the message security provider to use.
 	 * @param config the configuration of the parser.
-	 * @throws MessageException if configuration contained bad configuration of security provider.
+	 * @throws MessageProcessingException if configuration contained bad configuration of security provider.
 	 */
-	void init(MessageSecurityProvider securityProvider, Properties config) throws MessageException;
+	void init(MessageSecurityProvider securityProvider, Properties config) throws MessageProcessingException;
 	
 	/**
 	 * Method to parse the messageData into a HeartBeatMessage with validation according to the
@@ -40,19 +41,19 @@ public interface HeartBeatParser {
 	 * 
 	 * @param messageData the message data to parse
 	 * @return a heart beat message from the message data.
-	 * @throws IllegalArgumentException if receipt message contained invalid data not conforming to the standard.
-	 * @throws MessageException if internal state occurred when processing the message
+	 * @throws MessageContentException if receipt message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the message
 	 */
-	HeartBeatMessage parseMessage(byte[] messageData) throws IllegalArgumentException, MessageException;
+	HeartBeatMessage parseMessage(byte[] messageData) throws MessageContentException, MessageProcessingException;
 	
 	/**
 	 * Method to generate a heart beat message from the supplied data.
 	 * 
 	 * @param heartBeatMessage the heart beat message data to transform into a message structure.
 	 * @return a generated heart beat message, never null.
-	 * @throws IllegalArgumentException if supplied arguments were invalid.
-	 * @throws MessageException if internal problems occurred when generating the heart beat message.
+	 * @throws MessageContentException if supplied arguments were invalid.
+	 * @throws MessageProcessingException if internal problems occurred when generating the heart beat message.
 	 */
-	byte[] genHeartBeatMessage(String messageId, HeartBeatMessage heartBeatMessage)  throws IllegalArgumentException, MessageException;
+	byte[] genHeartBeatMessage(String messageId, HeartBeatMessage heartBeatMessage)  throws MessageContentException, MessageProcessingException;
 
 }

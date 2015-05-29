@@ -10,12 +10,17 @@
 *  See terms of license at gnu.org.                                     *
 *                                                                       *
 *************************************************************************/
-package org.certificateservices.messages.csmessages;
+package org.certificateservices.messages.dummy;
 
+import java.io.InputStream;
 import java.util.Properties;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.csmessages.CSMessageParser;
+import org.certificateservices.messages.csmessages.PayloadParser;
+import org.certificateservices.messages.dummy.jaxb.ObjectFactory;
+import org.certificateservices.messages.dummy.jaxb.SomePayload;
 
 /**
  * Dummy implementation of a PayloadParser
@@ -25,31 +30,42 @@ import org.certificateservices.messages.MessageProcessingException;
  */
 public class DummyPayloadParser implements PayloadParser{
 	
-	public static String NAMESPACE = "http://dummynamespace";
+	public static String NAMESPACE = "http://certificateservices.org/xsd/dummy2_0";
 
 	Properties config = null;
+	CSMessageParser parser = null;
 	boolean initCalled = false;
 
+	ObjectFactory of = new ObjectFactory();
 
 	@Override
-	public void init(Properties config) throws MessageProcessingException {
+	public void init(Properties config, CSMessageParser parser) throws MessageProcessingException {
 		this.config = config;
+		this.parser = parser;
 		initCalled = true;
+	}
+	
+	public SomePayload genSomePayload(String someValue){
+		SomePayload retval = of.createSomePayload();
+		retval.setSomeValue(someValue);
+		return retval;
 	}
 
 	@Override
 	public String getNameSpace() {
-		return "http://testnamespace";
+		return NAMESPACE;
 	}
 
 	@Override
 	public String getJAXBPackage() {
-		return "some.package.name";
+		return "org.certificateservices.messages.dummy.jaxb";
 	}
 
 	@Override
-	public String getSchemaLocation(String payLoadVersion)
-			throws MessageContentException {
-		return "/somelocation.xsd";
+	public InputStream getSchemaAsInputStream(String payLoadVersion)
+			throws MessageContentException, MessageProcessingException {
+		return getClass().getResourceAsStream("/dummypayload_schema2_0.xsd");
 	}
+
+	
 }

@@ -14,7 +14,7 @@ package org.certificateservices.messages.csmessages;
 
 import java.util.Properties;
 
-import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
 
 /**
@@ -44,7 +44,7 @@ public class CSMessageParserFactory {
 	 * @return a newly created CS Message parser
 	 * @throws MessageException if problems occurred creating a message parser.
 	 */
-	public static CSMessageParser genCSMessageParser(MessageSecurityProvider securityProvider, Properties config) throws MessageException{
+	public static CSMessageParser genCSMessageParser(MessageSecurityProvider securityProvider, Properties config) throws MessageProcessingException{
 		String cp = config.getProperty(SETTING_CSMESSAGEPARSER_IMPL, DEFAULT_IMPLEMENTATION);
 		try{
 			Class<?> c = CSMessageParserFactory.class.getClassLoader().loadClass(cp);
@@ -52,10 +52,10 @@ public class CSMessageParserFactory {
 			retval.init(securityProvider, config);
 			return retval;
 		}catch(Exception e){
-			if(e instanceof MessageException){
-				throw (MessageException) e;
+			if(e instanceof MessageProcessingException){
+				throw (MessageProcessingException) e;
 			}			
-			throw new MessageException("Error creating CS Message Parser: " + e.getMessage(),e);			
+			throw new MessageProcessingException("Error creating CS Message Parser: " + e.getMessage(),e);			
 		}
 	}
 

@@ -1,6 +1,7 @@
 package org.certificateservices.messages.pkimessages
 
 import groovy.mock.interceptor.MockFor
+
 import java.security.PrivateKey
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
@@ -25,6 +26,7 @@ import org.junit.Test;
 import spock.lang.Specification
 
 
+@SuppressWarnings("deprecation")
 class PKIMessageParserFactorySpec extends Specification {
 	
 	Properties config = new Properties()

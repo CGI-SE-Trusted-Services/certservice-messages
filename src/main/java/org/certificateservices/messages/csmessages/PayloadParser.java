@@ -12,12 +12,11 @@
 *************************************************************************/
 package org.certificateservices.messages.csmessages;
 
+import java.io.InputStream;
 import java.util.Properties;
 
 import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageException;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.MessageSecurityProvider;
 
 
 /**
@@ -35,9 +34,10 @@ public interface PayloadParser {
 	 * This method might be called more than once if configuration have been updated and the parser needs to be updated.
 	 * 
 	 * @param config the configuration of the parser.
+	 * @param parser link to main CS Message Parser used.
 	 * @throws MessageException if configuration contained bad configuration of security provider.
 	 */
-	void init(Properties config) throws MessageProcessingException;
+	void init(Properties config, CSMessageParser parser) throws MessageProcessingException;
 	
 	/**
 	 * 
@@ -55,7 +55,8 @@ public interface PayloadParser {
 	 * getClass().getResourceAsStream()
 	 * 
 	 * @throws MessageContentException if given version isn't supported.
+	 * @throws MessageProcessingException if problems occurred setting up the stream.
 	 */
-	String getSchemaLocation(String payLoadVersion) throws MessageContentException;
+	InputStream getSchemaAsInputStream(String payLoadVersion) throws MessageContentException,MessageProcessingException;
 
 }

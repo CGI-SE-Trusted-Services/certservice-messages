@@ -18,6 +18,7 @@ import org.junit.Test;
 import spock.lang.Specification
 
 
+@SuppressWarnings("deprecation")
 public class DefaultMessageNameCatalogueSpec extends Specification {
 	
 

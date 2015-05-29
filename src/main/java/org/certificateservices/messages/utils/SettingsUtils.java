@@ -14,7 +14,9 @@ package org.certificateservices.messages.utils;
 
 import java.util.Properties;
 
-import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageProcessingException;
+
+
 
 /**
  * Utils used for parsing settings in configuration.
@@ -31,9 +33,9 @@ public class SettingsUtils {
 	 * @param setting the setting to fetch
 	 * @param required if required is a MessageException thrown if setting isn't set.
 	 * @return a boolean value of the setting.
-	 * @throws MessageException if setting couldn't be read properly from the configuration file.
+	 * @throws MessageProcessingException if setting couldn't be read properly from the configuration file.
 	 */
-	public static Boolean parseBoolean(Properties config, String setting, boolean required) throws MessageException{
+	public static Boolean parseBoolean(Properties config, String setting, boolean required) throws MessageProcessingException{
 		return parseBoolean(config, setting, null, required);
 	}
 	
@@ -45,14 +47,14 @@ public class SettingsUtils {
 	 * @param alternativeSetting for backward compability settings.
 	 * @param required if required is a MessageException thrown if setting isn't set.
 	 * @return a boolean value of the setting.
-	 * @throws MessageException if setting couldn't be read properly from the configuration file.
+	 * @throws MessageProcessingException if setting couldn't be read properly from the configuration file.
 	 */
-	public static Boolean parseBoolean(Properties config, String setting, String alternativeSetting, boolean required) throws MessageException{
+	public static Boolean parseBoolean(Properties config, String setting, String alternativeSetting, boolean required) throws MessageProcessingException{
 		String value = config.getProperty(setting, (alternativeSetting != null ? config.getProperty(alternativeSetting, "") : ""));
 
 		if(value == null || value.trim().equals("")){
 			if(required){
-				throw new MessageException("Error parsing setting " + setting + ", a value must be set to either TRUE or FALSE");
+				throw new MessageProcessingException("Error parsing setting " + setting + ", a value must be set to either TRUE or FALSE");
 			}
 			return null;
 		}
@@ -63,7 +65,7 @@ public class SettingsUtils {
 			if(value.equals("FALSE")){
 				return false;
 			}else{
-				throw new MessageException("Error parsing setting " + setting + ", value must be either TRUE or FALSE");
+				throw new MessageProcessingException("Error parsing setting " + setting + ", value must be either TRUE or FALSE");
 			}
 		}
 	}
@@ -76,9 +78,9 @@ public class SettingsUtils {
 	 * @param setting the setting to fetch
 	 * @param defaultValue value to return if not set.
 	 * @return the boolean setting of the value of the default value if not set.
-	 * @throws MessageException if setting couldn't be read properly from the configuration file.
+	 * @throws MessageProcessingException if setting couldn't be read properly from the configuration file.
 	 */
-	public static boolean parseBooleanWithDefault(Properties config, String setting, boolean defaultValue) throws MessageException{
+	public static boolean parseBooleanWithDefault(Properties config, String setting, boolean defaultValue) throws MessageProcessingException{
 		return parseBooleanWithDefault(config, setting, null, defaultValue);
 	}
 	
@@ -91,9 +93,9 @@ public class SettingsUtils {
 	 * @param alternativeSetting for backward compability settings.
 	 * @param defaultValue value to return if not set.
 	 * @return the boolean setting of the value of the default value if not set.
-	 * @throws MessageException if setting couldn't be read properly from the configuration file.
+	 * @throws MessageProcessingException if setting couldn't be read properly from the configuration file.
 	 */
-	public static boolean parseBooleanWithDefault(Properties config, String setting,  String alternativeSetting, boolean defaultValue) throws MessageException{
+	public static boolean parseBooleanWithDefault(Properties config, String setting,  String alternativeSetting, boolean defaultValue) throws MessageProcessingException{
 		Boolean retval = parseBoolean(config, setting, alternativeSetting, false);
 		if(retval == null){
 			return defaultValue;
@@ -149,7 +151,7 @@ public class SettingsUtils {
 	 * @param required if an exception should be thrown if setting isn't set.
 	 * @return and array of strings splitted and trimmed, never null.
 	 */
-    public static String[] parseStringArray(Properties config, String setting, String deliminator, boolean required) throws MessageException{
+    public static String[] parseStringArray(Properties config, String setting, String deliminator, boolean required) throws MessageProcessingException{
 		return parseStringArray(config, setting, null, deliminator, required);
 	}
     
@@ -164,14 +166,14 @@ public class SettingsUtils {
 	 * @param required if an exception should be thrown if setting isn't set.
 	 * @return and array of strings splitted and trimmed, never null.
 	 */
-    public static String[] parseStringArray(Properties config, String setting, String alternativeSetting, String deliminator, boolean required) throws MessageException{
+    public static String[] parseStringArray(Properties config, String setting, String alternativeSetting, String deliminator, boolean required) throws MessageProcessingException{
 		String value = config.getProperty(setting);
 		if(value == null && alternativeSetting != null){
 			value = config.getProperty(alternativeSetting);
 		}
 		if(value == null || value.trim().equals("")){
 			if(required){
-			  throw new MessageException("Required setting " + setting + " not set.");
+			  throw new MessageProcessingException("Required setting " + setting + " not set.");
 			}else{
 				return new String[0];
 			}
@@ -191,7 +193,7 @@ public class SettingsUtils {
      * @return the value if set.
      * @throws MessageException if setting wasn't set or set to ""
      */
-	public static String getRequiredProperty(Properties config, String key) throws MessageException{
+	public static String getRequiredProperty(Properties config, String key) throws MessageProcessingException{
 		return getRequiredProperty(config, key, null);
 	}
 	
@@ -204,10 +206,10 @@ public class SettingsUtils {
      * @return the value if set.
      * @throws MessageException if setting wasn't set or set to ""
      */
-	public static String getRequiredProperty(Properties config, String key, String alternativeSettings) throws MessageException{
+	public static String getRequiredProperty(Properties config, String key, String alternativeSettings) throws MessageProcessingException{
 		String value = config.getProperty(key, (alternativeSettings != null ? config.getProperty(alternativeSettings, "") : ""));
 		if(value.trim().equals("")){
-			throw new MessageException("Error required configuration property " + key + " not set.");
+			throw new MessageProcessingException("Error required configuration property " + key + " not set.");
 		}
 		return value;
 	}
