@@ -9,12 +9,15 @@ import org.certificateservices.messages.csmessages.jaxb.IsApprovedResponseType;
 import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 import org.junit.BeforeClass
+import org.junit.Ignore;
 import org.junit.Test
 
 import spock.lang.Shared
 import spock.lang.Specification
 
 //TODO Implement these tests
+// TODO Implement after credential management protocol.
+@Ignore
 class DefaultMessageManagerSpec extends Specification{
 
 	@Shared DefaultMessageManager mm = new DefaultMessageManager()

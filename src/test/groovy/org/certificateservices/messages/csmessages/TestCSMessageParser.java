@@ -141,4 +141,10 @@ public class TestCSMessageParser implements CSMessageParser {
 		return null;
 	}
 
+	@Override
+	public CSMessage parseMessage(byte[] messageData)
+			throws MessageContentException, MessageProcessingException {
+		return null;
+	}
+
 }

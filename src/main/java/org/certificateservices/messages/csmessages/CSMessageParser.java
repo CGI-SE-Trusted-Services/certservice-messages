@@ -40,13 +40,25 @@ public interface CSMessageParser {
 	void init(MessageSecurityProvider securityProvider, Properties config) throws MessageProcessingException;
 	
 	/**
+	 * Method to parse a message into a CSMessage and verify that it fulfills the registred schemas.
+	 * 
+	 * @param messageData the data to parse into a CSMessage
+	 * @return a parsed CS Message object.
+	 * 
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public CSMessage parseMessage(byte[] messageData)
+			throws MessageContentException, MessageProcessingException;
+	
+	/**
 	 * Method used to generate a CS Request message without any originator, i.e the signer of this message is the originator.
 	 * 
 	 * @param requestId id of request to send.
 	 * @param destinationId the destination Id to use.
 	 * @param organisation the related organisation (short name)
 	 * @param payLoadVersion version of the pay load structure.
-	 * @param payload the payload object 
+	 * @param payload the pay load object 
 	 * @param assertions a list of authorization assertions or null if no assertions should be inserted.
 	 * @return a generated and signed (if configured) message. 
 	 * @throws MessageContentException if input data contained invalid format.

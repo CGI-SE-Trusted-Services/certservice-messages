@@ -1,6 +1,7 @@
 package org.certificateservices.messages;
 
 import org.certificateservices.messages.csmessages.CSMessageResponseData;
+import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 
 import groovy.xml.XmlUtil;
 
@@ -44,5 +45,13 @@ public class TestUtils {
 		assert rd.messageName == expectedMessageName
 		assert rd.relatedEndEntity == expectedRelatedEndEntity
 		assert rd.messageProperties != null
+	}
+	
+	public static void setupRegisteredPayloadParser(){
+		DummyMessageSecurityProvider secprov = new DummyMessageSecurityProvider();
+		Properties config = new Properties();
+		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID");
+		DefaultCSMessageParser mp = new DefaultCSMessageParser();
+		mp.init(secprov, config)
 	}
 }

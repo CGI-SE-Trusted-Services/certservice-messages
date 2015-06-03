@@ -54,12 +54,12 @@ public class DefaultCSMessageParserSpec extends Specification{
 	
 	
 	org.certificateservices.messages.sysconfig.jaxb.ObjectFactory sysConfigOf = new org.certificateservices.messages.sysconfig.jaxb.ObjectFactory()
-	ObjectFactory of = new ObjectFactory();
+	static ObjectFactory of = new ObjectFactory();
 	DefaultCSMessageParser mp = new DefaultCSMessageParser()
 	DefaultCSMessageParser requestMessageParser = new DefaultCSMessageParser()
 	DummyMessageSecurityProvider secprov = new DummyMessageSecurityProvider();
 	
-	static final String TEST_ID = "12345678-1234-4444-8000-123456789012"
+	public static final String TEST_ID = "12345678-1234-4444-8000-123456789012"
 	
 	def setup(){
 		Properties requestConfig = new Properties();
@@ -463,7 +463,8 @@ public class DefaultCSMessageParserSpec extends Specification{
 	
 		mp.jaxbData.getJAXBIntrospector()
 		expect: // Verify that JAXB data isn't cleaned
-		mp.jaxbData.jaxbClassPath == "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.sysconfig.jaxb"
+		mp.jaxbData.jaxbClassPath =~ "org.certificateservices.messages.csmessages.jaxb"
+		mp.jaxbData.jaxbClassPath =~ ":org.certificateservices.messages.sysconfig.jaxb"
 		mp.jaxbData.jaxbContext != null
 		mp.jaxbData.jaxbIntrospector != null
 		mp.jaxbData.csMessageMarshallers.size() != 0
@@ -549,6 +550,10 @@ public class DefaultCSMessageParserSpec extends Specification{
 	
 
 	private void verifyCSHeaderMessage(byte[] messageData, GPathResult xmlMessage, String expectedSourceId, String expectedDestinationId, String expectedOrganisation, String expectedName, Credential expectedOriginator){
+		verifyCSHeaderMessage(messageData, xmlMessage, expectedSourceId, expectedDestinationId, expectedOrganisation, expectedName, expectedOriginator, mp)
+	}
+	
+	private static void verifyCSHeaderMessage(byte[] messageData, GPathResult xmlMessage, String expectedSourceId, String expectedDestinationId, String expectedOrganisation, String expectedName, Credential expectedOriginator, DefaultCSMessageParser mp){
 		String message = new String(messageData,"UTF-8")
 		assert message.contains("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"")
 		assert message.contains("xmlns:cs=\"http://certificateservices.org/xsd/csmessages2_0\"")
@@ -574,7 +579,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		mp.validateSignature(message.getBytes())
 	}
 	
-	private void verifySuccessfulBasePayload(GPathResult payLoadObject, String expectedResponseTo){
+	public static void verifySuccessfulBasePayload(GPathResult payLoadObject, String expectedResponseTo){
 	  assert payLoadObject.inResponseTo == expectedResponseTo
 	  assert payLoadObject.status == "SUCCESS"
 	  assert payLoadObject.failureMessage.size() == 0
@@ -589,7 +594,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 	}
 	
 
-	private Credential createOriginatorCredential(){
+	public static Credential createOriginatorCredential(){
 		Credential c = of.createCredential();
 		
 

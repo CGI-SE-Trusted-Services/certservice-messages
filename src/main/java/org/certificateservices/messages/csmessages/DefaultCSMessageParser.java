@@ -158,7 +158,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	
 	private String sourceId = null;
 	
-	private String defaultVersion = CSMESSAGE_VERSION_2_0;
+	private final String defaultVersion = CSMESSAGE_VERSION_2_0;
 	
 	
 	/**
@@ -227,8 +227,9 @@ public class DefaultCSMessageParser implements CSMessageParser {
 
 
 	/**
-	 * @see org.certificateservices.messages.pkimessages.PKIMessageParser#parseMessage(byte[])
+	 * @see org.certificateservices.messages.csmessages.CSMessageParser#parseMessage(byte[])
 	 */
+	@Override
 	public synchronized CSMessage parseMessage(byte[] messageData)
 			throws MessageContentException, MessageProcessingException {
 		try{
@@ -323,9 +324,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		}
 		responseType.setApprovalStatus(approvalStatus);
 		
-		populateSuccessfulResponse(responseType, request);
-		
-		
 		return generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), objectFactory.createIsApprovedResponse(responseType));
 	}
 	
@@ -338,7 +336,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		responseType.setApprovalId(approvalId);
 		responseType.setApprovalStatus(approvalStatus);
 
-		populateSuccessfulResponse(responseType, request);
+		
 		
 		return generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), objectFactory.createGetApprovalResponse(responseType));
 	}

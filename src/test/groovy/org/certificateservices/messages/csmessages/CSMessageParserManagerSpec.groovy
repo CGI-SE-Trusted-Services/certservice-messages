@@ -23,7 +23,7 @@ import org.certificateservices.messages.sysconfig.jaxb.Property;
 
 import spock.lang.Specification;
 
-public class CSMessageParserFactorySpec extends Specification{
+public class CSMessageParserManagerSpec extends Specification{
 	
 	Properties config = new Properties();
 	DummyMessageSecurityProvider secprov = new DummyMessageSecurityProvider();
@@ -34,21 +34,27 @@ public class CSMessageParserFactorySpec extends Specification{
 		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID")
 
 		when:
-		def mp = CSMessageParserFactory.genCSMessageParser(secprov, config)
+		def mp = CSMessageParserManager.initCSMessageParser(secprov, config)
 		
 		then:
 		mp instanceof DefaultCSMessageParser
 		mp.securityProvider == secprov
 		mp.sourceId == "SOMESOURCEID"
 		
+		when:
+		def mp2 = CSMessageParserManager.getCSMessageParser()
+		
+		then:
+		mp == mp2
+		
 	}
 	
 	def "Verify that custom CSMessageParser is returned if configured"(){
 		setup:
-		config.setProperty(CSMessageParserFactory.SETTING_CSMESSAGEPARSER_IMPL, TestCSMessageParser.class.getName())
+		config.setProperty(CSMessageParserManager.SETTING_CSMESSAGEPARSER_IMPL, TestCSMessageParser.class.getName())
 		
 		when:
-		def mp = CSMessageParserFactory.genCSMessageParser(secprov, config)
+		def mp = CSMessageParserManager.initCSMessageParser(secprov, config)
 		
 		then:
 		mp instanceof TestCSMessageParser
@@ -56,16 +62,25 @@ public class CSMessageParserFactorySpec extends Specification{
 
 	def "Verify that MessageProcessingException is thrown if invalid class path was given"(){
 		setup:
-		config.setProperty(CSMessageParserFactory.SETTING_CSMESSAGEPARSER_IMPL, Integer.class.getName())
+		config.setProperty(CSMessageParserManager.SETTING_CSMESSAGEPARSER_IMPL, Integer.class.getName())
 		
 		when:
-		CSMessageParserFactory.genCSMessageParser(secprov, config)
+		CSMessageParserManager.initCSMessageParser(secprov, config)
 		then:
 		thrown MessageProcessingException
 		
 		when:
-		config.setProperty(CSMessageParserFactory.SETTING_CSMESSAGEPARSER_IMPL, "notvalid.Invalid")
-		CSMessageParserFactory.genCSMessageParser(secprov, config)
+		config.setProperty(CSMessageParserManager.SETTING_CSMESSAGEPARSER_IMPL, "notvalid.Invalid")
+		CSMessageParserManager.initCSMessageParser(secprov, config)
+		then:
+		thrown MessageProcessingException
+	}
+	
+	def "Verify that uninitialized CSMessageParser throws MessageProcessingException when calling getCSMessageParser"(){
+		setup:
+		CSMessageParserManager.parser = null
+		when:
+		CSMessageParserManager.getCSMessageParser()
 		then:
 		thrown MessageProcessingException
 	}

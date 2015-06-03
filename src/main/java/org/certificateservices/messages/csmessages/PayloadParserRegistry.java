@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.keystoremgmt.KeystoreMgmtPayloadParser;
 import org.certificateservices.messages.sysconfig.SysConfigPayloadParser;
 
 /**
@@ -57,6 +58,7 @@ public class PayloadParserRegistry {
 		// Register built in payload parsers here.
 		if(registerBuiltInPayloads){
 		  payloadParserRegistry.put(SysConfigPayloadParser.NAMESPACE, SysConfigPayloadParser.class);
+		  payloadParserRegistry.put(KeystoreMgmtPayloadParser.NAMESPACE, KeystoreMgmtPayloadParser.class);
 		}
 	}
 	

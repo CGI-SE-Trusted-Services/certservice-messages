@@ -23,6 +23,7 @@ import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.csmessages.PayloadParserRegistry.ConfigurationCallback;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.dummy.DummyPayloadParser;
+import org.certificateservices.messages.keystoremgmt.KeystoreMgmtPayloadParser;
 import org.certificateservices.messages.sysconfig.SysConfigPayloadParser;
 import org.certificateservices.messages.sysconfig.jaxb.GetActiveConfigurationRequest;
 import org.certificateservices.messages.sysconfig.jaxb.Property;
@@ -44,6 +45,7 @@ public class PayloadParserRegistrySpec extends Specification{
 		then:
 		PayloadParserRegistry.configurationCallback != null
 		PayloadParserRegistry.payloadParserRegistry.get(SysConfigPayloadParser.NAMESPACE) != null
+		PayloadParserRegistry.payloadParserRegistry.get(KeystoreMgmtPayloadParser.NAMESPACE) != null
 	}
 	
 	def "Test that configure configures the callback and doesn't register default payload parsers if registerBuiltInPayloads is false "(){
@@ -72,7 +74,6 @@ public class PayloadParserRegistrySpec extends Specification{
 		def namespaces = PayloadParserRegistry.getRegistredNamespaces()
 		
 		then:
-		namespaces.size() == 2
 		namespaces.contains(SysConfigPayloadParser.NAMESPACE)
 		namespaces.contains(DummyPayloadParser.NAMESPACE)
 		

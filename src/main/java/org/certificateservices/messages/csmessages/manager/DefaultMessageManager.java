@@ -24,6 +24,8 @@ import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.csmessages.jaxb.CSResponse;
 import org.certificateservices.messages.pkimessages.PKIMessageParser;
 
+// TODO
+// TODO
 /**
  * Message manager in charge of sending a request and waiting for the response for
  * a given time before a time out IOException is thrown.
@@ -109,6 +111,9 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 		
 		return retval;
 	}
+	
+	// TODO
+	// TODO
 	
 	/**
 	 * Method called by the MessageHandler when receiving a message intended for this
