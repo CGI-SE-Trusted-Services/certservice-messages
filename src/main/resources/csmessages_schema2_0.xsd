@@ -225,7 +225,7 @@
 	<xs:complexType name="Token">
 		<xs:sequence>
 			<xs:element minOccurs="1" maxOccurs="1" name="serialNumber"
-				type="xs:int" />
+				type="tns:notemptystring" />
 			<xs:element minOccurs="1" maxOccurs="1" name="tokenContainer"
 				type="tns:notemptystring" />
 			<xs:element minOccurs="1" maxOccurs="1" name="tokenType"

@@ -1,15 +1,15 @@
 /************************************************************************
-*                                                                       *
-*  Certificate Service - Messages                                       *
-*                                                                       *
-*  This software is free software; you can redistribute it and/or       *
-*  modify it under the terms of the GNU Affero General Public License   *
-*  License as published by the Free Software Foundation; either         *
-*  version 3   of the License, or any later version.                    *
-*                                                                       *
-*  See terms of license at gnu.org.                                     *
-*                                                                       *
-*************************************************************************/
+ *                                                                       *
+ *  Certificate Service - Messages                                       *
+ *                                                                       *
+ *  This software is free software; you can redistribute it and/or       *
+ *  modify it under the terms of the GNU Affero General Public License   *
+ *  License as published by the Free Software Foundation; either         *
+ *  version 3   of the License, or any later version.                    *
+ *                                                                       *
+ *  See terms of license at gnu.org.                                     *
+ *                                                                       *
+ *************************************************************************/
 package org.certificateservices.messages.csmessages.manager;
 
 import java.io.IOException;
@@ -20,9 +20,20 @@ import java.util.Properties;
 
 import org.apache.xml.security.exceptions.Base64DecodingException;
 import org.apache.xml.security.utils.Base64;
+import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
+import org.certificateservices.messages.credmanagement.jaxb.ChangeCredentialStatusRequest;
+import org.certificateservices.messages.credmanagement.jaxb.GetCredentialRequest;
+import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsRequest;
 import org.certificateservices.messages.csmessages.CSMessageParser;
+import org.certificateservices.messages.csmessages.PayloadParserRegistry;
+import org.certificateservices.messages.csmessages.constants.AvailableCredentialStatuses;
+import org.certificateservices.messages.csmessages.constants.AvailableCredentialTypes;
+import org.certificateservices.messages.csmessages.constants.Constants;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
+import org.certificateservices.messages.csmessages.jaxb.Credential;
+import org.certificateservices.messages.csmessages.jaxb.CredentialRequest;
 import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 
@@ -31,100 +42,106 @@ import org.certificateservices.messages.utils.MessageGenerateUtils;
 public class DummyMessageHandler implements MessageHandler{
 
 	private MessageResponseCallback callback;
-//	private CSMessageParser parser;
-//	private ObjectFactory of = new ObjectFactory();
+	private CSMessageParser parser;
+	private CredManagementPayloadParser credManagementPayloadParser;
+	private ObjectFactory of = new ObjectFactory();
 	private long waitTime;	
-	
+
 	public boolean revokeMessageRecieved = false;
-	
+
 	public static final String SETTING_WAITTIME = "dummy.waittime";
-	
+
 	public void init(Properties config, CSMessageParser parser,
 			MessageResponseCallback callback) throws MessageProcessingException {
-		//this.parser = parser;
+		this.parser = parser;
 		this.callback = callback;
-		
+
 		waitTime = Long.parseLong(config.getProperty(SETTING_WAITTIME));
-		
+
+		credManagementPayloadParser = (CredManagementPayloadParser) PayloadParserRegistry.getParser(CredManagementPayloadParser.NAMESPACE);
 	}
 
 	public void connect() throws MessageProcessingException, IOException {
-		
-		
+
+
 	}
 
 	public void sendMessage(String messageId, byte[] messageData) throws MessageProcessingException,
 	IOException {
-		CSMessage response = null;	
-		assert false;
-		// TODO update and test
-//		CSMessage request = parser.parseMessage(messageData);
-//
-//		if(request.getPayload().getGetCredentialRequest() != null){
-//			GetCredentialRequest gcr = request.getPayload().getGetCredentialRequest();		
-//
-//
-//			Credential c = of.createCredential();
-//			c.setCredentialData(base64Decode(base64Cert));
-//			c.setCredentialSubType(gcr.getCredentialSubType());
-//			c.setCredentialType(AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE);
-//			c.setDisplayName("SomeDisplayName");
-//			c.setExpireDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
-//			c.setIssueDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
-//			c.setIssuerId("CN=SomeIssuerId");
-//			c.setSerialNumber("abc123");
-//			c.setStatus(100);
-//			c.setUniqueId("SomeUniqueId");
-//			c.setValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
-//
-//			response = parser.parseMessage(parser.genGetCredentialResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, c).getResponseData());
-//
-//		}
-//		if(request.getPayload().getIssueTokenCredentialsRequest() != null){
-//			IssueTokenCredentialsRequest itr = request.getPayload().getIssueTokenCredentialsRequest();
-//
-//			CredentialRequest cr = itr.getTokenRequest().getCredentialRequests().getCredentialRequest().get(0);
-//			Credential c = of.createCredential();
-//			c.setCredentialData(base64Decode(base64Cert));
-//			c.setCredentialSubType(cr.getCredentialSubType());
-//			c.setCredentialType(AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE);
-//			c.setDisplayName("SomeDisplayName");
-//			c.setExpireDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
-//			c.setIssueDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
-//			c.setIssuerId("CN=SomeIssuerId");
-//			c.setSerialNumber("abc123");
-//			c.setStatus(100);
-//			c.setUniqueId("SomeUniqueId");
-//			c.setValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
-//
-//			List<Credential> credentials = new ArrayList<Credential>();
-//			credentials.add(c);
-//			response = parser.parseMessage(parser.genIssueTokenCredentialsResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, credentials, null).getResponseData());
-//		}
-//		if(request.getPayload().getChangeCredentialStatusRequest() != null){
-//			ChangeCredentialStatusRequest r = request.getPayload().getChangeCredentialStatusRequest();
-//			if(r.getNewCredentialStatus() != AvailableCredentialStatuses.REVOKED){
-//				throw new IllegalArgumentException("Bad revoke status");
-//			}
-//			if(!r.getIssuerId().equals("CN=SomeIssuerId")){
-//				throw new IllegalArgumentException("Bad issuer id");
-//			}
-//			if(!r.getReasonInformation().equals("5")){
-//				throw new IllegalArgumentException("Bad reason information");
-//			}
-//			if(!r.getSerialNumber().equals("abc123")){
-//				throw new IllegalArgumentException("Bad serial number");
-//			}
-//
-//			revokeMessageRecieved = true;
-//		}
+		try{
+			CSMessage response = null;	
+			CSMessage request = parser.parseMessage(messageData);
 
-		if(response != null){
-			Thread t = new Thread(new WaitAndSend(response));
-			t.start();
+			if(request.getPayload().getAny() instanceof GetCredentialRequest){
+				GetCredentialRequest gcr = (GetCredentialRequest) request.getPayload().getAny();		
+
+
+				Credential c = of.createCredential();
+				c.setCredentialData(base64Decode(base64Cert));
+				c.setCredentialSubType(gcr.getCredentialSubType());
+				c.setCredentialType(AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE);
+				c.setDisplayName("SomeDisplayName");
+				c.setExpireDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
+				c.setIssueDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
+				c.setIssuerId("CN=SomeIssuerId");
+				c.setSerialNumber("abc123");
+				c.setStatus(100);
+				c.setUniqueId("SomeUniqueId");
+				c.setValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
+
+
+
+				response = parser.parseMessage(credManagementPayloadParser.genGetCredentialResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, c, null).getResponseData());
+
+			}
+			if(request.getPayload().getAny() instanceof IssueTokenCredentialsRequest){
+				IssueTokenCredentialsRequest itr = (IssueTokenCredentialsRequest) request.getPayload().getAny();
+
+				CredentialRequest cr = itr.getTokenRequest().getCredentialRequests().getCredentialRequest().get(0);
+				Credential c = of.createCredential();
+				c.setCredentialData(base64Decode(base64Cert));
+				c.setCredentialSubType(cr.getCredentialSubType());
+				c.setCredentialType(AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE);
+				c.setDisplayName("SomeDisplayName");
+				c.setExpireDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
+				c.setIssueDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
+				c.setIssuerId("CN=SomeIssuerId");
+				c.setSerialNumber("abc123");
+				c.setStatus(100);
+				c.setUniqueId("SomeUniqueId");
+				c.setValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
+
+				List<Credential> credentials = new ArrayList<Credential>();
+				credentials.add(c);
+				response = parser.parseMessage(credManagementPayloadParser.genIssueTokenCredentialsResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, credentials, null,null).getResponseData());
+			}
+			if(request.getPayload().getAny() instanceof ChangeCredentialStatusRequest){
+				ChangeCredentialStatusRequest r = (ChangeCredentialStatusRequest) request.getPayload().getAny();
+				if(r.getNewCredentialStatus() != AvailableCredentialStatuses.REVOKED){
+					throw new IllegalArgumentException("Bad revoke status");
+				}
+				if(!r.getIssuerId().equals("CN=SomeIssuerId")){
+					throw new IllegalArgumentException("Bad issuer id");
+				}
+				if(!r.getReasonInformation().equals("5")){
+					throw new IllegalArgumentException("Bad reason information");
+				}
+				if(!r.getSerialNumber().equals("abc123")){
+					throw new IllegalArgumentException("Bad serial number");
+				}
+
+				revokeMessageRecieved = true;
+			}
+
+			if(response != null){
+				Thread t = new Thread(new WaitAndSend(response));
+				t.start();
+			}
+		}catch(MessageContentException e){
+			throw new MessageProcessingException(e.getMessage(),e);
 		}
 	}
-	
+
 	private class WaitAndSend implements Runnable{
 
 		private CSMessage responseMessage;
@@ -141,11 +158,11 @@ public class DummyMessageHandler implements MessageHandler{
 			callback.responseReceived(responseMessage);	
 		}
 	}
-			
+
 
 	public void close() throws IOException {
-		
-		
+
+
 	}
 
 
@@ -170,20 +187,20 @@ public class DummyMessageHandler implements MessageHandler{
 			"Vw==").getBytes();
 
 	public Object getConnectionFactory() throws MessageProcessingException,
-			IOException {
+	IOException {
 		throw new MessageProcessingException("Not implemented");
 	}
 
 	public boolean isConnected() {
 		return true;
 	}
-	
-//	private byte[] base64Decode(byte[] data) throws MessageProcessingException{
-//		try {
-//			return Base64.decode(base64Cert);
-//		} catch (Base64DecodingException e) {
-//			throw new MessageProcessingException("Base64 Decoding Exception: " + e.getMessage(),e);
-//		}
-//	}
+
+	private byte[] base64Decode(byte[] data) throws MessageProcessingException{
+		try {
+			return Base64.decode(base64Cert);
+		} catch (Base64DecodingException e) {
+			throw new MessageProcessingException("Base64 Decoding Exception: " + e.getMessage(),e);
+		}
+	}
 
 }

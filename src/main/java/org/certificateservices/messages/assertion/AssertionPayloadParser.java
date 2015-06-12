@@ -1,10 +1,18 @@
-/**
- * 
- */
+/************************************************************************
+*                                                                       *
+*  Certificate Service - Messages                                       *
+*                                                                       *
+*  This software is free software; you can redistribute it and/or       *
+*  modify it under the terms of the GNU Affero General Public License   *
+*  License as published by the Free Software Foundation; either         *
+*  version 3   of the License, or any later version.                    *
+*                                                                       *
+*  See terms of license at gnu.org.                                     *
+*                                                                       *
+*************************************************************************/
 package org.certificateservices.messages.assertion;
 
 import java.io.InputStream;
-import java.security.cert.CertStoreParameters;
 import java.util.Properties;
 
 import org.certificateservices.messages.MessageContentException;
@@ -15,7 +23,7 @@ import org.certificateservices.messages.csmessages.PayloadParser;
 /**
  * 
  * TODO
- * @author philip
+ * @author Philip Vendil
  *
  */
 public class AssertionPayloadParser implements PayloadParser {
@@ -56,5 +64,15 @@ public class AssertionPayloadParser implements PayloadParser {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	// Method to generate Each of the two Assertions
+	
+	// Method to parse an assertion
+	
+	// TODO main parser should verify
+	
+	// have a verify method
+	
+	
 
 }

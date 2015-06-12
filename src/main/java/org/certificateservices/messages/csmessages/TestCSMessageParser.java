@@ -147,4 +147,19 @@ public class TestCSMessageParser implements CSMessageParser {
 		return null;
 	}
 
+	@Override
+	public CSMessage genCSMessage(String version, String payLoadVersion,
+			String requestName, String messageId, String destinationID,
+			String organisation, Credential originator, Object payload,
+			List<Object> assertions) throws MessageContentException,
+			MessageProcessingException {
+		return null;
+	}
+
+	@Override
+	public Credential getOriginatorFromRequest(CSMessage request) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

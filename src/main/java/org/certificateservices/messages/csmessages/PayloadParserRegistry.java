@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
 import org.certificateservices.messages.keystoremgmt.KeystoreMgmtPayloadParser;
 import org.certificateservices.messages.sysconfig.SysConfigPayloadParser;
 
@@ -32,14 +33,10 @@ import org.certificateservices.messages.sysconfig.SysConfigPayloadParser;
  *
  */
 public class PayloadParserRegistry {
-	
-	
-	
+		
 	private static Map<String, Class<? extends PayloadParser>> payloadParserRegistry = new HashMap<String, Class<? extends PayloadParser>>();
 	private static Map<String,PayloadParser> payloadParserCache = new HashMap<String, PayloadParser>(); 
 	private static ConfigurationCallback configurationCallback = null;
-	
-
 	
 	/**
 	 * Setup method that should be called from the CSMessageParser or eqvivalent, and set a ConfigurationCallback implementation
@@ -52,13 +49,12 @@ public class PayloadParserRegistry {
 	 */
 	public static void configure(ConfigurationCallback callback, boolean registerBuiltInPayloads) {
 		configurationCallback = callback;
-		
-		
-		
+
 		// Register built in payload parsers here.
 		if(registerBuiltInPayloads){
 		  payloadParserRegistry.put(SysConfigPayloadParser.NAMESPACE, SysConfigPayloadParser.class);
 		  payloadParserRegistry.put(KeystoreMgmtPayloadParser.NAMESPACE, KeystoreMgmtPayloadParser.class);
+		  payloadParserRegistry.put(CredManagementPayloadParser.NAMESPACE, CredManagementPayloadParser.class);
 		}
 	}
 	

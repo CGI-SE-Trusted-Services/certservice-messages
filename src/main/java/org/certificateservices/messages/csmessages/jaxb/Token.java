@@ -91,7 +91,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 })
 public class Token {
 
-    protected int serialNumber;
+    protected String serialNumber;
     @XmlElement(required = true)
     protected String tokenContainer;
     @XmlElement(required = true)
@@ -126,7 +126,7 @@ public class Token {
      * Gets the value of the serialNumber property.
      * 
      */
-    public int getSerialNumber() {
+    public String getSerialNumber() {
         return serialNumber;
     }
 
@@ -134,7 +134,7 @@ public class Token {
      * Sets the value of the serialNumber property.
      * 
      */
-    public void setSerialNumber(int value) {
+    public void setSerialNumber(String value) {
         this.serialNumber = value;
     }
 

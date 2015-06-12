@@ -142,6 +142,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	}
 	
 	static final String XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION = "/xmldsig-core-schema.xsd";
+	static final String XMLENC_XSD_SCHEMA_RESOURCE_LOCATION = "/xenc-schema.xsd";
 	
 
 	private static final String[] SUPPORTED_CSMESSAGE_VERSIONS = {"2.0"};
@@ -461,51 +462,10 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		return retval;
 	}
 	
-
 	/**
-	 * Help method that sets status to success and the in response to ID.
-	 * @param response the response object to populate
-	 * @param request the related request.
-	 * 
-	 * @throws MessageProcessingException  if problem occurred parsing the CSResponse from the respone object.
+	 * @see org.certificateservices.messages.csmessages.CSMessageParser#genCSMessage(String, String, String, String, String, String, Credential, Object, List)	 
 	 */
-	private void populateSuccessfulResponse(
-			Object response, CSMessage request) throws MessageProcessingException {
-		
-		CSResponse csresp = null;
-		if(response instanceof CSResponse ){
-			csresp = (CSResponse) response;
-		}
-		if(response instanceof JAXBElement<?> ){
-			if(((JAXBElement<?>) response).getValue() instanceof CSResponse){
-		  	  csresp = (CSResponse) ((JAXBElement<?>) response).getValue();
-			}
-		}
-		if(csresp == null){
-			throw new MessageProcessingException("Error populating CS response, response object is not a CSResponse");
-		}
-		
-		csresp.setFailureMessage(null);
-		csresp.setStatus(RequestStatus.SUCCESS);
-		csresp.setInResponseTo(request.getID());		
-	}
-	
-	/**
-	 * Method that populates all fields except the signature of a CS message.
-	 * 
-	 * @param version, version of the CS Message
-	 * @param payLoadVersion, version of the pay load structure.
-	 * @param requestName the name in the a related request if this is a response message, or null if no related request exists
-	 * @param messageId the id of the message, if null is a random id generated.
-	 * @param destinationID the destination Id to use.
-	 * @param organisation the related organisation
-	 * @param originator the originator of the message if applicable.
-	 * @param payload the payload object to set in the object
-	 * @param assertions a list of authorization assertions used along with this message.
-	 * @throws MessageContentException if input data contained invalid format.
-	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
-	 */
-	private CSMessage genCSMessage(String version, String payLoadVersion, String requestName, String messageId, String destinationID, String organisation, Credential originator, Object payload, List<Object> assertions) throws MessageContentException, MessageProcessingException{
+	public CSMessage genCSMessage(String version, String payLoadVersion, String requestName, String messageId, String destinationID, String organisation, Credential originator, Object payload, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		CSMessage retval = objectFactory.createCSMessage();
 		retval.setVersion(version);
 		retval.setPayLoadVersion(payLoadVersion);
@@ -538,6 +498,36 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			
 		return retval;
 	}
+
+	/**
+	 * Help method that sets status to success and the in response to ID.
+	 * @param response the response object to populate
+	 * @param request the related request.
+	 * 
+	 * @throws MessageProcessingException  if problem occurred parsing the CSResponse from the respone object.
+	 */
+	private void populateSuccessfulResponse(
+			Object response, CSMessage request) throws MessageProcessingException {
+		
+		CSResponse csresp = null;
+		if(response instanceof CSResponse ){
+			csresp = (CSResponse) response;
+		}
+		if(response instanceof JAXBElement<?> ){
+			if(((JAXBElement<?>) response).getValue() instanceof CSResponse){
+		  	  csresp = (CSResponse) ((JAXBElement<?>) response).getValue();
+			}
+		}
+		if(csresp == null){
+			throw new MessageProcessingException("Error populating CS response, response object is not a CSResponse");
+		}
+		
+		csresp.setFailureMessage(null);
+		csresp.setStatus(RequestStatus.SUCCESS);
+		csresp.setInResponseTo(request.getID());		
+	}
+	
+
 
 	/**
 	 * Method that generates the signature and marshalls the message to byte array in UTF-8 format.
@@ -880,10 +870,11 @@ public class DefaultCSMessageParser implements CSMessageParser {
 				InputStream payLoadSchemaStream = pp.getSchemaAsInputStream(payLoadVersion);
 		    	String csMessageSchemaLocation = csMessageSchemaMap.get(version);
 				
-		        Source[] sources = new Source[3];
-		        sources[0] = new StreamSource(getClass().getResourceAsStream(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
-		        sources[1] = new StreamSource(getClass().getResourceAsStream(csMessageSchemaLocation));
-		        sources[2] = new StreamSource(payLoadSchemaStream);
+		        Source[] sources = new Source[4];
+		        sources[0] = new StreamSource(getClass().getResourceAsStream(XMLENC_XSD_SCHEMA_RESOURCE_LOCATION));
+		        sources[1] = new StreamSource(getClass().getResourceAsStream(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
+		        sources[2] = new StreamSource(getClass().getResourceAsStream(csMessageSchemaLocation));
+		        sources[3] = new StreamSource(payLoadSchemaStream);
 		        
 				try {
 					Schema s = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema(sources);
@@ -1000,9 +991,10 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	    	String schemaLocation = csMessageSchemaMap.get(version);
 			SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 			
-	        Source[] sources = new Source[2];
-	        sources[0] = new StreamSource(getClass().getResourceAsStream(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
-	        sources[1] = new StreamSource(getClass().getResourceAsStream(schemaLocation));
+	        Source[] sources = new Source[3];
+	        sources[0] = new StreamSource(getClass().getResourceAsStream(XMLENC_XSD_SCHEMA_RESOURCE_LOCATION));
+	        sources[1] = new StreamSource(getClass().getResourceAsStream(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
+	        sources[2] = new StreamSource(getClass().getResourceAsStream(schemaLocation));
 	        
 	        Schema schema = schemaFactory.newSchema(sources);       
 	        

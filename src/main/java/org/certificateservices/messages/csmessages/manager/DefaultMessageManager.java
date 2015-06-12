@@ -18,14 +18,19 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
+import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
+import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsResponse;
 import org.certificateservices.messages.csmessages.CSMessageParser;
+import org.certificateservices.messages.csmessages.PayloadParserRegistry;
+import org.certificateservices.messages.csmessages.constants.AvailableCredentialStatuses;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.csmessages.jaxb.CSResponse;
-import org.certificateservices.messages.pkimessages.PKIMessageParser;
+import org.certificateservices.messages.csmessages.jaxb.Credential;
+import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
+import org.certificateservices.messages.utils.MessageGenerateUtils;
 
-// TODO
-// TODO
 /**
  * Message manager in charge of sending a request and waiting for the response for
  * a given time before a time out IOException is thrown.
@@ -58,6 +63,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	
 	protected static long SLEEP_INTERVAL_MILLIS = 100;
 	protected CSMessageParser parser;
+	protected CredManagementPayloadParser credManagementPayloadParser;
 	protected String destination;
 	protected MessageHandler messageHandler;
 	protected long timeout;
@@ -75,6 +81,8 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 		timeout = getTimeOutInMillis(config);
 		
 		this.messageHandler = getMessageHandler(config, parser);
+		
+		credManagementPayloadParser = (CredManagementPayloadParser) PayloadParserRegistry.getParser(CredManagementPayloadParser.NAMESPACE);
 		
 	}
 
@@ -111,47 +119,41 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 		
 		return retval;
 	}
-	
-	// TODO
-	// TODO
-	
+
 	/**
 	 * Method called by the MessageHandler when receiving a message intended for this
 	 * message manager.
 	 */
 	public void responseReceived(CSMessage responseMessage){
 		
-		assert false;
-		// TODO fix this when parser are ready.
-		
-//		String requestId = findRequestId(responseMessage);
-//		if(requestId != null){
-//			boolean stillWaiting = populateResponseMapIfStillExist(requestId, responseMessage);
-//			if(!stillWaiting){
-//				IssueTokenCredentialsResponse itcr = responseMessage.getPayload().getIssueTokenCredentialsResponse();
-//				if(itcr != null){
-//					if(itcr.getStatus() == RequestStatus.SUCCESS){
-//						// Issuance was successful but request timed-out, sending revocation message.
-//						if( itcr.getCredentials() != null && itcr.getCredentials().getCredential() != null){
-//							for(Credential c : itcr.getCredentials().getCredential()){
-//								// Send revocation request
-//								try {
-//									String messageId = MessageGenerateUtils.generateRandomUUID();
-//									byte[] revokeMessage = parser.genChangeCredentialStatusRequest(messageId,destination, responseMessage.getOrganisation(), c.getIssuerId(), c.getSerialNumber(), AvailableCredentialStatuses.REVOKED, REVOKE_REASON_REASONINFORMATION_CESSATIONOFOPERATION, DefaultPKIMessageParser.getOriginatorFromRequest(responseMessage));
-//									messageHandler.sendMessage(messageId, revokeMessage);
-//								} catch (IOException e) {
-//									log.error("Error revoking timed-out certificate, io exception: " + e.getMessage());
-//								} catch (MessageException e) {
-//									log.error("Error revoking timed-out certificate, internal error: " + e.getMessage());
-//								} catch (IllegalArgumentException e) {
-//									log.error("Error revoking timed-out certificate, illegal argument: " + e.getMessage());
-//								} 															
-//							}
-//						}
-//					}
-//				}
-//			}
-//		}		
+		String requestId = findRequestId(responseMessage);
+		if(requestId != null){
+			boolean stillWaiting = populateResponseMapIfStillExist(requestId, responseMessage);
+			if(!stillWaiting){
+				if(responseMessage.getPayload().getAny() instanceof IssueTokenCredentialsResponse){
+					IssueTokenCredentialsResponse itcr = (IssueTokenCredentialsResponse) responseMessage.getPayload().getAny();
+					if(itcr.getStatus() == RequestStatus.SUCCESS){
+						// Issuance was successful but request timed-out, sending revocation message.
+						if( itcr.getCredentials() != null && itcr.getCredentials().getCredential() != null){
+							for(Credential c : itcr.getCredentials().getCredential()){
+								// Send revocation request
+								try {
+									String messageId = MessageGenerateUtils.generateRandomUUID();
+									byte[] revokeMessage = credManagementPayloadParser.genChangeCredentialStatusRequest(messageId,destination, responseMessage.getOrganisation(), c.getIssuerId(), c.getSerialNumber(), AvailableCredentialStatuses.REVOKED, REVOKE_REASON_REASONINFORMATION_CESSATIONOFOPERATION, parser.getOriginatorFromRequest(responseMessage), null);
+									messageHandler.sendMessage(messageId, revokeMessage);
+								} catch (IOException e) {
+									log.error("Error revoking timed-out certificate, io exception: " + e.getMessage());
+								} catch (MessageProcessingException e) {
+									log.error("Error revoking timed-out certificate, internal error: " + e.getMessage());
+								} catch (MessageContentException e) {
+									log.error("Error revoking timed-out certificate, illegal message: " + e.getMessage());
+								} 															
+							}
+						}
+					}
+				}
+			}
+		}		
 	}
 	
 	/**

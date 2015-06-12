@@ -2,29 +2,35 @@ package org.certificateservices.messages.csmessages.manager
 
 import org.certificateservices.messages.DummyMessageSecurityProvider;
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.credmanagement.CredManagementPayloadParser
+import org.certificateservices.messages.credmanagement.jaxb.GetCredentialResponse;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
+import org.certificateservices.messages.csmessages.PayloadParserRegistry;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.csmessages.jaxb.CSResponse;
+import org.certificateservices.messages.csmessages.jaxb.CredentialRequest;
 import org.certificateservices.messages.csmessages.jaxb.IsApprovedResponseType;
 import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
+import org.certificateservices.messages.csmessages.jaxb.TokenRequest;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 import org.junit.BeforeClass
 import org.junit.Ignore;
 import org.junit.Test
 
+import spock.lang.IgnoreRest;
 import spock.lang.Shared
 import spock.lang.Specification
 
-//TODO Implement these tests
-// TODO Implement after credential management protocol.
-@Ignore
+
 class DefaultMessageManagerSpec extends Specification{
 
 	@Shared DefaultMessageManager mm = new DefaultMessageManager()
 		
 	@Shared ObjectFactory of = new ObjectFactory()
+	@Shared org.certificateservices.messages.credmanagement.jaxb.ObjectFactory credOf = new org.certificateservices.messages.credmanagement.jaxb.ObjectFactory()
 	
 	@Shared DefaultCSMessageParser parser = new DefaultCSMessageParser()
+	@Shared CredManagementPayloadParser credManagementPayloadParser;
 	
 	@Shared Properties config
 	
@@ -38,21 +44,24 @@ class DefaultMessageManagerSpec extends Specification{
 		
 		parser.init(new DummyMessageSecurityProvider(), config);
 		mm.init(config,parser, "SomeDestination");
+		
+		credManagementPayloadParser = PayloadParserRegistry.getParser(CredManagementPayloadParser.NAMESPACE)
 	}
 	
+	// TODO repeat the same request messages
 	
-	@Test
+
 	def "Test to send a simple get credential request message and expect a get credential response"(){
 		setup:
-		byte[] request = parser.generateIsApprovedRequest(TEST_ID, "somedestination", "someorg", "SomeApprovalId", , null,null)
+		byte[] request = credManagementPayloadParser.genGetCredentialRequest(TEST_ID, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678",null,null)
 		when:
 		CSMessage response = mm.sendMessage(TEST_ID, request)
 		then:
 		assert response != null;
-		assert response.getPayload().getAny() instanceof IsApprovedResponseType
+		assert response.getPayload().getAny() instanceof GetCredentialResponse
 	}
 	
-	@Test
+
 	def "Test to 200 concurrent request and verify all responses are ok"(){
 		final int numberOfConcurrentRequests = 200
 		when:
@@ -60,7 +69,7 @@ class DefaultMessageManagerSpec extends Specification{
 		
 		for(int i=0;i<numberOfConcurrentRequests;i++){
 			String requestId = MessageGenerateUtils.generateRandomUUID();
-			byte[] request = parser.generateIsApprovedRequest(TEST_ID, "somedestination", "someorg", "SomeApprovalId", , null,null)
+			byte[] request = credManagementPayloadParser.genGetCredentialRequest(requestId, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678",null,null)
 			new Thread(new SendRandomRequest(mm,requestId,request, 100,4000)).start()
 		}
 		
@@ -76,12 +85,12 @@ class DefaultMessageManagerSpec extends Specification{
 		assert true;
 	}
 	
-	@Test
+
 	def "Check that time out expeption is thrown when message takes longer time than set timeout."(){
 		setup:
 		((DummyMessageHandler) mm.messageHandler).waitTime = 10000
 		mm.timeout = 200
-	    byte[] request = parser.generateIsApprovedRequest(TEST_ID, "somedestination", "someorg", "SomeApprovalId", , null,null)
+		byte[] request = credManagementPayloadParser.genGetCredentialRequest(TEST_ID, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678",null,null)
 		when:
 		mm.sendMessage(TEST_ID, request)
 		then:
@@ -90,62 +99,58 @@ class DefaultMessageManagerSpec extends Specification{
 		((DummyMessageHandler) mm.messageHandler).waitTime = 100
 		mm.timeout = 10000
 	}
-	
-	// TODO Activate this test after full implementation
-//	@Test
-//	def "Check that revoce message is sent for issue token request responses where wait thread has timed out."(){
-//		setup:
-//		((DummyMessageHandler) mm.messageHandler).waitTime = 1000
-//		mm.timeout = 200
-//		byte[] request = parser.genIssueTokenCredentialsRequest(TEST_ID, "somedestination", "someorg", createDummyTokenRequest(),null)
-//		when:
-//		mm.sendMessage(TEST_ID, request)
-//		then:
-//		thrown(IOException)
-//		when:
-//		
-//		while(!((DummyMessageHandler) mm.messageHandler).revokeMessageRecieved){
-//			System.out.println("Waiting for revoce message to be sent ...");
-//			Thread.sleep(1000);
-//		}
-//		System.out.println("Waiting sent successfully");
-//		then:
-//		assert ((DummyMessageHandler) mm.messageHandler).revokeMessageRecieved
-//		cleanup:
-//		((DummyMessageHandler) mm.messageHandler).waitTime = 100
-//		mm.timeout = 10000
-//	}
+
+	def "Check that revoce message is sent for issue token request responses where wait thread has timed out."(){
+		setup:
+		((DummyMessageHandler) mm.messageHandler).waitTime = 1000
+		mm.timeout = 200
+		byte[] request = credManagementPayloadParser.genIssueTokenCredentialsRequest(TEST_ID, "somedestination", "someorg", createDummyTokenRequest(),null,null,null)
+		when:
+		mm.sendMessage(TEST_ID, request)
+		then:
+		thrown(IOException)
+		when:
+		
+		while(!((DummyMessageHandler) mm.messageHandler).revokeMessageRecieved){
+			System.out.println("Waiting for revoce message to be sent ...");
+			Thread.sleep(1000);
+		}
+		System.out.println("Waiting sent successfully");
+		then:
+		assert ((DummyMessageHandler) mm.messageHandler).revokeMessageRecieved
+		cleanup:
+		((DummyMessageHandler) mm.messageHandler).waitTime = 100
+		mm.timeout = 10000
+	}
 	
 
-	
-	@Test
 	def "Check findRequestId returns the correct request id from the message"(){
 		when:
 		CSResponse response = of.createCSResponse();
 		response.setInResponseTo(TEST_ID);		
-		CSMessage csMessage = parser.genPKIMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,null, "somedest", "someorg", null,response)
+		CSMessage csMessage = parser.genCSMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,"2.0",null, null, "somedest", "someorg", null,response,null)
 		then:
 		assert mm.findRequestId(csMessage) == TEST_ID
 		when:
-		response = of.createIssueTokenCredentialsResponse();
+		response = credOf.createIssueTokenCredentialsResponse();
 		response.setInResponseTo(TEST_ID);
-		csMessage = parser.genPKIMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,null, "somedest", "someorg", null,response)
+		csMessage = parser.genCSMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,"2.0",null,null, "somedest", "someorg", null,response,null)
 		then:
 		assert mm.findRequestId(csMessage) == TEST_ID
 		when:
-		response = of.createGetCredentialResponse();
+		response = credOf.createGetCredentialResponse();
 		response.setInResponseTo(TEST_ID);
-		csMessage = parser.genPKIMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,null, "somedest", "someorg", null,response)
+		csMessage = parser.genCSMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,"2.0",null,null, "somedest", "someorg", null,response,null)
 		then:
 		assert mm.findRequestId(csMessage) == TEST_ID
 		when:
-		response = of.createIsIssuerResponse();
+		response = credOf.createIsIssuerResponse();
 		response.setInResponseTo(TEST_ID);
-		csMessage = parser.genCSMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,null, "somedest", "someorg", null,response)
+		csMessage = parser.genCSMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,"2.0",null,null, "somedest", "someorg", null,response,null)
 		then:
 		assert mm.findRequestId(csMessage) == TEST_ID
 		when:
-		csMessage = parser.genCSMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,null, "somedest", "someorg", null,of.createIsIssuerRequest())
+		csMessage = parser.genCSMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,"2.0",null,null, "somedest", "someorg", null,credOf.createIsIssuerRequest(),null)
 		then:
 		assert mm.findRequestId(csMessage) == null
 
@@ -153,7 +158,7 @@ class DefaultMessageManagerSpec extends Specification{
 	}
 	
 
-	@Test
+
 	def "Check getTimeOutInMillis verifies the responses properly"(){
 		when:
 		Properties config = new Properties();
@@ -203,7 +208,8 @@ class DefaultMessageManagerSpec extends Specification{
 			}
 			Thread.sleep(waitTime);
 			
-			assert mm.sendMessage(requestId, requestData)  != null;	
+			def result = mm.sendMessage(requestId, requestData)
+			assert result != null;	
 			
 			synchronized (numberOfCompletedRequests) {
 				numberOfCompletedRequests++;
@@ -213,25 +219,24 @@ class DefaultMessageManagerSpec extends Specification{
 		
 	}
 
-	// TODO Activate after credential managenemt protocol have been implemented.
-//	private TokenRequest createDummyTokenRequest(){
-//		TokenRequest retval = of.createTokenRequest();
-//		retval.user = "someuser";
-//		retval.tokenContainer = "SomeTokenContainer"
-//		retval.tokenType = "SomeTokenType"
-//		retval.tokenClass = "SomeTokenClass"
-//		
-//		CredentialRequest cr = of.createCredentialRequest();
-//		cr.credentialRequestId = 123
-//		cr.credentialType = "SomeCredentialType"
-//		cr.credentialSubType = "SomeCredentialSubType"
-//		cr.x509RequestType = "SomeX509RequestType"
-//		cr.credentialRequestData = "12345ABC"
-//		
-//		retval.setCredentialRequests(new TokenRequest.CredentialRequests())
-//		retval.getCredentialRequests().getCredentialRequest().add(cr)
-//
-//		return retval
-//	}
+	private TokenRequest createDummyTokenRequest(){
+		TokenRequest retval = of.createTokenRequest();
+		retval.user = "someuser";
+		retval.tokenContainer = "SomeTokenContainer"
+		retval.tokenType = "SomeTokenType"
+		retval.tokenClass = "SomeTokenClass"
+		
+		CredentialRequest cr = of.createCredentialRequest();
+		cr.credentialRequestId = 123
+		cr.credentialType = "SomeCredentialType"
+		cr.credentialSubType = "SomeCredentialSubType"
+		cr.x509RequestType = "SomeX509RequestType"
+		cr.credentialRequestData = "12345ABC"
+		
+		retval.setCredentialRequests(new TokenRequest.CredentialRequests())
+		retval.getCredentialRequests().getCredentialRequest().add(cr)
+
+		return retval
+	}
 
 }

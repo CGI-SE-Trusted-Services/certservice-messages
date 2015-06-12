@@ -83,6 +83,24 @@ public interface CSMessageParser {
 	 */
 	public byte[] generateCSRequestMessage(String requestId, String destinationId, String organisation, String payLoadVersion, Object payload, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException;
 	
+	
+	/**
+	 * Method that populates all fields except the signature of a CS message.
+	 * 
+	 * @param version, version of the CS Message
+	 * @param payLoadVersion, version of the pay load structure.
+	 * @param requestName the name in the a related request if this is a response message, or null if no related request exists
+	 * @param messageId the id of the message, if null is a random id generated.
+	 * @param destinationID the destination Id to use.
+	 * @param organisation the related organisation
+	 * @param originator the originator of the message if applicable.
+	 * @param payload the payload object to set in the object
+	 * @param assertions a list of authorization assertions used along with this message.
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public CSMessage genCSMessage(String version, String payLoadVersion, String requestName, String messageId, String destinationID, String organisation, Credential originator, Object payload, List<Object> assertions) throws MessageContentException, MessageProcessingException;
+	
 	/**
 	 * Method to generate a CS Respone message from a request. CS Response message will be marked as non forwardable, which means not for use in data syncronization applications.
 	 * 
@@ -230,4 +248,11 @@ public interface CSMessageParser {
      */
     public CSMessageVersion getVersionFromMessage(byte[] messageData) throws MessageContentException, MessageProcessingException;
 
+    /**
+     * Method to extract the originator credential from a message.
+     * 
+     * @param request the request message to extract the originator from.
+     * @return the originator credential from the message or null if no originator was found.
+     */
+    public Credential getOriginatorFromRequest(CSMessage request);
 }
