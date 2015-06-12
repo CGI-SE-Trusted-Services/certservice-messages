@@ -32,7 +32,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-                <build.version>1.0.22</build.version>
+		<build.version>1.0.22</build.version>
 		<versionAppend></versionAppend>
 	</properties>
 
@@ -43,43 +43,34 @@
 			<version>4.8.1</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
+     	<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 			<version>1.2.8</version>
-		</dependency>
-
+		</dependency> 
 		<dependency>
 			<groupId>org.apache.santuario</groupId>
 			<artifactId>xmlsec</artifactId>
-			<version>1.5.2</version>
+			<version>1.5.7</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.groovy</groupId>
 			<artifactId>groovy-all</artifactId>
 			<version>2.0.7</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.spockframework</groupId>
 			<artifactId>spock-core</artifactId>
-			<version>1.0-groovy-2.0-SNAPSHOT</version>
+			<version>1.0-groovy-2.0</version>
 			<scope>test</scope>
 		</dependency>
+	<!-- 	<dependency>
+			<groupId>org.opensaml</groupId>
+			<artifactId>opensaml</artifactId>
+			<version>2.6.4</version>
+		</dependency>  -->
 	</dependencies>
-	<repositories>
-		<repository>
-			<id>oss.sonatype.org</id>
-			<name>Spock FrameworkSnapshot Repository</name>
-			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>oss.sonatype.org</id>
-			<name>Spock FrameworkSnapshot Repository</name>
-			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-		</pluginRepository>
-	</pluginRepositories>
 	<build>
 
 		<plugins>
@@ -220,29 +211,29 @@
 						<lifecycleMappingMetadata>
 							<pluginExecutions>
 								<pluginExecution>
-								<pluginExecutionFilter> 
-								   <groupId>org.spockframework</groupId> 
-								   <artifactId> spock-maven </artifactId> 
-								   <versionRange> [1.0-groovy-2.0-SNAPSHOT,)</versionRange> 
-								   <goals> 
-								     <goal>find-specs</goal> 
-								   </goals>
-								   </pluginExecutionFilter>
+									<pluginExecutionFilter>
+										<groupId>org.spockframework</groupId>
+										<artifactId> spock-maven </artifactId>
+										<versionRange> [1.0-groovy-2.0-SNAPSHOT,)</versionRange>
+										<goals>
+											<goal>find-specs</goal>
+										</goals>
+									</pluginExecutionFilter>
 									<action>
 										<ignore></ignore>
 									</action>
 								</pluginExecution>
 								<pluginExecution>
-								  <pluginExecutionFilter>
-								  <groupId>org.codehaus.gmaven</groupId> 
-								  <artifactId> gmaven-plugin </artifactId> 
-								  <versionRange> [1.4,) </versionRange> 
-								  <goals> 
-								    <goal>testCompile</goal> 
-								    <goal>compile</goal>
-								  </goals> 
-								    
-								    </pluginExecutionFilter> 
+									<pluginExecutionFilter>
+										<groupId>org.codehaus.gmaven</groupId>
+										<artifactId> gmaven-plugin </artifactId>
+										<versionRange> [1.4,) </versionRange>
+										<goals>
+											<goal>testCompile</goal>
+											<goal>compile</goal>
+										</goals>
+
+									</pluginExecutionFilter>
 									<action>
 										<ignore></ignore>
 									</action>
@@ -269,7 +260,7 @@
 							</pluginExecutions>
 						</lifecycleMappingMetadata>
 					</configuration>
-				</plugin> 
+				</plugin>
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>build-helper-maven-plugin</artifactId>
@@ -295,9 +286,9 @@
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>2.6</version>
 					<configuration>
-					    <includes>
-                           <include>**/*Spec.java</include>
-                        </includes>
+						<includes>
+							<include>**/*Spec.java</include>
+						</includes>
 						<excludes>
 							<exclude>**/*IT.java</exclude>
 							<exclude>**/*IT.groovy</exclude>
@@ -424,6 +415,11 @@
 						<groupId>com.atlassian.maven.plugins</groupId>
 						<artifactId>maven-clover2-plugin</artifactId>
 						<version>3.1.4</version>
+						<configuration>
+						  <excludes>
+                             <exclude>**/jaxb/*.java</exclude>
+                          </excludes>
+						</configuration>
 						<executions>
 							<execution>
 								<id>clover</id>

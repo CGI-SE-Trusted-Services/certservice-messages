@@ -52,6 +52,7 @@ import spock.lang.IgnoreRest;
 import spock.lang.Specification
 
 
+@SuppressWarnings("deprecation")
 class DefaultPKIMessageParserSpec extends Specification {
 	
 	static DefaultPKIMessageParser mp = new DefaultPKIMessageParser();

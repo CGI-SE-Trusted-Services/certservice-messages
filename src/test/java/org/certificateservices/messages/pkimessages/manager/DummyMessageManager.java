@@ -9,12 +9,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
-
 import org.apache.xml.security.exceptions.Base64DecodingException;
 import org.apache.xml.security.utils.Base64;
 import org.certificateservices.messages.DummyMessageSecurityProvider;
 import org.certificateservices.messages.MessageException;
 import org.certificateservices.messages.MessageSecurityProvider;
+import org.certificateservices.messages.pkimessages.PKIMessageGenerateUtils;
 import org.certificateservices.messages.pkimessages.PKIMessageParser;
 import org.certificateservices.messages.pkimessages.constants.AvailableCredentialTypes;
 import org.certificateservices.messages.pkimessages.constants.Constants;
@@ -26,12 +26,12 @@ import org.certificateservices.messages.pkimessages.jaxb.ObjectFactory;
 import org.certificateservices.messages.pkimessages.jaxb.PKIMessage;
 import org.certificateservices.messages.pkimessages.jaxb.RequestStatus;
 import org.certificateservices.messages.pkimessages.manager.MessageManager;
-import org.certificateservices.messages.utils.MessageGenerateUtils;
 
 /**
  * @author Philip Vendil
  *
  */
+@SuppressWarnings({ "deprecation" })
 public class DummyMessageManager implements MessageManager{
 
 	PKIMessageParser messageParser;
@@ -65,13 +65,13 @@ public class DummyMessageManager implements MessageManager{
 					c.setCredentialSubType(gcr.getCredentialSubType());
 					c.setCredentialType(AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE);
 					c.setDisplayName("SomeDisplayName");
-					c.setExpireDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
-					c.setIssueDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
+					c.setExpireDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
+					c.setIssueDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
 					c.setIssuerId(gcr.getIssuerId());
 					c.setSerialNumber(gcr.getSerialNumber());
 					c.setStatus(100);
 					c.setUniqueId("SomeUniqueId");
-					c.setValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
+					c.setValidFromDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
 
 
 					return messageParser.parseMessage(messageParser.genGetCredentialResponse(Constants.RELATED_END_ENTITY_UNKNOWN,rm, c).getResponseData());
@@ -89,13 +89,13 @@ public class DummyMessageManager implements MessageManager{
 				c.setCredentialSubType(cr.getCredentialSubType());
 				c.setCredentialType(AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE);
 				c.setDisplayName("SomeDisplayName");
-				c.setExpireDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
-				c.setIssueDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
+				c.setExpireDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
+				c.setIssueDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
 				c.setIssuerId("CN=SomeIssuerId");
 				c.setSerialNumber("abc123");
 				c.setStatus(100);
 				c.setUniqueId("SomeUniqueId");
-				c.setValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
+				c.setValidFromDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
 
 				List<Credential> credentials = new ArrayList<Credential>();
 				credentials.add(c);

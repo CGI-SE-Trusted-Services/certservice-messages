@@ -24,6 +24,7 @@ import org.certificateservices.messages.MessageSecurityProvider;
  * @author Philip Vendil
  *
  */
+@SuppressWarnings({ "deprecation" })
 public class PKIMessageParserFactory {
 	
 	/**

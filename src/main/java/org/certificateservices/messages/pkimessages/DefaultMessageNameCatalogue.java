@@ -1,6 +1,6 @@
 /************************************************************************
 *                                                                       *
-*  Certificate Service - PKI Messages                                   *
+*  Certificate Service - Messages                                       *
 *                                                                       *
 *  This software is free software; you can redistribute it and/or       *
 *  modify it under the terms of the GNU Affero General Public License   *
@@ -16,6 +16,8 @@ import java.util.Properties;
 
 import org.certificateservices.messages.MessageException;
 
+
+
 /**
  * Class in charge of looking up the name of a specific PKI messages.  
  * <p>
@@ -28,6 +30,7 @@ import org.certificateservices.messages.MessageException;
  * @author Philip Vendil
  *
  */
+@SuppressWarnings({ "deprecation" })
 public class DefaultMessageNameCatalogue implements MessageNameCatalogue {
 	
 	private Properties properties;

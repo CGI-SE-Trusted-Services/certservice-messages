@@ -68,19 +68,19 @@ public class SimpleMessageSecurityProvider implements
 	 * @param config provider configuration.
 	 * @throws MessageException if not all required settings were set correctly.
 	 */
-	public SimpleMessageSecurityProvider(Properties config) throws MessageException{
+	public SimpleMessageSecurityProvider(Properties config) throws MessageProcessingException{
 		String keyStorePath = SettingsUtils.getRequiredProperty(config, SETTING_SIGNINGKEYSTORE_PATH);
 		
 		InputStream keyStoreInputStream = this.getClass().getClassLoader().getResourceAsStream(keyStorePath);
 		if(keyStoreInputStream == null){
 			File keyStoreFile = new File(keyStorePath);
 			if(!keyStoreFile.canRead() || !keyStoreFile.exists() || !keyStoreFile.isFile()){
-				throw new MessageException("Error reading signing keystore: " + keyStorePath + ", make sure it exists and is readable");
+				throw new MessageProcessingException("Error reading signing keystore: " + keyStorePath + ", make sure it exists and is readable");
 			}else{
 				try {
 					keyStoreInputStream = new FileInputStream(keyStoreFile);
 				} catch (FileNotFoundException e) {
-					throw new MessageException("Error keystore file: " + keyStoreFile + " not found.");
+					throw new MessageProcessingException("Error keystore file: " + keyStoreFile + " not found.");
 				}
 			}
 		}
@@ -98,14 +98,14 @@ public class SimpleMessageSecurityProvider implements
 			signPrivateKey = (PrivateKey) signKeystore.getKey(signKeystoreAlias, signKeystorePassword.toCharArray());
 
 		}catch(Exception e){
-			if(e instanceof MessageException){
-				throw (MessageException) e;
+			if(e instanceof MessageProcessingException){
+				throw (MessageProcessingException) e;
 			}
-			throw new MessageException("Error loading signing keystore: " + e.getMessage(),e);
+			throw new MessageProcessingException("Error loading signing keystore: " + e.getMessage(),e);
 		}
 		
 		if(signCertificate == null || signPrivateKey == null){
-			throw new MessageException("Error finding signing certificate and key for alias : " + signKeystoreAlias + ", in key store: " + keyStorePath);
+			throw new MessageProcessingException("Error finding signing certificate and key for alias : " + signKeystoreAlias + ", in key store: " + keyStorePath);
 		}
 				
 		String trustStorePath = SettingsUtils.getRequiredProperty(config, SETTING_TRUSTKEYSTORE_PATH);
@@ -113,12 +113,12 @@ public class SimpleMessageSecurityProvider implements
 		if(trustStoreInputStream == null){
 			File trustStoreFile = new File(trustStorePath);
 			if(!trustStoreFile.canRead() || !trustStoreFile.exists() || !trustStoreFile.isFile()){
-				throw new MessageException("Error reading signing truststore: " + trustStorePath + ", make sure it exists and is readable");
+				throw new MessageProcessingException("Error reading signing truststore: " + trustStorePath + ", make sure it exists and is readable");
 			}else{
 				try {
 					trustStoreInputStream = new FileInputStream(trustStorePath);
 				} catch (FileNotFoundException e) {
-					throw new MessageException("Error keystore file: " + trustStorePath + " not found.");
+					throw new MessageProcessingException("Error keystore file: " + trustStorePath + " not found.");
 				}
 			}
 		}
@@ -130,10 +130,10 @@ public class SimpleMessageSecurityProvider implements
 			trustStore.load(trustStoreInputStream, truststorePassword.toCharArray());
 
 		}catch(Exception e){
-			if(e instanceof MessageException){
-				throw (MessageException) e;
+			if(e instanceof MessageProcessingException){
+				throw (MessageProcessingException) e;
 			}
-			throw new MessageException("Error loading signing truststore: " + e.getMessage(),e);
+			throw new MessageProcessingException("Error loading signing truststore: " + e.getMessage(),e);
 		}
 		
 	}
@@ -141,14 +141,14 @@ public class SimpleMessageSecurityProvider implements
 	/**
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getSigningKey()
 	 */
-	public PrivateKey getSigningKey() throws MessageException {
+	public PrivateKey getSigningKey() throws MessageProcessingException {
 		return signPrivateKey;
 	}
 
 	/**
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getSigningCertificate()
 	 */
-	public X509Certificate getSigningCertificate() throws MessageException {
+	public X509Certificate getSigningCertificate() throws MessageProcessingException {
 		return signCertificate;
 	}
 
@@ -164,7 +164,7 @@ public class SimpleMessageSecurityProvider implements
 	 */
 	public boolean isValidAndAuthorized(X509Certificate signCertificate,
 			String organisation) throws IllegalArgumentException,
-			MessageException {
+			MessageProcessingException {
 		
 		boolean[] keyUsage = signCertificate.getKeyUsage();
 		if (keyUsage[0] == false) {
@@ -182,9 +182,9 @@ public class SimpleMessageSecurityProvider implements
 				}
 			}		  
 		}catch(CertificateEncodingException e){
-			throw new MessageException("Error reading certificates from truststore: " + e.getMessage());
+			throw new MessageProcessingException("Error reading certificates from truststore: " + e.getMessage());
 		} catch (KeyStoreException e) {
-			throw new MessageException("Error reading certificates from truststore: " + e.getMessage());
+			throw new MessageProcessingException("Error reading certificates from truststore: " + e.getMessage());
 		}
 		
 		return foundMatching;

@@ -1,6 +1,6 @@
 /************************************************************************
 *                                                                       *
-*  Certificate Service - PKI Messages                                   *
+*  Certificate Service - Messages                                       *
 *                                                                       *
 *  This software is free software; you can redistribute it and/or       *
 *  modify it under the terms of the GNU Affero General Public License   *
@@ -25,20 +25,22 @@ import java.security.cert.X509Certificate;
  */
 public interface MessageSecurityProvider {
 	
+	// TODO getEncryptionKey()
+	// TODO getEncryptionCertificate()
 
 	/**
 	 * Fetches the signing key used to create the digital signatures of the XML file.
 	 * @return the signing key used.
 	 * @throws MessageException if key isn't accessible or activated.
 	 */
-	PrivateKey getSigningKey() throws MessageException;
+	PrivateKey getSigningKey() throws MessageProcessingException;
 	
 	/**
 	 * Fetches the signing certificate used to create the digital signatures of the XML file.
 	 * @return the signing certificate used.
 	 * @throws MessageException if certificate isn't accessible.
 	 */
-	X509Certificate getSigningCertificate()  throws MessageException;
+	X509Certificate getSigningCertificate()  throws MessageProcessingException;
 	
 
 	/**
@@ -50,5 +52,5 @@ public interface MessageSecurityProvider {
 	 * @throws IllegalArgumentException if arguments were invalid.
 	 * @throws MessageException if internal error occurred validating the certificate.
 	 */
-	boolean isValidAndAuthorized(X509Certificate signCertificate, String organisation) throws IllegalArgumentException, MessageException;
+	boolean isValidAndAuthorized(X509Certificate signCertificate, String organisation) throws IllegalArgumentException, MessageProcessingException;
 }

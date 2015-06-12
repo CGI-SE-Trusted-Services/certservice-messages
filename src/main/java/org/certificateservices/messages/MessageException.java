@@ -20,7 +20,8 @@ package org.certificateservices.messages;
  * @author Philip Vendil
  *
  */
-public class MessageException extends Exception {
+@Deprecated
+public class MessageException extends MessageProcessingException {
 
 
 	private static final long serialVersionUID = 1L;

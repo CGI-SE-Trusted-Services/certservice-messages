@@ -18,6 +18,7 @@ import org.junit.Test;
 import spock.lang.Specification
 
 
+@SuppressWarnings("deprecation")
 class PKIMessageResponseDataSpec extends Specification {
 	
 	

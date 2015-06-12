@@ -14,7 +14,7 @@ package org.certificateservices.messages.heartbeat;
 
 import java.util.List;
 
-import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageContentException;
 import org.junit.Test;
 
 import spock.lang.Specification;
@@ -34,27 +34,27 @@ public class HeartBeatMessageSpec extends Specification {
 		when:
 		new HeartBeatMessage(null, [new MonitoringPoint("somemonitoringid", new Date(), HealthStatus.OK)], HealthStatus.OK)
 		then:
-		thrown(IllegalArgumentException)
+		thrown(MessageContentException)
 		
 		when:
 		new HeartBeatMessage("", [new MonitoringPoint("somemonitoringid", new Date(), HealthStatus.OK)], HealthStatus.OK)
 		then:
-		thrown(IllegalArgumentException)
+		thrown(MessageContentException)
 		
 		when:
 		new HeartBeatMessage("somesystemId", [], HealthStatus.OK)
 		then:
-		thrown(IllegalArgumentException)
+		thrown(MessageContentException)
 		
 		when:
 		new HeartBeatMessage("somesystemId", null, HealthStatus.OK)
 		then:
-		thrown(IllegalArgumentException)
+		thrown(MessageContentException)
 		
 		when:
 		new HeartBeatMessage("somesystemId", [new MonitoringPoint("somemonitoringid", new Date(), HealthStatus.OK)],null)
 		then:
-		thrown(IllegalArgumentException)
+		thrown(MessageContentException)
 	}
 	
 }

@@ -1,6 +1,6 @@
 /************************************************************************
 *                                                                       *
-*  Certificate Service - PKI Messages                                   *
+*  Certificate Service - Messages                                       *
 *                                                                       *
 *  This software is free software; you can redistribute it and/or       *
 *  modify it under the terms of the GNU Affero General Public License   *
@@ -16,6 +16,15 @@ import java.util.Properties;
 
 import org.certificateservices.messages.MessageException;
 
+
+/**
+ * Clone of org.certificateservices.messages.csmessages.MessageNameCatalogue for
+ * backward compability.
+ * 
+ * @author Philip Vendil
+ *
+ */
+@Deprecated
 public interface MessageNameCatalogue {
 	
 	/**
