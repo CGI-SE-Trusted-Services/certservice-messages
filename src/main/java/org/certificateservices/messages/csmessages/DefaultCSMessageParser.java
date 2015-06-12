@@ -870,11 +870,11 @@ public class DefaultCSMessageParser implements CSMessageParser {
 				InputStream payLoadSchemaStream = pp.getSchemaAsInputStream(payLoadVersion);
 		    	String csMessageSchemaLocation = csMessageSchemaMap.get(version);
 				
-		        Source[] sources = new Source[4];
-		        sources[0] = new StreamSource(getClass().getResourceAsStream(XMLENC_XSD_SCHEMA_RESOURCE_LOCATION));
-		        sources[1] = new StreamSource(getClass().getResourceAsStream(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
-		        sources[2] = new StreamSource(getClass().getResourceAsStream(csMessageSchemaLocation));
-		        sources[3] = new StreamSource(payLoadSchemaStream);
+		        Source[] sources = new Source[3];
+		       // sources[0] = new StreamSource(getClass().getResourceAsStream(XMLENC_XSD_SCHEMA_RESOURCE_LOCATION));
+		        sources[0] = new StreamSource(getClass().getResourceAsStream(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
+		        sources[1] = new StreamSource(getClass().getResourceAsStream(csMessageSchemaLocation));
+		        sources[2] = new StreamSource(payLoadSchemaStream);
 		        
 				try {
 					Schema s = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema(sources);
@@ -991,10 +991,10 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	    	String schemaLocation = csMessageSchemaMap.get(version);
 			SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 			
-	        Source[] sources = new Source[3];
-	        sources[0] = new StreamSource(getClass().getResourceAsStream(XMLENC_XSD_SCHEMA_RESOURCE_LOCATION));
-	        sources[1] = new StreamSource(getClass().getResourceAsStream(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
-	        sources[2] = new StreamSource(getClass().getResourceAsStream(schemaLocation));
+	        Source[] sources = new Source[2];
+	       // sources[0] = new StreamSource(getClass().getResourceAsStream(XMLENC_XSD_SCHEMA_RESOURCE_LOCATION));
+	        sources[0] = new StreamSource(getClass().getResourceAsStream(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
+	        sources[1] = new StreamSource(getClass().getResourceAsStream(schemaLocation));
 	        
 	        Schema schema = schemaFactory.newSchema(sources);       
 	        
