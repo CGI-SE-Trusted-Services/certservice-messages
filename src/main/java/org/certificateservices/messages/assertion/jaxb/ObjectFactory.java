@@ -14,9 +14,6 @@ import javax.xml.bind.annotation.XmlRegistry;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.namespace.QName;
-import org.certificateservices.messages.xenc.jaxb.EncryptedDataType;
-import org.certificateservices.messages.xenc.jaxb.EncryptedKeyType;
-import org.certificateservices.messages.xmldsig.jaxb.SignatureType;
 
 
 /**
@@ -36,9 +33,8 @@ import org.certificateservices.messages.xmldsig.jaxb.SignatureType;
 @XmlRegistry
 public class ObjectFactory {
 
-    private final static QName _Signature_QNAME = new QName("http://www.w3.org/2000/09/xmldsig#", "Signature");
+   
     private final static QName _Subject_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:assertion", "Subject");
-    private final static QName _EncryptedKey_QNAME = new QName("http://www.w3.org/2001/04/xmlenc#", "EncryptedKey");
     private final static QName _EncryptedAssertion_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:assertion", "EncryptedAssertion");
     private final static QName _Advice_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:assertion", "Advice");
     private final static QName _SubjectLocality_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:assertion", "SubjectLocality");
@@ -56,7 +52,6 @@ public class ObjectFactory {
     private final static QName _AssertionIDRef_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:assertion", "AssertionIDRef");
     private final static QName _SubjectConfirmation_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:assertion", "SubjectConfirmation");
     private final static QName _AuthnContextClassRef_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:assertion", "AuthnContextClassRef");
-    private final static QName _EncryptedData_QNAME = new QName("http://www.w3.org/2001/04/xmlenc#", "EncryptedData");
     private final static QName _Audience_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:assertion", "Audience");
     private final static QName _ProxyRestriction_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:assertion", "ProxyRestriction");
     private final static QName _Action_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:assertion", "Action");
@@ -240,14 +235,7 @@ public class ObjectFactory {
         return new KeyInfoConfirmationDataType();
     }
 
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link SignatureType }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://www.w3.org/2000/09/xmldsig#", name = "Signature")
-    public JAXBElement<SignatureType> createSignature(SignatureType value) {
-        return new JAXBElement<SignatureType>(_Signature_QNAME, SignatureType.class, null, value);
-    }
+
 
     /**
      * Create an instance of {@link JAXBElement }{@code <}{@link SubjectType }{@code >}}
@@ -258,14 +246,7 @@ public class ObjectFactory {
         return new JAXBElement<SubjectType>(_Subject_QNAME, SubjectType.class, null, value);
     }
 
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link EncryptedKeyType }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://www.w3.org/2001/04/xmlenc#", name = "EncryptedKey")
-    public JAXBElement<EncryptedKeyType> createEncryptedKey(EncryptedKeyType value) {
-        return new JAXBElement<EncryptedKeyType>(_EncryptedKey_QNAME, EncryptedKeyType.class, null, value);
-    }
+
 
     /**
      * Create an instance of {@link JAXBElement }{@code <}{@link EncryptedElementType }{@code >}}
@@ -421,14 +402,6 @@ public class ObjectFactory {
         return new JAXBElement<String>(_AuthnContextClassRef_QNAME, String.class, null, value);
     }
 
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link EncryptedDataType }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://www.w3.org/2001/04/xmlenc#", name = "EncryptedData")
-    public JAXBElement<EncryptedDataType> createEncryptedData(EncryptedDataType value) {
-        return new JAXBElement<EncryptedDataType>(_EncryptedData_QNAME, EncryptedDataType.class, null, value);
-    }
 
     /**
      * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}}

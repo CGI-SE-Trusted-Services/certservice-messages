@@ -13,12 +13,11 @@
 package org.certificateservices.messages.assertion;
 
 import java.io.InputStream;
-import java.util.Properties;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.csmessages.CSMessageParser;
-import org.certificateservices.messages.csmessages.PayloadParser;
+import org.certificateservices.messages.assertion.jaxb.ObjectFactory;
+import org.certificateservices.messages.csmessages.BasePayloadParser;
 
 /**
  * 
@@ -26,33 +25,33 @@ import org.certificateservices.messages.csmessages.PayloadParser;
  * @author Philip Vendil
  *
  */
-public class AssertionPayloadParser implements PayloadParser {
+public class AssertionPayloadParser extends BasePayloadParser {
+	
+	public static String NAMESPACE = "urn:oasis:names:tc:SAML:2.0:assertion";
+	
+	private static final String ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/saml-schema-assertion-2.0.xsd";
 
-	/* (non-Javadoc)
-	 * @see org.certificateservices.messages.csmessages.PayloadParser#init(java.util.Properties)
-	 */
-	@Override
-	public void init(Properties config, CSMessageParser parser) throws MessageProcessingException {
-		// TODO Auto-generated method stub
+	private ObjectFactory of = new ObjectFactory();
+	
+	private static final String[] SUPPORTED_ASSERTION_VERSIONS = {"2.0"};
+	
+	private static final String DEFAULT_ASSERTION_VERSION = "2.0";
 
-	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see org.certificateservices.messages.csmessages.PayloadParser#getNameSpace()
 	 */
 	@Override
 	public String getNameSpace() {
-		// TODO Auto-generated method stub
-		return null;
+		return NAMESPACE;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see org.certificateservices.messages.csmessages.PayloadParser#getJAXBPackage()
 	 */
 	@Override
 	public String getJAXBPackage() {
-		// TODO Auto-generated method stub
-		return null;
+		return "org.certificateservices.messages.assertion.jaxb";
 	}
 
 	/* (non-Javadoc)
@@ -61,8 +60,27 @@ public class AssertionPayloadParser implements PayloadParser {
 	@Override
 	public InputStream getSchemaAsInputStream(String payLoadVersion)
 			throws MessageContentException, MessageProcessingException {
-		// TODO Auto-generated method stub
+    	if(payLoadVersion.equals("2.0")){
+    		return getClass().getResourceAsStream(ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION);
+    	}
+    	
+    	throw new MessageContentException("Error unsupported Assertion version: " + payLoadVersion);
+	}
+
+	@Override
+	protected String[] getSupportedVersions() {
+		return SUPPORTED_ASSERTION_VERSIONS;
+	}
+
+	@Override
+	protected String getDefaultPayloadVersion() {
+		return DEFAULT_ASSERTION_VERSION;
+	}
+	
+	public byte[] genRoleAssertion() throws MessageContentException, MessageProcessingException{
 		return null;
+		
+		// TODO Custom Sign
 	}
 	
 	// Method to generate Each of the two Assertions
