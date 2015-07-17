@@ -10,6 +10,7 @@ import org.junit.Test;
 import spock.lang.Specification
 
 
+import static org.certificateservices.messages.MessageSecurityProvider.*
 class DummyPKIMessageSecurityProviderSpec extends Specification {
 	
 	@Test
@@ -31,5 +32,63 @@ class DummyPKIMessageSecurityProviderSpec extends Specification {
 		 assert cert != null
 		 assert cert instanceof X509Certificate
 	}
+	
+	@Test
+	def "Test that getDecryptionKey() and getDecryptionCertificate() getDecryptionCertificateChain() returns default key and certificate for DEFAULT_DECRYPTIONKEY"(){
+		when:
+		  DummyMessageSecurityProvider prov = new DummyMessageSecurityProvider();
+		  X509Certificate cert = prov.getDecryptionCertificate(DEFAULT_DECRYPTIONKEY)
+		  X509Certificate[] certChain = prov.getDecryptionCertificateChain(DEFAULT_DECRYPTIONKEY)
+		  PrivateKey key = prov.getDecryptionKey(DEFAULT_DECRYPTIONKEY);
+		then:
+		 assert cert != null
+		 assert cert instanceof X509Certificate	
+		 assert key != null
+		 assert key instanceof PrivateKey
+		 assert certChain.length == 1
+		 assert certChain instanceof X509Certificate[]
+		 	 
+	}
 
+	@Test
+	def "Verify that getDecryptionKeyIds() returns a valid signing key id and that getDecryptionKey() and getDecryptionCertificate() getDecryptionCertificateChain() returns related key and certificate."(){
+		when:
+		  DummyMessageSecurityProvider prov = new DummyMessageSecurityProvider();
+		  Set<String> keyIds = prov.getDecryptionKeyIds();
+		  String keyId = keyIds.iterator().next();
+		then:
+		   keyIds.size() == 3
+		   keyId == "A2a5JrfZL6oHCSexVqT9GyeV66QaYYY1YbqU+/eDkyc="
+		when:
+		  X509Certificate cert = prov.getDecryptionCertificate(keyId)
+		  X509Certificate[] certChain = prov.getDecryptionCertificateChain(keyId)
+		  PrivateKey key = prov.getDecryptionKey(keyId);
+		then:
+		 assert cert != null
+		 assert cert instanceof X509Certificate
+		 assert key != null
+		 assert key instanceof PrivateKey
+		 assert certChain.length == 1 
+		 assert certChain instanceof X509Certificate[]
+			  
+	}
+	
+	@Test
+	def "Verify that getDecryptionKey() and getDecryptionCertificate() throws MessageProcessingException on invalid key id."(){
+		when:
+		  DummyMessageSecurityProvider prov = new DummyMessageSecurityProvider();
+		  prov.getDecryptionKey("INVALID")
+		then:
+		   thrown MessageProcessingException
+		when:
+		  prov.getDecryptionCertificate("INVALID")
+		then:
+		   thrown MessageProcessingException
+		when:
+		   prov.getDecryptionCertificateChain("INVALID")
+		 then:
+			thrown MessageProcessingException
+			  
+	}
+	
 }

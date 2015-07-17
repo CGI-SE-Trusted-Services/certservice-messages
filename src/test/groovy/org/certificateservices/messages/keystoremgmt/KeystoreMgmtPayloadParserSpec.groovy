@@ -2,6 +2,7 @@ package org.certificateservices.messages.keystoremgmt;
 
 import javax.xml.datatype.DatatypeFactory;
 
+import org.apache.xml.security.Init;
 import org.certificateservices.messages.DummyMessageSecurityProvider;
 import org.certificateservices.messages.TestUtils;
 import org.certificateservices.messages.csmessages.CSMessageResponseData;
@@ -30,6 +31,10 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 	KeystoreMgmtPayloadParser pp;
 	ObjectFactory of = new ObjectFactory()
 	org.certificateservices.messages.csmessages.jaxb.ObjectFactory csMessageOf = new org.certificateservices.messages.csmessages.jaxb.ObjectFactory()
+	
+	def setupSpec(){
+		Init.init();
+	}
 	
 	def setup(){
 		setupRegisteredPayloadParser();

@@ -158,7 +158,11 @@ public class TestCSMessageParser implements CSMessageParser {
 
 	@Override
 	public Credential getOriginatorFromRequest(CSMessage request) {
-		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public MessageSecurityProvider getMessageSecurityProvider() {
 		return null;
 	}
 

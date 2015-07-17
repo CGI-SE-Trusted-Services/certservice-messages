@@ -71,7 +71,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	
 	public static String NAMESPACE = "http://certificateservices.org/xsd/credmanagement2_0";
 	
-	private static final String CREDMANAGEMENT_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/credmanagement_schema2_0.xsd";
+	public static final String CREDMANAGEMENT_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/credmanagement_schema2_0.xsd";
 
 	private ObjectFactory of = new ObjectFactory();
 	

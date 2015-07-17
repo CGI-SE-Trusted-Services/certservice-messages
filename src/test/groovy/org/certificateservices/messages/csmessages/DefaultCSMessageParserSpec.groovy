@@ -15,7 +15,9 @@ package org.certificateservices.messages.csmessages;
 import groovy.util.slurpersupport.GPathResult;
 import groovy.xml.XmlUtil;
 
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Properties;
 
 import javax.xml.bind.JAXBContext;
@@ -23,9 +25,16 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.parsers.DocumentBuilder;
 
+import org.apache.xml.security.Init;
+import org.apache.xml.security.utils.Base64;
 import org.certificateservices.messages.DummyMessageSecurityProvider;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.assertion.AssertionPayloadParser;
+import org.certificateservices.messages.assertion.AssertionPayloadParserSpec;
+import org.certificateservices.messages.assertion.jaxb.AssertionType;
+import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
+import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
 import org.certificateservices.messages.csmessages.PayloadParserRegistry.ConfigurationCallback;
 import org.certificateservices.messages.csmessages.jaxb.ApprovalStatus;
 import org.certificateservices.messages.csmessages.jaxb.Attribute;
@@ -37,9 +46,11 @@ import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
 import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
 import org.certificateservices.messages.dummy.DummyPayloadParser;
 import org.certificateservices.messages.dummy.jaxb.SomePayload;
+import org.certificateservices.messages.samlp.jaxb.ResponseType;
 import org.certificateservices.messages.sysconfig.SysConfigPayloadParser;
 import org.certificateservices.messages.sysconfig.jaxb.GetActiveConfigurationRequest;
 import org.certificateservices.messages.sysconfig.jaxb.Property;
+import org.certificateservices.messages.utils.SystemTime;
 import org.junit.After;
 
 import spock.lang.Ignore;
@@ -59,7 +70,18 @@ public class DefaultCSMessageParserSpec extends Specification{
 	DefaultCSMessageParser requestMessageParser = new DefaultCSMessageParser()
 	DummyMessageSecurityProvider secprov = new DummyMessageSecurityProvider();
 	
+	AssertionPayloadParser assertionPayloadParser
+	CredManagementPayloadParser credManagementPayloadParser
+	
 	public static final String TEST_ID = "12345678-1234-4444-8000-123456789012"
+	
+	List<X509Certificate> recipients
+	def fv1
+	def fv2
+	
+	def setupSpec(){
+		Init.init()
+	}
 	
 	def setup(){
 		Properties requestConfig = new Properties();
@@ -69,6 +91,24 @@ public class DefaultCSMessageParserSpec extends Specification{
 		Properties config = new Properties();
 		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID");
 		mp.init(secprov, config)
+		
+		assertionPayloadParser = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE)
+		assertionPayloadParser.systemTime = Mock(SystemTime)
+		assertionPayloadParser.systemTime.getSystemTime() >> new Date(1436279213000)
+		
+		
+		credManagementPayloadParser = PayloadParserRegistry.getParser(CredManagementPayloadParser.NAMESPACE)
+		
+		
+		X509Certificate validCert = secprov.getDecryptionCertificate(secprov.decryptionKeyIds.iterator().next())
+		recipients = [validCert]
+		
+		fv1 = new FieldValue();
+		fv1.key = "someKey1"
+		fv1.value = "someValue1"
+		fv2 = new FieldValue();
+		fv2.key = "someKey2"
+		fv2.value = "someValue2"
 	
 	}
 	
@@ -218,7 +258,6 @@ public class DefaultCSMessageParserSpec extends Specification{
 		m.signature == null
 		
 		when: "Create full cs message"
-		// TODO test assertions!!
 		m = mp.genCSMessage("2.0", "2.1", "NameRequest", TEST_ID, "somedest", "someorg", createOriginatorCredential(), createPayLoad(), null)
 		then:
 		m.id == TEST_ID;
@@ -376,7 +415,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		Properties p = new Properties()
 		p.load(new StringReader(property))
 		mp.properties = p
-		mp.signMessages == null
+		mp.signMessages = null
 		expect:
 		mp.signMessages() == expected
 		mp.signMessages == expected
@@ -395,6 +434,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		Properties p = new Properties()
 		p.load(new StringReader("csmessage.sign= InvalidBoolean "))
 		mp.properties = p
+		mp.signMessages = null
 		
 		when:
 		mp.signMessages() 
@@ -456,6 +496,11 @@ public class DefaultCSMessageParserSpec extends Specification{
 		then:
 		thrown (MessageProcessingException)
 
+	}
+	
+	def "Verify that getMessageSecurityProvider()  isnt null"(){
+		expect:
+		mp.getMessageSecurityProvider() != null
 	}
 	
 	def "Verify that JAXB Related Data helper method works"(){
@@ -548,6 +593,30 @@ public class DefaultCSMessageParserSpec extends Specification{
 		thrown MessageContentException
 	}
 	
+	
+	
+	def "Test to generate a ChangeCredentialStatusRequest with two assertions, verify that validation of assertions is ok"(){
+		setup:
+		ResponseType ticketResp =  assertionPayloadParser.parseAttributeQueryResponse(assertionPayloadParser.genDistributedAuthorizationTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",["role1", "role2"], recipients))
+		JAXBElement<AssertionType> ticketAssertion = assertionPayloadParser.getAssertionFromResponseType(ticketResp)
+		JAXBElement<AssertionType> approvalResp = assertionPayloadParser.parseApprovalTicket(assertionPayloadParser.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"]))
+		def assertions = [approvalResp, ticketAssertion]
+		when:
+		byte[] requestData = credManagementPayloadParser.genChangeCredentialStatusRequest(TEST_ID, "somedst", "someorg", "someissuer", "123", 100, "", null, assertions)
+		//printXML(requestData)
+		def xml = slurpXml(requestData)
+		then:
+		xml.assertions.size() == 1
+		xml.assertions.Assertion.size() == 2
+		xml.assertions.Assertion[0].AttributeStatement.Attribute[0].AttributeValue == "APPROVAL_TICKET"
+		xml.assertions.Assertion[1].AttributeStatement.Attribute[0].AttributeValue == "AUTHORIZATION_TICKET"
+		
+		when: "Test to parse ticket with assertion "
+		CSMessage csMessage = credManagementPayloadParser.parseMessage(requestData)
+		
+		then:
+		csMessage != null
+	}
 
 	private void verifyCSHeaderMessage(byte[] messageData, GPathResult xmlMessage, String expectedSourceId, String expectedDestinationId, String expectedOrganisation, String expectedName, Credential expectedOriginator){
 		verifyCSHeaderMessage(messageData, xmlMessage, expectedSourceId, expectedDestinationId, expectedOrganisation, expectedName, expectedOriginator, mp)

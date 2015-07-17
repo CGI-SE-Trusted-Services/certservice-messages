@@ -15,15 +15,7 @@ package org.certificateservices.messages.csmessages;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -38,33 +30,11 @@ import javax.xml.bind.JAXBIntrospector;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.util.JAXBSource;
-import javax.xml.crypto.MarshalException;
-import javax.xml.crypto.dsig.CanonicalizationMethod;
-import javax.xml.crypto.dsig.DigestMethod;
-import javax.xml.crypto.dsig.Reference;
-import javax.xml.crypto.dsig.SignatureMethod;
-import javax.xml.crypto.dsig.SignedInfo;
-import javax.xml.crypto.dsig.Transform;
-import javax.xml.crypto.dsig.XMLSignature;
-import javax.xml.crypto.dsig.XMLSignatureException;
-import javax.xml.crypto.dsig.XMLSignatureFactory;
-import javax.xml.crypto.dsig.dom.DOMSignContext;
-import javax.xml.crypto.dsig.dom.DOMValidateContext;
-import javax.xml.crypto.dsig.keyinfo.KeyInfo;
-import javax.xml.crypto.dsig.keyinfo.KeyInfoFactory;
-import javax.xml.crypto.dsig.keyinfo.X509Data;
-import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
-import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -75,11 +45,10 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.apache.xml.security.exceptions.Base64DecodingException;
-import org.apache.xml.security.utils.Base64;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
+import org.certificateservices.messages.assertion.AssertionPayloadParser;
 import org.certificateservices.messages.csmessages.PayloadParserRegistry.ConfigurationCallback;
 import org.certificateservices.messages.csmessages.jaxb.ApprovalStatus;
 import org.certificateservices.messages.csmessages.jaxb.Assertions;
@@ -96,9 +65,11 @@ import org.certificateservices.messages.csmessages.jaxb.Payload;
 import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 import org.certificateservices.messages.utils.SettingsUtils;
+import org.certificateservices.messages.utils.XMLSigner;
+import org.certificateservices.messages.utils.XMLSigner.SignatureLocationFinder;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
@@ -127,7 +98,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	
 	private static final String CSMESSAGE_VERSION_2_0 = "2.0";
 	
-	private static final String CSMESSAGE_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/csmessages_schema2_0.xsd";
+	public static final String CSMESSAGE_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/csmessages_schema2_0.xsd";
 	
 	private static final String CSMESSAGE_XSD_SCHEMA_2_0_URI = "http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd";	
 	
@@ -141,8 +112,8 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		csMessageSchemaUriMap.put(CSMESSAGE_VERSION_2_0, CSMESSAGE_XSD_SCHEMA_2_0_URI);
 	}
 	
-	static final String XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION = "/xmldsig-core-schema.xsd";
-	static final String XMLENC_XSD_SCHEMA_RESOURCE_LOCATION = "/xenc-schema.xsd";
+	public static final String XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION = "/xmldsig-core-schema.xsd";
+	public static final String XMLENC_XSD_SCHEMA_RESOURCE_LOCATION = "/xenc-schema.xsd";
 	
 
 	private static final String[] SUPPORTED_CSMESSAGE_VERSIONS = {"2.0"};
@@ -158,10 +129,11 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	private JAXBRelatedData jaxbData = new JAXBRelatedData();
 	
 	private String sourceId = null;
+	private XMLSigner xmlSigner;
 	
 	private final String defaultVersion = CSMESSAGE_VERSION_2_0;
 	
-	
+	private CSMessageSignatureLocationFinder cSMessageSignatureLocationFinder = new CSMessageSignatureLocationFinder();
 	/**
 	 * @see org.certificateservices.messages.csmessages.CSMessageParser#init(org.certificateservices.messages.MessageSecurityProvider, java.util.Properties)
 	 */
@@ -223,6 +195,15 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		sourceId = SettingsUtils.getProperty(config, SETTING_SOURCEID, OLD_SETTING_SOURCEID);
 		if(sourceId == null || sourceId.trim().equals("")){
 			throw new MessageProcessingException("Error setting " + SETTING_SOURCEID + " must be set.");
+		}
+		
+		try {
+			xmlSigner = new XMLSigner(securityProvider,
+					getDocumentBuilder(),signMessages(),
+					 "CSMessage",CSMESSAGE_NAMESPACE, "ID",
+					 "organisation",CSMESSAGE_NAMESPACE);
+		} catch (ParserConfigurationException e) {
+			throw new MessageProcessingException("Error initizalizing XML Signer " + e.getMessage(),e);
 		}
 	}
 
@@ -351,10 +332,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			String failureMessage, String destinationID, Credential originator) throws MessageContentException,
 			MessageProcessingException {
 		try {
-			DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-			domFactory.setNamespaceAware(true);
-			DocumentBuilder builder = domFactory.newDocumentBuilder();
-			Document doc = builder.parse(new ByteArrayInputStream(request));
+			Document doc = getDocumentBuilder().parse(new ByteArrayInputStream(request));
 			
     		Node pkiMessageNode = doc.getFirstChild();
     		String version=null;
@@ -423,41 +401,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			throws MessageContentException, MessageProcessingException {
 		X509Certificate retval = null;
 		if(requireSignature()){
-			try{
-				DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-				domFactory.setNamespaceAware(true);
-				DocumentBuilder builder = domFactory.newDocumentBuilder();
-				Document doc = builder.parse(new ByteArrayInputStream(request));
-
-				XPathFactory factory = XPathFactory.newInstance();
-				XPath xpath = factory.newXPath();
-
-				XPathExpression expr = xpath.compile("//*[local-name()='KeyInfo']/*[local-name()='X509Data']/*[local-name()='X509Certificate']/text()");
-				String result = (String) expr.evaluate(doc, XPathConstants.STRING);
-				if(result != null && !result.equals("")){
-					CertificateFactory cf = 
-							CertificateFactory.getInstance("X.509");
-					retval = (X509Certificate) 
-							cf.generateCertificate(new ByteArrayInputStream(Base64.decode(result.getBytes())));					
-				}
-
-			}catch(CertificateException e){
-			} catch (ParserConfigurationException e) {
-				throw new MessageProcessingException("Error building XPath Expression when fetching signing certificate: " + e.getMessage(),e);
-			} catch (SAXException e) {
-				throw new MessageContentException("Error reading signing certificate found in CS Message request: " + e.getMessage(),e);
-			} catch (IOException e) {
-				throw new MessageContentException("Error reading signing certificate found in CS Message request: " + e.getMessage(),e);
-			} catch (XPathExpressionException e) {
-				throw new MessageProcessingException("Error building XPath Expression when fetching signing certificate: " + e.getMessage(),e);
-			} catch (Base64DecodingException e) {
-				throw new MessageContentException("Error reading signing certificate base 64 decoding exception: " + e.getMessage(),e);
-			}
-
-
-			if(retval == null){
-				throw new MessageContentException("Error, no signing certificate found in CS Message request.");
-			}			
+				retval = xmlSigner.findSignerCertificate(request);		
 		}
 		return retval;
 	}
@@ -490,6 +434,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			for(Object assertion : assertions){
 			  assertionsElem.getAny().add(assertion);
 			}
+			retval.setAssertions(assertionsElem);
 		}
 		
 		Payload payLoadElem = objectFactory.createPayload();
@@ -540,70 +485,23 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		if(csMessage == null){
 			throw new MessageProcessingException("Error marshalling CS Message, message cannot be null.");
 		}
-
+		
 		try {
 			Document doc = getDocumentBuilder().newDocument();		
 			String version = csMessage.getVersion();
+
 			jaxbData.getCSMessageMarshaller(version).marshal(csMessage, doc);
-			if(signMessages()){
-	
-				XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM",new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
-				DigestMethod digestMethod = fac.newDigestMethod 
-						("http://www.w3.org/2001/04/xmlenc#sha256", null);
 
-				List<Transform> transFormList = new ArrayList<Transform>();
-				transFormList.add(fac.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));				
-				Reference ref = fac.newReference("#" + csMessage.getID(),digestMethod, transFormList, null, null);
-
-				ArrayList<Reference> refList = new ArrayList<Reference>();
-				refList.add(ref);
-				CanonicalizationMethod cm =  fac.newCanonicalizationMethod(CanonicalizationMethod.EXCLUSIVE,(C14NMethodParameterSpec) null);
-				SignatureMethod sm = fac.newSignatureMethod("http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",null);
-				SignedInfo signedInfo =fac.newSignedInfo(cm,sm,refList);
-				DOMSignContext signContext = null;
-				signContext = new DOMSignContext(securityProvider.getSigningKey(),doc.getDocumentElement());
-
-				signContext.setIdAttributeNS(doc.getDocumentElement(), null, "ID");
-				
-				KeyInfoFactory kif = KeyInfoFactory.getInstance("DOM",new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
-				List<X509Certificate> certs = new ArrayList<X509Certificate>();
-				X509Certificate cert = securityProvider.getSigningCertificate();
-				certs.add(cert);
-				X509Data x509Data = kif.newX509Data(certs);
-				KeyInfo ki = kif.newKeyInfo(Collections.singletonList(x509Data)); 
-
-				XMLSignature signature = fac.newXMLSignature(signedInfo,ki);
-				signature.sign(signContext);
-
-				org.w3c.dom.Node signatureElement = doc.getElementsByTagName("Signature").item(0);
-				signatureElement.setPrefix("ds");
-			}
-			TransformerFactory tf = TransformerFactory.newInstance();
-			Transformer transformer = tf.newTransformer();
-			StringWriter writer = new StringWriter();
-			transformer.transform(new DOMSource(doc), new StreamResult(writer));
-			String output = writer.getBuffer().toString();	
-			return output.getBytes("UTF-8");
+			return xmlSigner.marshallAndSignAssertion(doc, csMessage.getID(), cSMessageSignatureLocationFinder, null, null);
 		} catch (JAXBException e) {
 			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
 		} catch (ParserConfigurationException e) {
 			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
-		} catch (UnsupportedEncodingException e) {
-			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
-		} catch (TransformerException e) {
-			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
-		} catch (NoSuchAlgorithmException e) {
-			throw new MessageProcessingException("Error signing the CS Message, " + e.getMessage(),e);
-		} catch (InvalidAlgorithmParameterException e) {
-			throw new MessageProcessingException("Error signing the CS Message, " + e.getMessage(),e);
-		} catch (MarshalException e) {
-			throw new MessageProcessingException("Error signing the CS Message, " + e.getMessage(),e);
-		} catch (XMLSignatureException e) {
-			throw new MessageProcessingException("Error signing the CS Message, " + e.getMessage(),e);
 		}
+		
+		
 	}
-	
-	
+		
     /**
      * Method that tries to parse the xml version from a message
      * @param messageData the messageData to extract version from.
@@ -642,6 +540,11 @@ public class DefaultCSMessageParser implements CSMessageParser {
       	}
     	return new CSMessageVersion(messageVersion, payLoadVersion);
     }
+	
+	@Override
+	public MessageSecurityProvider getMessageSecurityProvider() {
+		return securityProvider;
+	}
 
 	/**
 	 * Verifies that the given version is supported.
@@ -678,7 +581,9 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		}
 		CSMessage csMessage = (CSMessage) object;
 		validateCSMessageHeader(csMessage, message);
-		
+		if(csMessage.getAssertions() != null){
+		  validateAssertions(csMessage.getAssertions().getAny());
+		}
 		validatePayloadObject(version, csMessage.getPayload().getAny());
 	}
 	
@@ -724,42 +629,39 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		}   	
     }
 	
+	/**
+	 * Method to validate a message assertions object separately.
+	 * 
+	 * @param assertions list of assertions to validate.
+	 * 
+	 * @throws MessageProcessingException if internal problems occurred.
+	 * @throws MessageContentException if the message contained invalid XML.
+	 */
+	private void validateAssertions(List<Object> assertions) throws MessageContentException, MessageProcessingException {
+		if(assertions == null){
+			return;
+		}
+		for(Object assertion : assertions){
+			getAssertionPayloadParser().schemaValidateAssertion(assertion);
+		}	
+	}
+	
 
+    private AssertionPayloadParser assertionPayloadParser = null;
+    private AssertionPayloadParser getAssertionPayloadParser() throws MessageProcessingException{
+    	if(assertionPayloadParser == null){
+    		assertionPayloadParser = (AssertionPayloadParser) PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE);
+    	}
+    	
+    	return assertionPayloadParser;
+    }
 
 	/**
-	 * Help method to verify a messag signature.
+	 * Help method to verify a message signature.
 	 */
 	private void validateSignature(byte[] message) throws MessageContentException, MessageProcessingException {
 		if(requireSignature()){
-			try{
-				DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-				factory.setNamespaceAware(true);
-				DocumentBuilder builder = factory.newDocumentBuilder();
-				Document doc = builder.parse(new InputSource(new ByteArrayInputStream(message)));
-
-				Node signature = doc.getElementsByTagName("ds:Signature").item(0);
-
-				if(signature == null){
-					throw new MessageContentException("Required digital signature not found in message.");
-				}
-
-				DOMValidateContext validationContext = new DOMValidateContext(new X509DataOnlyKeySelector(securityProvider), signature);
-				validationContext.setIdAttributeNS(doc.getDocumentElement(), null, "ID");
-				XMLSignatureFactory signatureFactory = XMLSignatureFactory.getInstance("DOM",new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
-				XMLSignature sig =  signatureFactory.unmarshalXMLSignature(validationContext);
-				if(!sig.validate(validationContext)){
-					throw new MessageContentException("Error, signed message didn't pass validation.");
-				}
-				
-			}catch(Exception e){
-				if(e instanceof MessageContentException ){
-					throw (MessageContentException) e;
-				}
-				if(e instanceof MessageProcessingException){
-					throw (MessageProcessingException) e;
-				}
-				throw new MessageContentException("Error validating signature of message: " + e.getMessage(),e);
-			}
+			xmlSigner.verifyEnvelopedSignature(message, true);
 		}				
 	}
 	
@@ -1000,6 +902,17 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	        
 	        return schema;
 	    }
+	}
+
+
+	public class CSMessageSignatureLocationFinder implements SignatureLocationFinder{
+
+		@Override
+		public Element getSignatureLocation(Document doc)
+				throws MessageProcessingException {
+			return doc.getDocumentElement();
+		}
+		
 	}
 
 }

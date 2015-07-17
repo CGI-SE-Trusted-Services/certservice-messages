@@ -255,4 +255,13 @@ public interface CSMessageParser {
      * @return the originator credential from the message or null if no originator was found.
      */
     public Credential getOriginatorFromRequest(CSMessage request);
+    
+    /**
+     * Help method to return the related message security provider.
+     * 
+     * @return the related message security provider, never null.
+     */
+    public MessageSecurityProvider getMessageSecurityProvider();
+    
+
 }
