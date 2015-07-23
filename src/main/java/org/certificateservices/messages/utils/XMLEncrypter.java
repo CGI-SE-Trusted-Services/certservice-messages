@@ -33,6 +33,7 @@ import org.certificateservices.messages.EncryptionAlgorithmScheme;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
+import org.certificateservices.messages.NoDecryptionKeyFoundException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -122,6 +123,28 @@ public class XMLEncrypter {
 
 			marshaller.marshal(element, doc);
 
+			return encryptElement(doc, receipients, useKeyId);
+
+		}catch(Exception e){
+			if(e instanceof MessageProcessingException){
+				throw (MessageProcessingException) e;
+			}
+			throw new MessageProcessingException("Internal error occurred when encrypting XML: " + e.getMessage(),e);
+		}
+	}
+	
+	/**
+	 * Method to create a encrypted DOM structure containing a EncryptedData element of the related JAXB Element.
+	 * 
+	 * @param doc the document to encrypt.
+	 * @param receipients a list of reciepiets of the message.
+	 * @param useKeyId if in key info should be included the shorter KeyName tag instead of X509Certificate
+	 * @return a new DOM Document the encrypted data.
+	 * @throws MessageProcessingException if internal problems occurred generating the data.
+	 */
+	public  Document encryptElement(Document doc, List<X509Certificate> receipients, boolean useKeyId) throws MessageProcessingException{
+		try{
+			
 			Key dataKey = dataKeyGenerator.generateKey();
 
 			encDataXMLCipher.init(XMLCipher.ENCRYPT_MODE, dataKey);
@@ -150,9 +173,10 @@ public class XMLEncrypter {
 	 * @param doc the document containing encrypted data.
 	 * @return a JAXB version of the document where all encrypted attributes are decrypted.
 	 * @throws MessageProcessingException if internal problems occurred decrypting the message.
-	 * @throws MessageContentException if no related decryption key could be found with the message.
+	 * @throws MessageContentException if content of message was invalid
+	 * @throws NoDecryptionKeyFoundException if no related decryption key could be found with the message.
 	 */
-	public JAXBElement<?> decryptDocument(Document doc) throws MessageProcessingException, MessageContentException{
+	public JAXBElement<?> decryptDocument(Document doc) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
 		return decryptDocument(doc, null);
 	}
 	
@@ -164,9 +188,38 @@ public class XMLEncrypter {
 	 * @param converter the post decryption xml converter to manipulate the result to fullfill schema, null to disable manipulation.
 	 * @return a JAXB version of the document where all encrypted attributes are decrypted.
 	 * @throws MessageProcessingException if internal problems occurred decrypting the message.
-	 * @throws MessageContentException if no related decryption key could be found with the message.
+	 * @throws MessageContentException if content of message was invalid
+	 * @throws NoDecryptionKeyFoundException if no related decryption key could be found with the message.
 	 */
-	public JAXBElement<?> decryptDocument(Document doc, DecryptedXMLConverter converter) throws MessageProcessingException, MessageContentException{
+	public JAXBElement<?> decryptDocument(Document doc, DecryptedXMLConverter converter) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
+		try{			
+			return (JAXBElement<?>) unmarshaller.unmarshal(decryptDoc(doc,converter));
+		}catch(Exception e){
+			if(e instanceof NoDecryptionKeyFoundException){
+				throw (NoDecryptionKeyFoundException) e;
+			}
+			if(e instanceof MessageContentException){
+				throw (MessageContentException) e;
+			}
+			if(e instanceof MessageProcessingException){
+				throw (MessageProcessingException) e;
+			}
+			throw new MessageProcessingException("Internal error occurred when decrypting XML: " + e.getMessage(),e);
+		}
+	}
+	
+	/**
+	 * Method to decrypt all encrypted structures in the related message.
+	 * 
+	 * <b>Important: If multiple EncryptedData exists it must be encrypted with the same data key and receipients.</b>
+	 * @param doc the document containing encrypted data.
+	 * @param converter the post decryption xml converter to manipulate the result to fullfill schema, null to disable manipulation.
+	 * @return a new Document with decrypted content.
+	 * @throws MessageProcessingException if internal problems occurred decrypting the message.
+	 * @throws MessageContentException if content of message was invalid
+	 * @throws NoDecryptionKeyFoundException if no related decryption key could be found with the message.
+	 */
+	public Document decryptDoc(Document doc, DecryptedXMLConverter converter) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
 		try{
 			NodeList nodeList = doc.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_ENCRYPTEDDATA);
 			while(nodeList.getLength() > 0){
@@ -182,8 +235,11 @@ public class XMLEncrypter {
 				doc = converter.convert(doc);
 			}
 			
-			return (JAXBElement<?>) unmarshaller.unmarshal(doc);
+			return doc;
 		}catch(Exception e){
+			if(e instanceof NoDecryptionKeyFoundException){
+				throw (NoDecryptionKeyFoundException) e;
+			}
 			if(e instanceof MessageContentException){
 				throw (MessageContentException) e;
 			}
@@ -209,7 +265,6 @@ public class XMLEncrypter {
 			}
 		}
 		
-		// TODO Write tests
 	}
 	
 	/**
@@ -220,7 +275,7 @@ public class XMLEncrypter {
 	 * @return a related Private Key used to decrypt the data key with.
 	 * @throws MessageContentException if no valid decryption key could be found in the key info.
 	 */
-	private Key findKEK(Element encryptedElement) throws MessageContentException {
+	private Key findKEK(Element encryptedElement) throws NoDecryptionKeyFoundException {
 		try{
 			Set<String> availableKeyIds = securityProvider.getDecryptionKeyIds();
 			
@@ -250,10 +305,10 @@ public class XMLEncrypter {
 			}
 
 		}catch(Exception e){
-			throw new MessageContentException("Error finding encryption public key in XML message: " + e.getMessage(), e);
+			throw new NoDecryptionKeyFoundException("Error finding encryption public key in XML message: " + e.getMessage(), e);
 		}
 
-		throw new MessageContentException("Error couldn't find any matching decryption key to decrypt XML message");
+		throw new NoDecryptionKeyFoundException("Error couldn't find any matching decryption key to decrypt XML message");
 
 	}
 

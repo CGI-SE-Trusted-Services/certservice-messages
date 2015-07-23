@@ -1,0 +1,150 @@
+package org.certificateservices.messages.encryptedcsmessage;
+
+import java.security.cert.X509Certificate;
+
+import javax.xml.datatype.DatatypeFactory;
+
+import org.apache.xml.security.Init;
+import org.certificateservices.messages.DummyMessageSecurityProvider;
+import org.certificateservices.messages.MessageSecurityProvider;
+import org.certificateservices.messages.TestUtils;
+import org.certificateservices.messages.csmessages.CSMessageResponseData;
+import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
+import org.certificateservices.messages.csmessages.PayloadParserRegistry;
+import org.certificateservices.messages.csmessages.jaxb.Attribute;
+import org.certificateservices.messages.csmessages.jaxb.CSMessage;
+import org.certificateservices.messages.csmessages.jaxb.Credential;
+import org.certificateservices.messages.csmessages.jaxb.CredentialRequest;
+import org.certificateservices.messages.csmessages.jaxb.IsApprovedRequest;
+import org.certificateservices.messages.csmessages.jaxb.Organisation;
+import org.certificateservices.messages.encryptedcsmessage.jaxb.ObjectFactory;
+import org.certificateservices.messages.utils.MessageGenerateUtils;
+import org.certificateservices.messages.utils.SystemTime;
+
+import spock.lang.IgnoreRest;
+import spock.lang.Specification;
+import static org.certificateservices.messages.TestUtils.*
+import static org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.*
+
+class EncryptedCSMessagePayloadParserSpec extends Specification {
+	
+	EncryptedCSMessagePayloadParser pp;
+	ObjectFactory of = new ObjectFactory()
+	org.certificateservices.messages.csmessages.jaxb.ObjectFactory csMessageOf = new org.certificateservices.messages.csmessages.jaxb.ObjectFactory()
+	X509Certificate recipient
+	
+	
+	// TODO
+	// 2. test parse
+	// 3. whole test with payload parser
+	
+	def setupSpec(){
+		Init.init();
+	}
+	
+	def setup(){
+		setupRegisteredPayloadParser();
+		
+		pp = PayloadParserRegistry.getParser(EncryptedCSMessagePayloadParser.NAMESPACE);
+		
+		recipient = pp.csMessageParser.messageSecurityProvider.getDecryptionCertificate(MessageSecurityProvider.DEFAULT_DECRYPTIONKEY)
+		
+		pp.systemTime = Mock(SystemTime)
+		pp.systemTime.getSystemTime() >> new Date(1436279213000L)
+	}
+
+	
+	def "Verify that JAXBPackage(), getNameSpace(), getSchemaAsInputStream(), getSupportedVersions(), getDefaultPayloadVersion() returns the correct values"(){
+		expect:
+		pp.getJAXBPackage() == null
+		pp.getNameSpace() == "http://certificateservices.org/xsd/encrypted_csmessages2_0"
+		pp.getSchemaAsInputStream("2.0") == null
+		pp.getDefaultPayloadVersion() == "2.0"
+		pp.getSupportedVersions() == ["2.0"] as String[]
+	}
+
+	def "Verify that calling getResponseStatus() throws IllegalStateException"(){
+		when:
+		pp.getResponseStatus(null)
+		then:
+		thrown IllegalStateException
+	}
+	
+	def "Verify that calling generateGetApprovalRequest() throws IllegalStateException"(){
+		when:
+		pp.generateGetApprovalRequest(null,null,null,null,null,null)
+		then:
+		thrown IllegalStateException
+	}
+	
+	def "Verify that calling generateIsApprovedRequest() throws IllegalStateException"(){
+        when:
+		pp.generateIsApprovedRequest(null,null,null,null,null,null)
+		then:
+		thrown IllegalStateException
+	}
+	
+	def "Verify that calling getPayload() throws IllegalStateException"(){
+		when:
+		pp.getPayload(null)
+		then:
+		thrown IllegalStateException
+	}
+	
+	def "Verify that generateGetAvailableKeyStoreInfoRequest() generates a valid xml message and generateGetAvailableKeyStoreInfoResponse() generates a valid CSMessageResponseData"(){
+		String requestId = MessageGenerateUtils.generateRandomUUID()
+		byte[] req = genCSMessage(requestId)
+		when:
+		byte[] requestMessage = pp.genEncryptedCSMessage(req, [recipient])
+		String message = new String(requestMessage, "UTF-8")
+        //printXML(requestMessage)
+		def xml = slurpXml(requestMessage)
+		then:
+		message =~ 'xmlns:ds="http://www.w3.org/2000/09/xmldsig#"'
+		message =~ 'xmlns:xenc="http://www.w3.org/2001/04/xmlenc#'
+		message =~ 'xmlns:enccs="http://certificateservices.org/xsd/encrypted_csmessages2_0"'
+		xml.@ID == requestId
+		xml.@timeStamp == "2015-07-07T16:26:53.000+02:00"
+		xml.@version =="2.0"
+		xml.@payLoadVersion =="2.0"
+		xml.EncryptedData.size() == 1
+		
+		when: "Try to generate message with a specified version"
+		requestMessage = pp.genEncryptedCSMessage(req, "SomeVersion",[recipient])
+		//printXML(requestMessage)
+	    xml = slurpXml(requestMessage)
+		then:
+		xml.@version =="SomeVersion"
+
+		
+	}
+
+	def "Verify that parseMessage parses an encrypted CS message into a CS Message"(){
+		setup:
+		String requestId = MessageGenerateUtils.generateRandomUUID()
+		byte[] req = genCSMessage(requestId)
+		byte[] requestMessage = pp.genEncryptedCSMessage(req, [recipient])
+		
+		when:
+		CSMessage message = pp.parseMessage(requestMessage)
+		then:
+		message.getPayload().getAny() instanceof IsApprovedRequest
+	}
+	
+	def "Verify that parseMessage parses an plaintext CS message into a CS Message"(){
+		setup:
+		String requestId = MessageGenerateUtils.generateRandomUUID()
+		byte[] req = genCSMessage(requestId)
+		
+		when:
+		CSMessage message = pp.parseMessage(req)
+		then:
+		message.getPayload().getAny() instanceof IsApprovedRequest
+	}
+	
+	
+
+	private byte[] genCSMessage(String requestId){
+		return pp.csMessageParser.generateIsApprovedRequest(requestId, "SomeDestination", "SomeOrg", "12345", null, null)
+	}
+}

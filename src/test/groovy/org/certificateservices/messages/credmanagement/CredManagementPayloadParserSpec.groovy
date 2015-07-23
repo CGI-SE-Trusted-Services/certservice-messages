@@ -65,7 +65,7 @@ class CredManagementPayloadParserSpec extends Specification {
 		when:
 		pp.csMessageParser.sourceId = "SOMEREQUESTER"
 		byte[] requestMessage = pp.genIssueTokenCredentialsRequest(TEST_ID, "SOMESOURCEID", "someorg", createTokenRequest(), null,  createOriginatorCredential(), null)
-		printXML(requestMessage)
+		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.IssueTokenCredentialsRequest
 		

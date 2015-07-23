@@ -15,6 +15,7 @@ package org.certificateservices.messages.assertion;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -43,6 +44,7 @@ import javax.xml.validation.Validator;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
+import org.certificateservices.messages.NoDecryptionKeyFoundException;
 import org.certificateservices.messages.assertion.jaxb.AssertionType;
 import org.certificateservices.messages.assertion.jaxb.AttributeStatementType;
 import org.certificateservices.messages.assertion.jaxb.AttributeType;
@@ -56,6 +58,7 @@ import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
 import org.certificateservices.messages.csmessages.BasePayloadParser;
 import org.certificateservices.messages.csmessages.CSMessageParser;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
+import org.certificateservices.messages.csmessages.jaxb.Approver;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.samlp.jaxb.AttributeQueryType;
 import org.certificateservices.messages.samlp.jaxb.ResponseType;
@@ -76,14 +79,22 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 /**
+ * Assertion Payload Parser used to parse and generate Assertion Tickets such as:
  * 
- * TODO
+ * <li>Distributed Authorization Ticket
+ * <li>User Data Ticket
+ * <li>Approval Ticket
+ * <p>
+ * Uses SAML Core 2.0 and SAMLP 2.0 as underlying message structures.
+ * 
  * @author Philip Vendil
  *
  */
 public class AssertionPayloadParser extends BasePayloadParser {
 	
 	public static String NAMESPACE = "urn:oasis:names:tc:SAML:2.0:assertion";
+	
+	public static String ANY_DESTINATION = "ANY";
 	
 	private static final String ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/saml-schema-assertion-2.0.xsd";
 	private static final String SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/saml-schema-protocol-2.0.xsd";
@@ -95,17 +106,20 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	
 	private static final String DEFAULT_ASSERTION_VERSION = "2.0";
 
-	private static final String ATTRIBUTE_NAME_TYPE = "JAXBElement<AssertionType>";
-	private static final String ATTRIBUTE_NAME_DISPLAYNAME = "DisplayName";
-	private static final String ATTRIBUTE_NAME_ROLES = "Roles";
-	private static final String ATTRIBUTE_NAME_USERDATA = "UserData";
-	private static final String ATTRIBUTE_NAME_APPROVALID = "ApprovalId";
-	private static final String ATTRIBUTE_NAME_APPROVEDREQUESTS = "ApprovedRequests";
+    static final String ATTRIBUTE_NAME_TYPE = "Type";
+	static final String ATTRIBUTE_NAME_DISPLAYNAME = "DisplayName";
+	static final String ATTRIBUTE_NAME_ROLES = "Roles";
+	static final String ATTRIBUTE_NAME_USERDATA = "UserData";
+	static final String ATTRIBUTE_NAME_DESTINATIONID = "DestinationId";
+	static final String ATTRIBUTE_NAME_APPROVALID = "ApprovalId";
+	static final String ATTRIBUTE_NAME_APPROVEDREQUESTS = "ApprovedRequests";
+	static final String ATTRIBUTE_NAME_APPROVERS = "Approvers";
 	
 	private MessageSecurityProvider secProv;
 	private SystemTime systemTime = new DefaultSystemTime();
 	private XMLEncrypter xmlEncrypter;
 	private XMLEncrypter userDataXmlEncrypter;
+	EncryptedAssertionXMLConverter encryptedAssertionXMLConverter = new EncryptedAssertionXMLConverter();
 	private XMLSigner xmlSigner;
 	private CertificateFactory cf;
 	
@@ -146,7 +160,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 		return "org.certificateservices.messages.assertion.jaxb";
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see org.certificateservices.messages.csmessages.PayloadParser#getSchemaAsInputStream(java.lang.String)
 	 */
 	@Override
@@ -208,10 +222,10 @@ public class AssertionPayloadParser extends BasePayloadParser {
 		return genAttributeQuery(subjectId, ATTRIBUTE_NAME_USERDATA);
 	}
 	
-	// TODO maybe change inresponseto param, to request data
+	
 	/**
 	 * Method to generate a Distributed Authorization Ticket with an signed assertion containing the 
-	 * subjects Roles encrypted envelopen into a successful SAMLP Response.
+	 * subjects Roles encrypted enveloped into a successful SAMLP Response.
 	 * 
 	 * @param inResponseTo The ID of the attribute query request
 	 * @param issuer the issuer of the assertion.
@@ -332,11 +346,14 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	 * @param approvalRequests containing one or more AttributeValue with the digest values of the calculated request actions. 
 	 * It’s up to the approval workflow engine to to determine how the digest is calculated from an approval request and how to verify that subsequent 
 	 * request matches the given approval.
+	 * @param destinationId the id to the target system processing the ticket. null for ANY destination.
+	 * @param approvers if encrypted approver data should be included, used to send information about an approval to more sensitive inner systems for audit purposes.
+	 * @param receipients receiptents of the encrypted approvers data. null if no approvers is null.
 	 * @return a generated and signed SAMLP message.
 	 * @throws MessageContentException if parameters where invalid.
 	 * @throws MessageProcessingException if internal problems occurred generated the message.
 	 */
-	public byte[] genApprovalTicket(String issuer, Date notBefore, Date notOnOrAfter, String subjectId, String approvalId, List<String> approvalRequests) throws MessageContentException, MessageProcessingException{
+	public byte[] genApprovalTicket(String issuer, Date notBefore, Date notOnOrAfter, String subjectId, String approvalId, List<String> approvalRequests, String destinationId, List<Approver> approvers, List<X509Certificate> receipients) throws MessageContentException, MessageProcessingException{
 		try{
 			List<Object> attributes = new ArrayList<Object>();
 			
@@ -344,6 +361,11 @@ public class AssertionPayloadParser extends BasePayloadParser {
 			typeAttributeType.setName(ATTRIBUTE_NAME_TYPE);
 			typeAttributeType.getAttributeValue().add(AssertionTypeEnum.APPROVAL_TICKET.getAttributeValue());
 			attributes.add(typeAttributeType);
+			
+			AttributeType destAttributeType = of.createAttributeType();
+			destAttributeType.setName(ATTRIBUTE_NAME_DESTINATIONID);
+			destAttributeType.getAttributeValue().add((destinationId != null ? destinationId : ANY_DESTINATION));
+			attributes.add(destAttributeType);
 			
 			AttributeType approvalIdAttributeType = of.createAttributeType();
 			approvalIdAttributeType.setName(ATTRIBUTE_NAME_APPROVALID);
@@ -356,6 +378,22 @@ public class AssertionPayloadParser extends BasePayloadParser {
 				approvalRequestAttributeType.getAttributeValue().add(approvalRequest);
 			}
 			attributes.add(approvalRequestAttributeType);
+			
+			if(approvers != null){
+				AttributeType approversAttributeType = of.createAttributeType();
+				approversAttributeType.setName(ATTRIBUTE_NAME_APPROVERS);
+				for(Approver approver : approvers){		
+					approversAttributeType.getAttributeValue().add(approver);
+				}
+				JAXBElement<AttributeType> approverAttribute = of.createAttribute(approversAttributeType);
+				
+				@SuppressWarnings("unchecked")
+				JAXBElement<EncryptedDataType> encryptedData = (JAXBElement<EncryptedDataType>) getAssertionUnmarshaller().unmarshal(userDataXmlEncrypter.encryptElement(approverAttribute, receipients, true));
+			    EncryptedElementType encryptedElementType1 = of.createEncryptedElementType();
+				encryptedElementType1.setEncryptedData(encryptedData.getValue());
+				
+				attributes.add(encryptedElementType1);
+			}
 			
 			return marshallAndSignAssertion(generateAssertion(issuer, notBefore, notOnOrAfter, subjectId, attributes));
 
@@ -409,6 +447,8 @@ public class AssertionPayloadParser extends BasePayloadParser {
 			throw new MessageProcessingException("Error generation DistributedAuthorizationTicket: " + e.getMessage(),e);
 		}
 	}
+	
+	
 	
 	/**
 	 * Method to parse a response of a attribute query.
@@ -572,14 +612,116 @@ public class AssertionPayloadParser extends BasePayloadParser {
 		
 		throw new MessageContentException("Error no Attribute type could be determined from assertion");
 	}
-	// TODO
 
+
+	/**
+	 * Method to parse an attribute query into a more manageable data structure.
+	 * @param attributeQuery the attribute query to parse.
+	 * @return a parsed AttributeQueryData structure.
+	 * @throws MessageContentException if illegal message content was found.
+	 * @throws MessageProcessingException if internal problems occurred processing the message.
+	 */
+	public AttributeQueryData parseAttributeQuery(byte[] attributeQuery) throws MessageContentException, MessageProcessingException{
+		try {
+			@SuppressWarnings("unchecked")
+			JAXBElement<AttributeQueryType> attrQuery = (JAXBElement<AttributeQueryType>) getUserDataUnmarshaller().unmarshal(new ByteArrayInputStream(attributeQuery));
+			AttributeQueryData aqd = new AttributeQueryData();
+			aqd.parse(attrQuery);
+			return aqd;
+		} catch (Exception e) {
+			if(e instanceof MessageContentException){
+				throw (MessageContentException) e;
+			}
+			if(e instanceof MessageProcessingException){
+				throw (MessageProcessingException) e;
+			}
+			throw new MessageContentException("Error parsing Attribute Query: " + e.getMessage(),e);
+		}
+	}
+
+	/**
+	 * Method to parse (but not decrypt encrypted attributes) an assertion, usually used by clients of approval tickets, where the approvers data 
+	 * cannot be read since it's probably only intended for more sensitive systems.
+	 * 
+	 * This method is intended to be used by clients and not server systems.
+	 * 
+	 * @param assertions a list of assertions to parse, UserData and Authorization assertions are skipped and not included.
+	 * @return parsed assertions, not all types of assertions i possible to parse without decryption such as authorization and user data tickets.
+	 * @throws MessageContentException if content of message was invalid.
+	 * @throws MessageProcessingException if internal problems occurred parsing the assertions.
+	 */
+	public List<AssertionData> parseAssertions(List<JAXBElement<AssertionType>> assertions) throws MessageContentException, MessageProcessingException{
+		try {
+			List<AssertionData> retval = new ArrayList<AssertionData>();
+			for(JAXBElement<AssertionType> assertion: assertions){
+				AssertionTypeEnum assertionType = getTypeOfAssertion(assertion);
+				if(assertionType != AssertionTypeEnum.AUTHORIZATION_TICKET && assertionType != AssertionTypeEnum.USER_DATA){
+					schemaValidateAssertion(assertion);
+					AssertionData ad = (AssertionData) assertionType.getAssertionDataClass().getConstructor(AssertionPayloadParser.class).newInstance(this);
+					ad.parse(assertion);
+					retval.add(ad);
+				}
+			}
+			
+			return retval;
+		}  catch (InstantiationException e) {
+			throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+		} catch (IllegalAccessException e) {
+			throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+		} catch (IllegalArgumentException e) {
+			throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+		} catch (InvocationTargetException e) {
+			throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+		} catch (NoSuchMethodException e) {
+			throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+		} catch (SecurityException e) {
+			throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+		}
+	}
 	
-	// TODO Helpmethods
-	//           AssertionData decryptAndParseAssertion()
+	/**
+	 * Method to parse and decrypt an assertion of any type.
+	 * 
+	 * @param assertion the assertion to decrypt and parse
+	 * @return an assertion data implementation of the type of assertion.
+	 * @throws MessageContentException if content of message was invalid.
+	 * @throws MessageProcessingException if internal problems occurred parsing the assertions.
+	 * @throws NoDecryptionKeyFoundException if no key could be found decrypting the assertion.
+	 */
+	public AssertionData parseAndDecryptAssertion(JAXBElement<AssertionType> assertion) throws MessageContentException, MessageProcessingException, NoDecryptionKeyFoundException{
+		try {
+			Document doc = getDocumentBuilder().newDocument();
+			getUserDataMarshaller().marshal(assertion, doc);
+			
+			@SuppressWarnings("unchecked")
+			JAXBElement<AssertionType> decryptedAssertion = (JAXBElement<AssertionType>) userDataXmlEncrypter.decryptDocument(doc, encryptedAssertionXMLConverter);
+			
+			schemaValidateAssertion(decryptedAssertion);
+			
+			AssertionTypeEnum assertionType = getTypeOfAssertion(decryptedAssertion);
+			
+			AssertionData retval = (AssertionData) assertionType.getAssertionDataClass().getConstructor(AssertionPayloadParser.class).newInstance(this);
+			retval.parse(decryptedAssertion);
 
-	// 6. Parse Assertion -> Role, UserData
-
+			return retval;
+		} catch (ParserConfigurationException e) {
+			throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+		} catch (JAXBException e) {
+			throw new MessageContentException("Error parsing assertion : " + e.getMessage(),e);
+		} catch (InstantiationException e) {
+			throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+		} catch (IllegalAccessException e) {
+			throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+		} catch (IllegalArgumentException e) {
+			throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+		} catch (InvocationTargetException e) {
+			throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+		} catch (NoSuchMethodException e) {
+			throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+		} catch (SecurityException e) {
+			throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+		}
+	}
 
 
 	
@@ -675,7 +817,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 			throw new MessageContentException("Error subject id cannot be null in attribute query");
 		}
 		AttributeQueryType attributeQueryType = samlpOf.createAttributeQueryType();
-		attributeQueryType.setID(MessageGenerateUtils.generateRandomUUID());
+		attributeQueryType.setID("_" +MessageGenerateUtils.generateRandomUUID());
 		attributeQueryType.setIssueInstant(MessageGenerateUtils.dateToXMLGregorianCalendar(systemTime.getSystemTime()));
 		attributeQueryType.setVersion(DEFAULT_ASSERTION_VERSION);
 		

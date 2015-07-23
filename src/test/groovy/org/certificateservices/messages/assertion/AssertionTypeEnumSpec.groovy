@@ -10,11 +10,12 @@ class AssertionTypeEnumSpec extends Specification {
 	def "verify that AssertionTypeEnum #type has assertion value #value"(){
 		expect:
 		type.attributeValue == value
+		type.assertionDataClass == assertionDataClass
 		where:
-		type                  | value
-		APPROVAL_TICKET       | "APPROVAL_TICKET"
-		USER_DATA             | "USER_DATA"
-		AUTHORIZATION_TICKET  | "AUTHORIZATION_TICKET"
+		type                  | value                       | assertionDataClass 
+		APPROVAL_TICKET       | "APPROVAL_TICKET"           | ApprovalAssertionData.class
+		USER_DATA             | "USER_DATA"                 | UserDataAssertionData.class
+		AUTHORIZATION_TICKET  | "AUTHORIZATION_TICKET"      | AuthorizationAssertionData.class
 	}
 
 }

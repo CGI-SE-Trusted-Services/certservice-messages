@@ -45,6 +45,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.xml.security.Init;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
@@ -144,6 +145,8 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		this.securityProvider = securityProvider;
 		this.messageNameCatalogue = getMessageNameCatalogue(config);
 		
+		Init.init();
+		
 		// Register
 		final CSMessageParser thisParser = this;
 		PayloadParserRegistry.configure(new ConfigurationCallback() {
@@ -215,18 +218,44 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	public synchronized CSMessage parseMessage(byte[] messageData)
 			throws MessageContentException, MessageProcessingException {
 		try{
-			
+			Document doc = getDocumentBuilder().parse(new ByteArrayInputStream(messageData));
 			CSMessageVersion version = getVersionFromMessage(messageData);
 			verifyCSMessageVersion(version.getMessageVersion());
 		
-			Object object = jaxbData.getCSMessageUnmarshaller(version.getMessageVersion()).unmarshal(new ByteArrayInputStream(messageData));
-			validateCSMessage(version, object, messageData);
+			Object object = jaxbData.getCSMessageUnmarshaller(version.getMessageVersion()).unmarshal(doc);
+			validateCSMessage(version, object, doc);
 			return (CSMessage) object;
 		}catch(JAXBException e){
+			throw new MessageContentException("Error parsing CS Message: " + e.getMessage(),e);
+		} catch (SAXException e) {
+			throw new MessageContentException("Error parsing CS Message: " + e.getMessage(),e);
+		} catch (IOException e) {
+			throw new MessageContentException("Error parsing CS Message: " + e.getMessage(),e);
+		} catch (ParserConfigurationException e) {
 			throw new MessageContentException("Error parsing CS Message: " + e.getMessage(),e);
 		} 
 		
 	}
+	
+	/**
+	 * @see org.certificateservices.messages.csmessages.CSMessageParser#parseMessage(Document)
+	 */
+	@Override
+	public synchronized CSMessage parseMessage(Document doc) throws MessageContentException,
+			MessageProcessingException {
+		try{
+			
+			CSMessageVersion version = getVersionFromMessage(doc);
+			verifyCSMessageVersion(version.getMessageVersion());
+		
+			Object object = jaxbData.getCSMessageUnmarshaller(version.getMessageVersion()).unmarshal(doc);
+			validateCSMessage(version, object, doc);
+			return (CSMessage) object;
+		}catch(JAXBException e){
+			throw new MessageContentException("Error parsing CS Message: " + e.getMessage(),e);
+		} 
+	}
+
 	
 
 	/**
@@ -271,13 +300,20 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * 
 	 */
 	@Override
-	public byte[] generateGetApprovalRequest(String requestId, String destinationId, String organisation, CSRequest request, String requestPayloadVersion, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
+	public byte[] generateGetApprovalRequest(String requestId, String destinationId, String organisation, byte[] request, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
+		CSMessage csMessage = parseMessage(request);
+		CSRequest requestPayload = null;
+		try{
+			requestPayload = (CSRequest) csMessage.getPayload().getAny();
+		}catch(Exception e){
+			throw new MessageContentException("Error in request message, request didn't contain CSRequest in payload.");
+		}
 		GetApprovalRequest payload = objectFactory.createGetApprovalRequest();
 		Payload requestedPayload = objectFactory.createPayload();
-		requestedPayload.setAny(request);
+		requestedPayload.setAny(requestPayload);
 		payload.setRequestPayload(requestedPayload);
 		
-		return generateCSRequestMessage(requestId, destinationId, organisation, requestPayloadVersion, payload, originator, assertions);
+		return generateCSRequestMessage(requestId, destinationId, organisation, csMessage.getPayLoadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -305,6 +341,13 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			throw new MessageContentException("Error generating IsApprovedResponse, no IsApprovedRequest found in request payload");
 		}
 		responseType.setApprovalStatus(approvalStatus);
+		if(assertions != null && assertions.size() > 0){
+			Assertions a = objectFactory.createAssertions();
+			for(Object assertion : assertions){
+			  a.getAny().add(assertion);
+			}
+			responseType.getAssertions().add(a);
+		}
 		
 		return generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), objectFactory.createIsApprovedResponse(responseType));
 	}
@@ -318,6 +361,13 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		responseType.setApprovalId(approvalId);
 		responseType.setApprovalStatus(approvalStatus);
 
+		if(assertions != null && assertions.size() > 0){
+			Assertions a = objectFactory.createAssertions();
+			for(Object assertion : assertions){
+			  a.getAny().add(assertion);
+			}
+			responseType.getAssertions().add(a);
+		}
 		
 		
 		return generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), objectFactory.createGetApprovalResponse(responseType));
@@ -511,11 +561,36 @@ public class DefaultCSMessageParser implements CSMessageParser {
      */
 	@Override
     public CSMessageVersion getVersionFromMessage(byte[] messageData) throws MessageContentException, MessageProcessingException{
-    	String messageVersion = null;
-    	String payLoadVersion = null;
+
     	try{
     		Document doc = getDocumentBuilder().parse(new ByteArrayInputStream(messageData));
     		
+    		return  getVersionFromMessage(doc);	
+
+    	}catch(Exception e){
+    		if( e instanceof MessageContentException){
+    			throw (MessageContentException) e;
+    		}
+    		if( e instanceof MessageProcessingException){
+    			throw (MessageProcessingException) e;
+    		}
+    		throw new MessageContentException("Error parsing XML data: " + e.getMessage(),e);
+    	}
+
+  
+    }
+	
+    /**
+     * Method that tries to parse the xml version from a message
+     * @param messageData the messageData to extract version from.
+     * @return the version in the version and payLoadVersion attributes of the message.
+     * @throws MessageContentException didn't contains a valid version attribute.
+     * @throws MessageProcessingException if internal problems occurred.
+     */
+    private CSMessageVersion getVersionFromMessage(Document doc) throws MessageContentException, MessageProcessingException{
+    	String messageVersion = null;
+    	String payLoadVersion = null;
+    	try{
     		Node csMessage = doc.getFirstChild();
     		if(csMessage != null){
     			Node versionNode = csMessage.getAttributes().getNamedItem("version");
@@ -544,6 +619,12 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	@Override
 	public MessageSecurityProvider getMessageSecurityProvider() {
 		return securityProvider;
+	}
+	
+	@Override
+	public Marshaller getMarshaller(CSMessage message)
+			throws MessageContentException, MessageProcessingException {
+		return jaxbData.getCSMessageMarshaller(message.getVersion());
 	}
 
 	/**
@@ -574,13 +655,13 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * @throws MessageContentException if the message contained bad format.
 	 * @throws MessageProcessingException if internal problems occurred validating the message.
 	 */
-	private void validateCSMessage(CSMessageVersion version, Object object, byte[] message) throws MessageContentException, MessageProcessingException {
+	private void validateCSMessage(CSMessageVersion version, Object object, Document doc) throws MessageContentException, MessageProcessingException {
 		
 		if(!(object instanceof CSMessage)){
 			throw new MessageContentException("Error: parsed object not a CS Message.");
 		}
 		CSMessage csMessage = (CSMessage) object;
-		validateCSMessageHeader(csMessage, message);
+		validateCSMessageHeader(csMessage, doc);
 		if(csMessage.getAssertions() != null){
 		  validateAssertions(csMessage.getAssertions().getAny());
 		}
@@ -591,11 +672,11 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * Method that validates the "header" parts of the cs message.
 	 * 
 	 * @param csMessage the cs message to validate, never null
-	 * @param message string representation of the message data.
+	 * @param doc related message as Document
 	 * @throws MessageContentException if the header contained illegal arguments.
 	 */
-	private void validateCSMessageHeader(CSMessage pkiMessage, byte[] message) throws MessageContentException, MessageProcessingException{
-		validateSignature(message);
+	private void validateCSMessageHeader(CSMessage pkiMessage, Document doc) throws MessageContentException, MessageProcessingException{
+		validateSignature(doc);
 	}
 
 	
@@ -659,9 +740,9 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	/**
 	 * Help method to verify a message signature.
 	 */
-	private void validateSignature(byte[] message) throws MessageContentException, MessageProcessingException {
+	private void validateSignature(Document doc) throws MessageContentException, MessageProcessingException {
 		if(requireSignature()){
-			xmlSigner.verifyEnvelopedSignature(message, true);
+			xmlSigner.verifyEnvelopedSignature(doc, true);
 		}				
 	}
 	
@@ -754,7 +835,10 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	    		jaxbClassPath = "org.certificateservices.messages.csmessages.jaxb";
 	    			    		
 	    		for(String namespace : PayloadParserRegistry.getRegistredNamespaces()){
-	    			jaxbClassPath += ":" + PayloadParserRegistry.getParser(namespace).getJAXBPackage();
+	    			String jaxbPackage = PayloadParserRegistry.getParser(namespace).getJAXBPackage();
+	    			if(jaxbPackage != null){
+	    			  jaxbClassPath += ":" + jaxbPackage;
+	    			}
 	    		}
 	    		
 	    		jaxbContext = JAXBContext.newInstance(jaxbClassPath);
@@ -772,12 +856,12 @@ public class DefaultCSMessageParser implements CSMessageParser {
 				InputStream payLoadSchemaStream = pp.getSchemaAsInputStream(payLoadVersion);
 		    	String csMessageSchemaLocation = csMessageSchemaMap.get(version);
 				
-		        Source[] sources = new Source[3];
-		       // sources[0] = new StreamSource(getClass().getResourceAsStream(XMLENC_XSD_SCHEMA_RESOURCE_LOCATION));
+		        Source[] sources = new Source[(payLoadSchemaStream == null ? 2: 3)];
 		        sources[0] = new StreamSource(getClass().getResourceAsStream(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
 		        sources[1] = new StreamSource(getClass().getResourceAsStream(csMessageSchemaLocation));
-		        sources[2] = new StreamSource(payLoadSchemaStream);
-		        
+		        if(payLoadSchemaStream != null){
+		          sources[2] = new StreamSource(payLoadSchemaStream);
+		        }
 				try {
 					Schema s = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema(sources);
 					retval = s.newValidator();
@@ -894,7 +978,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 			
 	        Source[] sources = new Source[2];
-	       // sources[0] = new StreamSource(getClass().getResourceAsStream(XMLENC_XSD_SCHEMA_RESOURCE_LOCATION));
 	        sources[0] = new StreamSource(getClass().getResourceAsStream(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
 	        sources[1] = new StreamSource(getClass().getResourceAsStream(schemaLocation));
 	        
@@ -914,5 +997,10 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		}
 		
 	}
+
+
+
+
+
 
 }

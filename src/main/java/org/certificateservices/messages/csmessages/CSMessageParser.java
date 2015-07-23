@@ -17,14 +17,16 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Properties;
 
+import javax.xml.bind.Marshaller;
+
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.csmessages.jaxb.ApprovalStatus;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
-import org.certificateservices.messages.csmessages.jaxb.CSRequest;
 import org.certificateservices.messages.csmessages.jaxb.Credential;
 import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
+import org.w3c.dom.Document;
 
 public interface CSMessageParser {
 	
@@ -49,6 +51,18 @@ public interface CSMessageParser {
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
 	public CSMessage parseMessage(byte[] messageData)
+			throws MessageContentException, MessageProcessingException;
+	
+	/**
+	 * Method to parse a message into a CSMessage and verify that it fulfills the registred schemas.
+	 * 
+	 * @param The Document data to parse into a CSMessage
+	 * @return a parsed CS Message object.
+	 * 
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public CSMessage parseMessage(Document doc)
 			throws MessageContentException, MessageProcessingException;
 	
 	/**
@@ -136,8 +150,7 @@ public interface CSMessageParser {
 	 * @param requestId  id of request to send.
 	 * @param destinationId the destination Id to use.
 	 * @param organisation the related organisation (short name)
-	 * @param request the request data to get approval for.
-	 * @param requestPayloadVersion the payload version of the CSRequest object what approval is requested for.
+	 * @param request the request message to get approval for.
 	 * @param originator the credential of the original requester, null if this is the origin of the request.
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
 	 * @return  a generated and signed (if configured) message.
@@ -145,7 +158,7 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public byte[] generateGetApprovalRequest(String requestId, String destinationId, String organisation, CSRequest request, String requestPayloadVersion,Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException;
+	public byte[] generateGetApprovalRequest(String requestId, String destinationId, String organisation, byte[] requestMessage, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException;
 	
 	/**
 	 * Method generate a Is Approved Request, 
@@ -262,6 +275,17 @@ public interface CSMessageParser {
      * @return the related message security provider, never null.
      */
     public MessageSecurityProvider getMessageSecurityProvider();
+    
+    /**
+     * Method that fetches the related marshaller for a given message.
+     * 
+     * @param message the message to fetch related marshaller for.
+     * @return the marshaller
+     * @throws MessageContentException if message content was faulty or no related marshaller could be found.
+     * @throws MessageProcessingException if internal error occurred processing the message.
+     */
+    public Marshaller getMarshaller(CSMessage message) throws MessageContentException, MessageProcessingException;
+    
     
 
 }

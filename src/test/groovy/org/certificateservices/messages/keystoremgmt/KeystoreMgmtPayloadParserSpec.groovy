@@ -122,7 +122,7 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 		when: "Test with X509CredentialParams"
 		pp.csMessageParser.sourceId = "SOMEREQUESTER"
 		requestMessage = pp.generateGenerateCredentialRequestRequest(TEST_ID, "SOMESOURCEID", "someorg", "someprovname","someapp",createX509CredentialRequestParams(),createOriginatorCredential(), null)
-		//printXML(requestMessage)
+		//openXML(requestMessage)
 		xml = slurpXml(requestMessage)
 		payloadObject = xml.payload.GenerateCredentialRequestRequest
 		then:
@@ -217,7 +217,7 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 		when:
 		pp.csMessageParser.sourceId = "SOMEREQUESTER"
 		byte[] requestMessage = pp.generateUpdateKeyDescriptionRequest(TEST_ID, "SOMESOURCEID", "someorg", "someprovname","somealias","somedesc", createOriginatorCredential(), null)
-		printXML(requestMessage)
+		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.UpdateKeyDescriptionRequest
 		then:
@@ -235,7 +235,7 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 		CSMessage request = pp.parseMessage(requestMessage)
 		
 		CSMessageResponseData rd = pp.generateUpdateKeyDescriptionResponse("SomeRelatedEndEntity", request, null)
-		printXML(rd.responseData)
+		//printXML(rd.responseData)
 		xml = slurpXml(rd.responseData)
 		payloadObject = xml.payload.UpdateKeyDescriptionResponse
 		

@@ -18,6 +18,7 @@ import org.apache.xml.security.utils.EncryptionConstants;
 import org.certificateservices.messages.EncryptionAlgorithmScheme;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.NoDecryptionKeyFoundException;
 import org.certificateservices.messages.assertion.AssertionPayloadParser;
 import org.certificateservices.messages.assertion.AssertionPayloadParser.EncryptedAssertionXMLConverter;
 import org.certificateservices.messages.assertion.jaxb.AssertionType;
@@ -60,6 +61,8 @@ public class XMLEncrypterSpec extends Specification {
 	def setup(){
 		setupRegisteredPayloadParser();
 		assertionPayloadParser = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE);
+		
+		assertionPayloadParser.systemTime = new DefaultSystemTime()
 		CertificateFactory cf = CertificateFactory.getInstance("X.509")
 		testCert = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(base64Cert)))
 		
@@ -102,7 +105,7 @@ public class XMLEncrypterSpec extends Specification {
 		when:
 		Document encDoc = xmlEncrypter.encryptElement(attribute1, threeReceipients, false);
 		String encXML = docToString(encDoc)
-		println encXML
+		//println encXML
 		
 		def xml = new XmlSlurper().parse(new StringReader(encXML)); 
 		then:
@@ -195,7 +198,7 @@ public class XMLEncrypterSpec extends Specification {
 	}
 	
 
-	def "Verify that decryptDocument throws MessageContentException if no valid key info could be found"(){
+	def "Verify that decryptDocument throws NoDecryptionKeyFoundException if no valid key info could be found"(){
 		setup:
 		xmlEncrypter.encKeyXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
 		xmlEncrypter.encDataXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
@@ -204,13 +207,13 @@ public class XMLEncrypterSpec extends Specification {
 		xmlEncrypter.decryptDocument(encDoc)
 		
 		then:
-		thrown MessageContentException
+		thrown NoDecryptionKeyFoundException
 		
 		when:
 		def encDoc2 = docToStringToDoc(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute","Hej Svejs" ), new ArrayList(), true))
 		xmlEncrypter.decryptDocument(encDoc2)
 		then:
-		thrown MessageContentException
+		thrown NoDecryptionKeyFoundException
 		
 	}
 	

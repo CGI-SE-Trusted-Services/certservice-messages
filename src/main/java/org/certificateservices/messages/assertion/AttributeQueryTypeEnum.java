@@ -18,17 +18,14 @@ package org.certificateservices.messages.assertion;
  * @author Philip Vendil
  *
  */
-public enum AssertionTypeEnum {
+public enum AttributeQueryTypeEnum {
 
-	AUTHORIZATION_TICKET("AUTHORIZATION_TICKET", AuthorizationAssertionData.class),
-	USER_DATA("USER_DATA", UserDataAssertionData.class),
-	APPROVAL_TICKET("APPROVAL_TICKET", ApprovalAssertionData.class);
+	AUTHORIZATION_TICKET(AssertionPayloadParser.ATTRIBUTE_NAME_ROLES),
+	USER_DATA(AssertionPayloadParser.ATTRIBUTE_NAME_USERDATA);
 
 	private String attributeValue;
-	private Class<?> assertionDataClass;
-	private AssertionTypeEnum(String attributeValue, Class<?> assertionDataClass){
+	private AttributeQueryTypeEnum(String attributeValue){
 		this.attributeValue = attributeValue;
-		this.assertionDataClass = assertionDataClass;
 	}
 	
 	/**
@@ -38,10 +35,6 @@ public enum AssertionTypeEnum {
 		return attributeValue;
 	}
 	
-	/**
-	 * @return the related assertion data class.
-	 */
-	public Class<?> getAssertionDataClass(){
-		return assertionDataClass;
-	}
 }
+	
+

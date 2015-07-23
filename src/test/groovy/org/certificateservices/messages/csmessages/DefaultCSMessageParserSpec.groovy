@@ -22,6 +22,7 @@ import java.util.Properties;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.Marshaller;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.parsers.DocumentBuilder;
 
@@ -52,6 +53,7 @@ import org.certificateservices.messages.sysconfig.jaxb.GetActiveConfigurationReq
 import org.certificateservices.messages.sysconfig.jaxb.Property;
 import org.certificateservices.messages.utils.SystemTime;
 import org.junit.After;
+import org.w3c.dom.Document;
 
 import spock.lang.Ignore;
 import spock.lang.IgnoreRest;
@@ -138,7 +140,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		
 		when:
 		CSMessage request = mp.parseMessage(requestMessage)
-		CSMessageResponseData rd = mp.generateIsApprovedResponse("SomeRelatedEndEntity", request, ApprovalStatus.APPROVED, null)
+		CSMessageResponseData rd = mp.generateIsApprovedResponse("SomeRelatedEndEntity", request, ApprovalStatus.APPROVED, createAssertions())
 		xml = slurpXml(rd.responseData)
 		payloadObject = xml.payload.IsApprovedResponse
 		
@@ -151,15 +153,18 @@ public class DefaultCSMessageParserSpec extends Specification{
 		
 		payloadObject.approvalId == "123-212"
 		payloadObject.approvalStatus == ApprovalStatus.APPROVED.toString()
+		payloadObject.assertions.Assertion.size() == 2
+		payloadObject.assertions.Assertion[0].AttributeStatement.Attribute[0].AttributeValue == "APPROVAL_TICKET"
 	}
 	
-
+	
 	def "Verify that generateGetApprovalRequest() generates a valid xml message  generateGetApprovalResponse() generates a valid CSMessageResponseData"(){
+		setup:
+		SysConfigPayloadParser scpp = PayloadParserRegistry.getParser(SysConfigPayloadParser.NAMESPACE);
 		when:
-		GetActiveConfigurationRequest csrequest = sysConfigOf.createGetActiveConfigurationRequest();
-		csrequest.application = "SomeApp"
-		csrequest.organisationShortName = "someorg"
-		byte[] requestMessage = requestMessageParser.generateGetApprovalRequest(TEST_ID, "SOMESOURCEID", "someorg", csrequest, "2.0", createOriginatorCredential(), null);
+		byte[] reqData = scpp.generateGetActiveConfigurationRequest(TEST_ID, "someDest", "someorg", "SomeApp", null, null)
+
+		byte[] requestMessage = requestMessageParser.generateGetApprovalRequest(TEST_ID, "SOMESOURCEID", "someorg", reqData, createOriginatorCredential(), null);
 		
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.GetApprovalRequest
@@ -174,7 +179,8 @@ public class DefaultCSMessageParserSpec extends Specification{
 		
 		when:
 		CSMessage request = mp.parseMessage(requestMessage)
-		CSMessageResponseData rd = mp.generateGetApprovalResponse("SomeRelatedEndEntity", request, "123-212",ApprovalStatus.APPROVED, null)
+		CSMessageResponseData rd = mp.generateGetApprovalResponse("SomeRelatedEndEntity", request, "123-212",ApprovalStatus.APPROVED, createAssertions())
+		//printXML(rd.responseData)
 		xml = slurpXml(rd.responseData)
 		payloadObject = xml.payload.GetApprovalResponse
 		
@@ -187,6 +193,8 @@ public class DefaultCSMessageParserSpec extends Specification{
 		
 		payloadObject.approvalId == "123-212"
 		payloadObject.approvalStatus == ApprovalStatus.APPROVED.toString()
+		payloadObject.assertions.Assertion.size() == 2
+		payloadObject.assertions.Assertion[0].AttributeStatement.Attribute[0].AttributeValue == "APPROVAL_TICKET"
 		
 		when:
 		mp.parseMessage(getApprovalRequestWithInvalidRequestPayload)
@@ -322,9 +330,10 @@ public class DefaultCSMessageParserSpec extends Specification{
 		
 	}
 	
+	
 	def "Verify validateCSMessage() method"(){
 		when: "Verify that valid message passes validation"
-		mp.validateCSMessage(mp.getVersionFromMessage(simpleCSMessage), mp.parseMessage(simpleCSMessage), simpleCSMessage)
+		mp.validateCSMessage(mp.getVersionFromMessage(simpleCSMessage), mp.parseMessage(simpleCSMessage), getDoc(simpleCSMessage))
 		then:
 		true
 		
@@ -334,13 +343,13 @@ public class DefaultCSMessageParserSpec extends Specification{
 		thrown MessageContentException
 		
 		when: "Verify invalid signature throws MessageContentException"
-		mp.validateCSMessage(mp.getVersionFromMessage(cSMessageWithInvalidSignature), mp.parseMessage(cSMessageWithInvalidSignature), cSMessageWithInvalidSignature)
+		mp.validateCSMessage(mp.getVersionFromMessage(cSMessageWithInvalidSignature), mp.parseMessage(cSMessageWithInvalidSignature), getDoc(cSMessageWithInvalidSignature))
 		then:
 		final MessageContentException e1 = thrown()
 		e1.message =~ "signed message"
 		
 		when: "Verify invalid payload throws MessageContentException"
-		mp.validateCSMessage(mp.getVersionFromMessage(simpleCSMessageWithInvalidPayload), mp.parseMessage(simpleCSMessageWithInvalidPayload), simpleCSMessageWithInvalidPayload)
+		mp.validateCSMessage(mp.getVersionFromMessage(simpleCSMessageWithInvalidPayload), mp.parseMessage(simpleCSMessageWithInvalidPayload), getDoc(simpleCSMessageWithInvalidPayload))
 		then:
 		final MessageContentException e2 = thrown()
 		e2.message =~ "parsing payload"
@@ -363,21 +372,21 @@ public class DefaultCSMessageParserSpec extends Specification{
 		mp.requireSignature() == true
 		
 		when:
-		mp.validateSignature(simpleCSMessage)
+		mp.validateSignature(getDoc(simpleCSMessage))
 		// Verify that no exception is thrown
-		mp.validateSignature(cSMessageWithInvalidSignature)
+		mp.validateSignature(getDoc(cSMessageWithInvalidSignature))
 		then:
 		thrown MessageContentException
 		
 		when:
-		mp.validateSignature(simpleCSMessageWithoutSignature)
+		mp.validateSignature(getDoc(simpleCSMessageWithoutSignature))
 		then:
 		thrown MessageContentException
 		
 		when:
 		mp.requireSignature = false
-		mp.validateSignature(cSMessageWithInvalidSignature)
-		mp.validateSignature(simpleCSMessageWithoutSignature)
+		mp.validateSignature(getDoc(cSMessageWithInvalidSignature))
+		mp.validateSignature(getDoc(simpleCSMessageWithoutSignature))
 		
 		then:
 		true // No exception was thrown for invalid signature
@@ -594,12 +603,22 @@ public class DefaultCSMessageParserSpec extends Specification{
 	}
 	
 	
+	@Unroll
+	def "Verify that getMarshaller returns a marshaller for CS Message Version: #version"(){
+		setup:
+		CSMessage m = new CSMessage();
+		m.version = version
+		expect:
+		mp.getMarshaller(m) instanceof Marshaller
+		where:
+		version << DefaultCSMessageParser.SUPPORTED_CSMESSAGE_VERSIONS
+	}
 	
 	def "Test to generate a ChangeCredentialStatusRequest with two assertions, verify that validation of assertions is ok"(){
 		setup:
 		ResponseType ticketResp =  assertionPayloadParser.parseAttributeQueryResponse(assertionPayloadParser.genDistributedAuthorizationTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",["role1", "role2"], recipients))
 		JAXBElement<AssertionType> ticketAssertion = assertionPayloadParser.getAssertionFromResponseType(ticketResp)
-		JAXBElement<AssertionType> approvalResp = assertionPayloadParser.parseApprovalTicket(assertionPayloadParser.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"]))
+		JAXBElement<AssertionType> approvalResp = assertionPayloadParser.parseApprovalTicket(assertionPayloadParser.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"], null, null,null))
 		def assertions = [approvalResp, ticketAssertion]
 		when:
 		byte[] requestData = credManagementPayloadParser.genChangeCredentialStatusRequest(TEST_ID, "somedst", "someorg", "someissuer", "123", 100, "", null, assertions)
@@ -645,7 +664,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		}
 		
 		assert xmlMessage.Signature != null
-		mp.validateSignature(message.getBytes())
+		mp.validateSignature(mp.getDocumentBuilder().parse(new ByteArrayInputStream(message.getBytes())))
 	}
 	
 	public static void verifySuccessfulBasePayload(GPathResult payLoadObject, String expectedResponseTo){
@@ -705,8 +724,13 @@ public class DefaultCSMessageParserSpec extends Specification{
 		return c
 	}
 	
-	// TODO
 	private List<Object> createAssertions(){
-		return null;
+		def as1 = assertionPayloadParser.parseApprovalTicket(assertionPayloadParser.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"], null, null,null))
+		def as2 = assertionPayloadParser.parseApprovalTicket(assertionPayloadParser.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","2345",["fdasdf", "asdf"], null,null,null))
+		return [as1,as2];
+	}
+	
+	private Document getDoc(byte[] message){
+		return mp.getDocumentBuilder().parse(new ByteArrayInputStream(message))
 	}
 }

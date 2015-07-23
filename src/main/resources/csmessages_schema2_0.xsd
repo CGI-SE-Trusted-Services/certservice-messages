@@ -62,6 +62,26 @@
 				maxOccurs="unbounded" />
 		</xs:sequence>
 	</xs:complexType>
+	
+	<xs:simpleType name="ApproverType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="MANUAL" />
+			<xs:enumeration value="AUTOMATIC" />
+			<xs:enumeration value="FORWARDED" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="Approver">
+		<xs:sequence>
+		    <xs:element minOccurs="1" maxOccurs="1" name="type"
+				type="tns:ApproverType" />
+			<xs:element minOccurs="1" maxOccurs="1" name="approvalDate"
+				type="xs:dateTime" />
+			<xs:element minOccurs="1" maxOccurs="1" name="credential"
+				type="tns:Credential" />
+			<xs:element minOccurs="0" name="description" type="xs:string" />
+		</xs:sequence>
+	</xs:complexType>
 
 	<xs:complexType name="Payload">
 		<xs:sequence>

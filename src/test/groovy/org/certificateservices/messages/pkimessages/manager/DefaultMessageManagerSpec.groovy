@@ -18,6 +18,7 @@ import org.junit.Test
 import spock.lang.Shared
 import spock.lang.Specification
 
+@SuppressWarnings("deprecation")
 class DefaultMessageManagerSpec extends Specification{
 
 	@Shared DefaultMessageManager mm = new DefaultMessageManager()

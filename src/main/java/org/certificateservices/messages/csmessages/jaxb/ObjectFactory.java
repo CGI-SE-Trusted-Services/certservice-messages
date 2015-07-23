@@ -114,6 +114,16 @@ public class ObjectFactory {
     public Assertions createAssertions() {
         return new Assertions();
     }
+    
+
+    /**
+     * Create an instance of {@link Approver }
+     * 
+     */
+    public Approver createApprover() {
+        return new Approver();
+    }
+
 
     /**
      * Create an instance of {@link Payload }

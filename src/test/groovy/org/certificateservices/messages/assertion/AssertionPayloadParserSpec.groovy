@@ -49,7 +49,11 @@ import org.certificateservices.messages.csmessages.CSMessageResponseData;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.csmessages.PayloadParserRegistry;
 import org.certificateservices.messages.csmessages.X509DataOnlyKeySelector;
+import org.certificateservices.messages.csmessages.constants.AvailableCredentialTypes;
+import org.certificateservices.messages.csmessages.jaxb.Approver;
+import org.certificateservices.messages.csmessages.jaxb.ApproverType;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
+import org.certificateservices.messages.csmessages.jaxb.Credential;
 import org.certificateservices.messages.assertion.jaxb.AssertionType;
 import org.certificateservices.messages.assertion.jaxb.AttributeStatementType;
 import org.certificateservices.messages.assertion.jaxb.AttributeType;
@@ -145,7 +149,7 @@ class AssertionPayloadParserSpec extends Specification {
 	
 	def "Verify that schemaValidateAssertion() validates agains schema"(){
 		setup:
-		JAXBElement<AssertionType> assertion = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"])) 
+		JAXBElement<AssertionType> assertion = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"], null, genApprovers(),twoReceiptiensValidFirst)) 
 		when:
 		pp.schemaValidateAssertion(assertion)
 		then:
@@ -223,8 +227,12 @@ class AssertionPayloadParserSpec extends Specification {
 		verifySignature(replacedAssertionId.getBytes("UTF-8"))
 		then:
 		thrown Exception
+		 
+		when: "Decrypt and check that roles exists"
+		AuthorizationAssertionData ad = pp.parseAndDecryptAssertion(pp.getAssertionFromResponseType(pp.parseAttributeQueryResponse(ticketData)))
+		then:
+		ad.getRoles() == ["role1", "role2"]
 		
-		// TODO Decrypt and check that roles exists
 	}
 	
 	
@@ -247,35 +255,57 @@ class AssertionPayloadParserSpec extends Specification {
 		verifySignature(ticketData)
 		
 		when: "Verify that if displayName is null isn't related attribute set."
-		ticketData = pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",null,[fv1, fv2], twoReceiptiensValidFirst)
+		byte[] ticketData2 = pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",null,[fv1, fv2], twoReceiptiensValidFirst)
 		
-		xml = new XmlSlurper().parse(new ByteArrayInputStream(ticketData))
+		xml = new XmlSlurper().parse(new ByteArrayInputStream(ticketData2))
 		then:
 		xml.Assertion.AttributeStatement.Attribute.size() == 1
 		xml.Assertion.AttributeStatement.Attribute[0].@Name == AssertionPayloadParser.ATTRIBUTE_NAME_TYPE
 		xml.Assertion.AttributeStatement.Attribute[0].AttributeValue == AssertionTypeEnum.USER_DATA.getAttributeValue()
 		
-		// TODO Decrypt and verify
+		when:
+		UserDataAssertionData ad = pp.parseAndDecryptAssertion(pp.getAssertionFromResponseType(pp.parseAttributeQueryResponse(ticketData)))
+		then:
+		ad.displayName == "SomeDisplayName"
+		ad.fieldValues.size() == 2
+		ad.fieldValues[0].key == "someKey1"
+		ad.fieldValues[0].value == "someValue1"
+		ad.fieldValues[1].key == "someKey2"
+		ad.fieldValues[1].value == "someValue2"
 	}
 	
 	
 	def "Verify genApprovalTicket() generates a valid Approval ticket"(){
 		when:
-		byte[] ticketData = pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"])
-		//println new String(ticketData)
+		byte[] ticketData = pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"], "SomeDestination",genApprovers(), twoReceiptiensValidFirst)
+		//printXML(ticketData)
 
 		def xml = new XmlSlurper().parse(new ByteArrayInputStream(ticketData))
 		then:	
-		xml.AttributeStatement.Attribute.size() == 3
+		xml.AttributeStatement.Attribute.size() == 4
 		xml.AttributeStatement.Attribute[0].@Name == AssertionPayloadParser.ATTRIBUTE_NAME_TYPE
 		xml.AttributeStatement.Attribute[0].AttributeValue == AssertionTypeEnum.APPROVAL_TICKET.getAttributeValue()
-		xml.AttributeStatement.Attribute[1].@Name == "ApprovalId"
-		xml.AttributeStatement.Attribute[1].AttributeValue == "1234"
-		xml.AttributeStatement.Attribute[2].@Name == "ApprovedRequests"
-		xml.AttributeStatement.Attribute[2].AttributeValue.size() == 2
-		xml.AttributeStatement.Attribute[2].AttributeValue[0] == "abcdef"
-		xml.AttributeStatement.Attribute[2].AttributeValue[1] == "defcva"
+		xml.AttributeStatement.Attribute[1].@Name == AssertionPayloadParser.ATTRIBUTE_NAME_DESTINATIONID
+		xml.AttributeStatement.Attribute[1].AttributeValue == "SomeDestination"
+		xml.AttributeStatement.Attribute[2].@Name == "ApprovalId"
+		xml.AttributeStatement.Attribute[2].AttributeValue == "1234"
+		xml.AttributeStatement.Attribute[3].@Name == "ApprovedRequests"
+		xml.AttributeStatement.Attribute[3].AttributeValue.size() == 2
+		xml.AttributeStatement.Attribute[3].AttributeValue[0] == "abcdef"
+		xml.AttributeStatement.Attribute[3].AttributeValue[1] == "defcva"
+		xml.AttributeStatement.EncryptedAttribute.size() == 1
 		verifySignature(ticketData)
+		
+		when: "Verify that null as destination id sets the attribute as ANY and no approvers doesn't add any encrypted attribute"
+		ticketData = pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"], null, null, null)
+		//println new String(ticketData)
+
+		xml = new XmlSlurper().parse(new ByteArrayInputStream(ticketData))
+		then:
+		xml.AttributeStatement.Attribute.size() == 4
+		xml.AttributeStatement.Attribute[1].@Name == AssertionPayloadParser.ATTRIBUTE_NAME_DESTINATIONID
+		xml.AttributeStatement.Attribute[1].AttributeValue == AssertionPayloadParser.ANY_DESTINATION
+		xml.AttributeStatement.EncryptedAttribute.size() == 0
 	}
 
 	
@@ -335,7 +365,7 @@ class AssertionPayloadParserSpec extends Specification {
 	
 	def "Verify that parseApprovalTicket parses an approval ticket successfully"(){
 		when:
-		JAXBElement<AssertionType> assertion = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212000), new Date(1436279412000), "SomeSubject","1234",["abcdef", "defcva"]))
+		JAXBElement<AssertionType> assertion = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212000), new Date(1436279412000), "SomeSubject","1234",["abcdef", "defcva"], null, genApprovers(), twoReceiptiensValidFirst))
 		then:
 		assertion != null
 		assertion.value instanceof AssertionType
@@ -361,7 +391,7 @@ class AssertionPayloadParserSpec extends Specification {
 	
 	def "Verify that verifyAssertionConditions verifies notBefore and notOnOrAfter correctly"(){
 	   setup:
-	   def ticket = pp.getAssertionUnmarshaller().unmarshal(new ByteArrayInputStream(pp.genApprovalTicket("someIssuer", new Date(1436279212000), new Date(1436279412000), "SomeSubject","1234",["abcdef", "defcva"]))).getValue()
+	   def ticket = pp.getAssertionUnmarshaller().unmarshal(new ByteArrayInputStream(pp.genApprovalTicket("someIssuer", new Date(1436279212000), new Date(1436279412000), "SomeSubject","1234",["abcdef", "defcva"],null,null,null))).getValue()
 	   
 	   createMockedTime(1436279211000)
 	   when: "Verify that MessageContent is thrown if not yet valid"
@@ -396,7 +426,7 @@ class AssertionPayloadParserSpec extends Specification {
 	
 	def "Verify that getCertificateFromAssertion finds the first certificate from an assertion"(){
 	   setup:
-	   JAXBElement<AssertionType> assertion = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212000), new Date(1436279412000), "SomeSubject","1234",["abcdef", "defcva"]))
+	   JAXBElement<AssertionType> assertion = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212000), new Date(1436279412000), "SomeSubject","1234",["abcdef", "defcva"],null, null, null))
 	   when:
 	   X509Certificate cert = pp.getCertificateFromAssertion(assertion)
 	   then:
@@ -414,7 +444,7 @@ class AssertionPayloadParserSpec extends Specification {
 		setup:
 		ResponseType ticketResp =  pp.parseAttributeQueryResponse(pp.genDistributedAuthorizationTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",["role1", "role2"], twoReceiptiensValidFirst))
 		JAXBElement<AssertionType> ticketAssertion = pp.getAssertionFromResponseType(ticketResp)
-		JAXBElement<AssertionType> approvalResp = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"]))
+		JAXBElement<AssertionType> approvalResp = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"],null, genApprovers(),twoReceiptiensValidFirst))
 		def assertions = [approvalResp, ticketAssertion]
 		
 		byte[] requestData = credManagementPayloadParser.genChangeCredentialStatusRequest(TEST_ID, "somedst", "someorg", "someissuer", "123", 100, "", null, assertions)
@@ -436,7 +466,7 @@ class AssertionPayloadParserSpec extends Specification {
 		ResponseType ticketResp =  pp.parseAttributeQueryResponse(pp.genDistributedAuthorizationTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",["role1", "role2"], twoReceiptiensValidFirst))
 		JAXBElement<AssertionType> userDataAssertion = pp.getAssertionFromResponseType(userDataResp)
 		JAXBElement<AssertionType> ticketAssertion = pp.getAssertionFromResponseType(ticketResp)
-		JAXBElement<AssertionType> approvalResp = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"]))
+		JAXBElement<AssertionType> approvalResp = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"],null, genApprovers(), twoReceiptiensValidFirst))
 	
 		expect:
 		pp.getTypeOfAssertion(userDataAssertion) == AssertionTypeEnum.USER_DATA
@@ -451,6 +481,28 @@ class AssertionPayloadParserSpec extends Specification {
 		thrown MessageContentException
 
 	}
+	
+	def "Verify that parseAssertion filters out authorization and user data tickets and returns undecrypted approval tickets"(){
+		setup:
+		ResponseType userDataResp =  pp.parseAttributeQueryResponse(pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","SomeDisplayName",[fv1, fv2], twoReceiptiensValidFirst))
+		ResponseType ticketResp =  pp.parseAttributeQueryResponse(pp.genDistributedAuthorizationTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",["role1", "role2"], twoReceiptiensValidFirst))
+		JAXBElement<AssertionType> userDataAssertion = pp.getAssertionFromResponseType(userDataResp)
+		JAXBElement<AssertionType> authAssertion = pp.getAssertionFromResponseType(ticketResp)
+		JAXBElement<AssertionType> approvalResp = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"],null, genApprovers(), twoReceiptiensValidFirst))
+	
+		when:
+		List<AssertionData> pa = pp.parseAssertions([userDataAssertion, authAssertion, approvalResp])
+		
+		then:
+		pa.size() == 1
+		pa[0] instanceof ApprovalAssertionData
+		pa[0].approvers == null
+		
+	}
+	
+	/*
+	 * parseAttributeQuery is tested in AttributeQueryDataSpec
+	 */
 
 	private def createMockedTime(long currentTime){
 		pp.systemTime = Mock(SystemTime)
@@ -502,7 +554,40 @@ class AssertionPayloadParserSpec extends Specification {
 			throw new MessageContentException("Error validating signature of message: " + e.getMessage(),e);
 		}
 	}
+	
+	static def genApprovers(){
+		def ap1 = new Approver()
+		ap1.type = ApproverType.MANUAL
+		ap1.approvalDate = MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1436279213000))
+		ap1.description = "Some Approval"
+		ap1.credential = genCredential()
+		
+		def ap2 = new Approver()
+		ap2.type = ApproverType.AUTOMATIC
+		ap2.approvalDate = MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1436279214000))
+		ap2.credential = genCredential()
+		
+		return [ap1, ap2]
+	}
 
+	static Credential genCredential(){
+		Credential c = new Credential()
+		c.credentialRequestId = 1
+		c.uniqueId = "SomeUniqueId"
+		c.displayName = "SomeDisplayName"
+		c.serialNumber = "SomeSerialNumber"
+		c.issuerId = "SomeIssuerID"
+		c.status = 100
+		c.credentialType = AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE
+		c.credentialSubType = "SomeCredentialSubtype"
+		c.credentialData = "SomeCredentialData".getBytes()
+		c.issueDate = MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1436279213000))
+		c.expireDate = MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1436279213000))
+		c.validFromDate = MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1436279213000))
+
+		return c
+	}
+	
 	private String docToString(Document doc) throws Exception {
 
 		ByteArrayOutputStream bo = new ByteArrayOutputStream();

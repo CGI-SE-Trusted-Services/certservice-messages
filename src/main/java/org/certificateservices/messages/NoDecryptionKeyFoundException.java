@@ -10,38 +10,39 @@
 *  See terms of license at gnu.org.                                     *
 *                                                                       *
 *************************************************************************/
-package org.certificateservices.messages.assertion;
+package org.certificateservices.messages;
 
 /**
- * Defines available types of assertions.
+ * Exception thrown when no decryption key could be found when trying to decrypt a message.
+ * 
  * 
  * @author Philip Vendil
  *
  */
-public enum AssertionTypeEnum {
+public class NoDecryptionKeyFoundException extends Exception {
 
-	AUTHORIZATION_TICKET("AUTHORIZATION_TICKET", AuthorizationAssertionData.class),
-	USER_DATA("USER_DATA", UserDataAssertionData.class),
-	APPROVAL_TICKET("APPROVAL_TICKET", ApprovalAssertionData.class);
 
-	private String attributeValue;
-	private Class<?> assertionDataClass;
-	private AssertionTypeEnum(String attributeValue, Class<?> assertionDataClass){
-		this.attributeValue = attributeValue;
-		this.assertionDataClass = assertionDataClass;
+	private static final long serialVersionUID = 1L;
+
+	/**
+	 * Exception thrown when no decryption key could be found when trying to decrypt a message
+     * 
+	 * @param message a descriptive message about the cause of the exception.
+	 * @param cause the cause of the exception.
+	 */
+	public NoDecryptionKeyFoundException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
+	/**
+	 * Exception thrown when no decryption key could be found when trying to decrypt a message
+     * 
+	 * @param message a descriptive message about the cause of the exception.
+	 */
+	public NoDecryptionKeyFoundException(String message) {
+		super(message);
 	}
 	
-	/**
-	 * @return the value of the AssertionType SAML Attribute
-	 */
-	public String getAttributeValue(){
-		return attributeValue;
-	}
 	
-	/**
-	 * @return the related assertion data class.
-	 */
-	public Class<?> getAssertionDataClass(){
-		return assertionDataClass;
-	}
+
 }

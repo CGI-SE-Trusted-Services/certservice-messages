@@ -19,6 +19,7 @@ import java.util.Set;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.assertion.AssertionPayloadParser;
 import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
+import org.certificateservices.messages.encryptedcsmessage.EncryptedCSMessagePayloadParser;
 import org.certificateservices.messages.keystoremgmt.KeystoreMgmtPayloadParser;
 import org.certificateservices.messages.sysconfig.SysConfigPayloadParser;
 
@@ -57,6 +58,7 @@ public class PayloadParserRegistry {
 		  payloadParserRegistry.put(KeystoreMgmtPayloadParser.NAMESPACE, KeystoreMgmtPayloadParser.class);
 		  payloadParserRegistry.put(CredManagementPayloadParser.NAMESPACE, CredManagementPayloadParser.class);
 		  payloadParserRegistry.put(AssertionPayloadParser.NAMESPACE, AssertionPayloadParser.class);
+		  payloadParserRegistry.put(EncryptedCSMessagePayloadParser.NAMESPACE, EncryptedCSMessagePayloadParser.class);
 		}
 	}
 	

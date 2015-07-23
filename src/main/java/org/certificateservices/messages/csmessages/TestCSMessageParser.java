@@ -16,14 +16,16 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Properties;
 
+import javax.xml.bind.Marshaller;
+
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.csmessages.jaxb.ApprovalStatus;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
-import org.certificateservices.messages.csmessages.jaxb.CSRequest;
 import org.certificateservices.messages.csmessages.jaxb.Credential;
 import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
+import org.w3c.dom.Document;
 
 public class TestCSMessageParser implements CSMessageParser {
 
@@ -71,7 +73,7 @@ public class TestCSMessageParser implements CSMessageParser {
 
 	@Override
 	public byte[] generateGetApprovalRequest(String requestId,
-			String destinationId, String organisation, CSRequest request,String requestPayloadVersion,
+			String destinationId, String organisation, byte[] request,
 			Credential originator, List<Object> assertions)
 			throws MessageContentException, MessageProcessingException {
 
@@ -163,6 +165,19 @@ public class TestCSMessageParser implements CSMessageParser {
 
 	@Override
 	public MessageSecurityProvider getMessageSecurityProvider() {
+		return null;
+	}
+
+	@Override
+	public Marshaller getMarshaller(CSMessage message)
+			throws MessageContentException {
+		return null;
+	}
+
+	@Override
+	public CSMessage parseMessage(Document doc) throws MessageContentException,
+			MessageProcessingException {
+		// TODO Auto-generated method stub
 		return null;
 	}
 

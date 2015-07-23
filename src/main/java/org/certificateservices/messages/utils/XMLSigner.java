@@ -26,9 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.crypto.dsig.DigestMethod;
@@ -47,7 +44,6 @@ import javax.xml.crypto.dsig.keyinfo.X509Data;
 import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
 import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -163,10 +159,31 @@ public class XMLSigner {
 	 * @throws MessageProcessingException if internal error occured verifying the signature.
 	 */
 	public void verifyEnvelopedSignature(byte[] message, boolean authorizeAgainstOrganisation) throws MessageContentException, MessageProcessingException{
+		Document doc;
+		try{
+			doc = documentBuilder.parse(new ByteArrayInputStream(message));		
+		}catch(Exception e){
+			throw new MessageContentException("Error validating signature of message: " + e.getMessage(),e);
+		}
+		verifyEnvelopedSignature(doc, authorizeAgainstOrganisation);
+	}
+	
+	/**
+	 * Help method to verify a signed enveloped message and performs the following checks.
+	 * 
+	 * <li>That the signature if included X509Certificate verifies.
+	 * <li>That the signatures algorithms is one of supported signature schemes.
+	 * <li>That the signature method is enveloped.
+	 * 
+	 * @param message the message to verify signature of.
+	 * @param authorizeAgainstOrganisation true if the message security provider should perform
+	 * any authorization to the related organisation, that must exist in the message of true.
+	 * @throws MessageContentException if message content was faulty
+	 * @throws MessageProcessingException if internal error occured verifying the signature.
+	 */
+	public void verifyEnvelopedSignature(Document doc, boolean authorizeAgainstOrganisation) throws MessageContentException, MessageProcessingException{
 
 		try{
-			Document doc = documentBuilder.parse(new ByteArrayInputStream(message));
-			
 			NodeList signedObjects = doc.getElementsByTagNameNS(signedElementNS, signedElementLocalName);
 			if(signedObjects.getLength() == 0){
 				throw new MessageContentException("Error verifying signature, no Element "+ signedElementLocalName + " found in message.");
