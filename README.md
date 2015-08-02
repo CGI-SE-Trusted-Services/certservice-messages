@@ -113,3 +113,42 @@ For the DefaultPKIMessageParser also exists the following settings:
 | pkimessage.requiresignature            | If parsed message has to have a valid signature.                   | true          |
 | pkimessage.messagenamecatalogue.impl   | If custom message name catalogue should be used.                   | See below     |
 
+
+# For Developers of this API
+
+This is a maven project, just check-it out and build with mvn 2:
+
+Main command to build a binary distribution is:
+
+## Other commands:
+
+  To clean:
+  
+    mvn clean
+
+  To compile:
+  
+    mvn compile
+
+  To test:
+  
+    mvn test
+
+  To package (This generates both a binary and source distribution):
+  
+    mvn package
+
+  To build site:
+  
+    mvn site
+
+  To build site with code coverage report (integration tests must have been setup first):
+  
+    mvn clean verify site -Pclover.report
+    
+
+##  Eclipse notes
+
+Import the project with a eclipse supporting maven 2 and almost everything should be set-up
+automatically, only add src/test/groovy as source folder and you should be ready to go.
+
