@@ -31,7 +31,6 @@ import org.certificateservices.messages.xenc.jaxb.EncryptedDataType;
  *         &lt;element ref="{http://www.w3.org/2001/04/xmlenc#}EncryptedData"/>
  *       &lt;/sequence>
  *       &lt;attribute name="version" use="required" type="{http://certificateservices.org/xsd/encrypted_csmessages2_0}notemptystring" />
- *       &lt;attribute name="payLoadVersion" use="required" type="{http://certificateservices.org/xsd/encrypted_csmessages2_0}notemptystring" />
  *       &lt;attribute name="ID" use="required" type="{http://certificateservices.org/xsd/encrypted_csmessages2_0}uuid" />
  *       &lt;attribute name="timeStamp" type="{http://www.w3.org/2001/XMLSchema}dateTime" />
  *     &lt;/restriction>
@@ -51,8 +50,6 @@ public class EncryptedCSMessageType {
     protected EncryptedDataType encryptedData;
     @XmlAttribute(name = "version", required = true)
     protected String version;
-    @XmlAttribute(name = "payLoadVersion", required = true)
-    protected String payLoadVersion;
     @XmlAttribute(name = "ID", required = true)
     protected String id;
     @XmlAttribute(name = "timeStamp")
@@ -107,29 +104,6 @@ public class EncryptedCSMessageType {
         this.version = value;
     }
 
-    /**
-     * Gets the value of the payLoadVersion property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getPayLoadVersion() {
-        return payLoadVersion;
-    }
-
-    /**
-     * Sets the value of the payLoadVersion property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setPayLoadVersion(String value) {
-        this.payLoadVersion = value;
-    }
 
     /**
      * Gets the value of the id property.

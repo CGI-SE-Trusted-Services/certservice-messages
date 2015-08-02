@@ -12,9 +12,11 @@
 *************************************************************************/
 package org.certificateservices.messages.csmessages;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
+import org.certificateservices.messages.MessageProcessingException;
 import org.w3c.dom.ls.LSInput;
 
 /**
@@ -42,6 +44,31 @@ public class XSDLSInput implements LSInput {
 	    this.systemId = systemId;
 	    this.content = content;
 
+	}
+	
+	/**
+	 * Alternate contructor with input stream of the schema as argument.
+	 * 
+	 * @param publicId the publicId of the schema.
+	 * @param systemId the systemId of the schema
+	 * @param resourceAsStream the input stream containing schema data.
+	 * @throws MessageProcessingException if problems occurred reading the schema from class path
+	 */
+	public XSDLSInput(String publicId, String systemId, InputStream resourceAsStream) throws MessageProcessingException{
+	    this.publicId = publicId;
+	    this.systemId = systemId;
+	    
+		try {		
+			synchronized (resourceAsStream) {
+				byte[] i = new byte[resourceAsStream.available()];
+				resourceAsStream.read(i);
+				this.content = new String(i);
+				resourceAsStream.close();
+			}
+		} catch (IOException e) {
+			throw new MessageProcessingException("Error reading XSD " + systemId + " from jar or classpath.");
+		}
+	    
 	}
 	
 	/**

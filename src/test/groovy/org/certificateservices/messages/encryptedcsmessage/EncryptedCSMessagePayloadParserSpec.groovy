@@ -34,10 +34,6 @@ class EncryptedCSMessagePayloadParserSpec extends Specification {
 	X509Certificate recipient
 	
 	
-	// TODO
-	// 2. test parse
-	// 3. whole test with payload parser
-	
 	def setupSpec(){
 		Init.init();
 	}
@@ -103,10 +99,9 @@ class EncryptedCSMessagePayloadParserSpec extends Specification {
 		message =~ 'xmlns:ds="http://www.w3.org/2000/09/xmldsig#"'
 		message =~ 'xmlns:xenc="http://www.w3.org/2001/04/xmlenc#'
 		message =~ 'xmlns:enccs="http://certificateservices.org/xsd/encrypted_csmessages2_0"'
-		xml.@ID == requestId
+		xml.@ID != requestId
 		xml.@timeStamp == "2015-07-07T16:26:53.000+02:00"
 		xml.@version =="2.0"
-		xml.@payLoadVersion =="2.0"
 		xml.EncryptedData.size() == 1
 		
 		when: "Try to generate message with a specified version"

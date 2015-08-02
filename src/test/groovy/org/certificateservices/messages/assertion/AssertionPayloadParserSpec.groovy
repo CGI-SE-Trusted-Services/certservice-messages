@@ -165,7 +165,7 @@ class AssertionPayloadParserSpec extends Specification {
 	def "Verify that genDistributedAuthorizationRequest() generates a valid SAMLP Attribute Query"(){
 		when:
 		def xmlData = pp.genDistributedAuthorizationRequest("SomeSubjectId@someorg")
-		//println new String(xmlData)
+		//printXML(xmlData)
 		def xml = new XmlSlurper().parse(new ByteArrayInputStream(xmlData))
 		then:
 		xml.@ID.toString().length() > 0
@@ -178,7 +178,7 @@ class AssertionPayloadParserSpec extends Specification {
 	def "Verify that genUserDataRequest() generates a valid SAMLP Attribute Query"(){
 		when:
 		def xmlData = pp.genUserDataRequest("SomeSubjectId@someorg")
-		//println new String(xmlData)
+		//printXML(xmlData)
 		def xml = new XmlSlurper().parse(new ByteArrayInputStream(xmlData))
 		then:
 		xml.@ID.toString().length() > 0
@@ -193,7 +193,7 @@ class AssertionPayloadParserSpec extends Specification {
 	def "Verify that genDistributedAuthorizationTicket() generates a valid authorization ticket"(){
 		when:
 		byte[] ticketData = pp.genDistributedAuthorizationTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",["role1", "role2"], twoReceiptiensValidFirst)
-		//println new String(ticketData)
+		//printXML(ticketData)
 		
 		def xml = new XmlSlurper().parse(new ByteArrayInputStream(ticketData))
 		
@@ -239,7 +239,7 @@ class AssertionPayloadParserSpec extends Specification {
 	def "Verify that genUserDataTicket() generates a valid user data ticket"(){
 		when:
 		byte[] ticketData = pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","SomeDisplayName",[fv1, fv2], twoReceiptiensValidFirst)
-		//println new String(ticketData)
+		//printXML(ticketData)
 
 		def xml = new XmlSlurper().parse(new ByteArrayInputStream(ticketData))
 		

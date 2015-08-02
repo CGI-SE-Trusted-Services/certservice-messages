@@ -58,6 +58,7 @@ import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
 import org.certificateservices.messages.csmessages.BasePayloadParser;
 import org.certificateservices.messages.csmessages.CSMessageParser;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
+import org.certificateservices.messages.csmessages.XSDLSInput;
 import org.certificateservices.messages.csmessages.jaxb.Approver;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.samlp.jaxb.AttributeQueryType;
@@ -76,6 +77,8 @@ import org.certificateservices.messages.xmldsig.jaxb.X509DataType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
 
 /**
@@ -93,6 +96,7 @@ import org.xml.sax.SAXException;
 public class AssertionPayloadParser extends BasePayloadParser {
 	
 	public static String NAMESPACE = "urn:oasis:names:tc:SAML:2.0:assertion";
+	public static String SAMLP_NAMESPACE = "urn:oasis:names:tc:SAML:2.0:protocol";
 	
 	public static String ANY_DESTINATION = "ANY";
 	
@@ -973,6 +977,8 @@ public class AssertionPayloadParser extends BasePayloadParser {
     
     private Schema generateAssertionSchema() throws SAXException{
     	SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+    	
+    	schemaFactory.setResourceResolver(new AssertionLSResourceResolver());
 		
         Source[] sources = new Source[4];
         sources[0] = new StreamSource(getClass().getResourceAsStream(DefaultCSMessageParser.XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
@@ -988,6 +994,8 @@ public class AssertionPayloadParser extends BasePayloadParser {
     private Schema generateUserDataSchema() throws SAXException{
     	SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 		
+    	schemaFactory.setResourceResolver(new AssertionLSResourceResolver());
+    	
         Source[] sources = new Source[6];
         sources[0] = new StreamSource(getClass().getResourceAsStream(DefaultCSMessageParser.XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
         sources[1] = new StreamSource(getClass().getResourceAsStream(DefaultCSMessageParser.XMLENC_XSD_SCHEMA_RESOURCE_LOCATION));
@@ -1043,5 +1051,38 @@ public class AssertionPayloadParser extends BasePayloadParser {
 		}
     	
     }
+    
+    public class AssertionLSResourceResolver implements  LSResourceResolver {
+		
+		@Override
+		public LSInput resolveResource(String type, String namespaceURI,
+				String publicId, String systemId, String baseURI) {
+			try {
+				if(systemId != null && systemId.equals("http://www.w3.org/2001/XMLSchema.dtd")){
+					return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream("/XMLSchema.dtd"));
+				}
+				if(systemId != null && systemId.equals("datatypes.dtd")){
+					return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream("/datatypes.dtd"));
+				}
+				if(namespaceURI != null){
+					if(namespaceURI.equals(DefaultCSMessageParser.XMLDSIG_NAMESPACE)){
+						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(DefaultCSMessageParser.XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
+					}
+					if(namespaceURI.equals(DefaultCSMessageParser.XMLENC_NAMESPACE)){
+						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(DefaultCSMessageParser.XMLENC_XSD_SCHEMA_RESOURCE_LOCATION));
+					}
+					if(namespaceURI.equals(SAMLP_NAMESPACE)){
+						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(AssertionPayloadParser.SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION));
+					}
+					if(namespaceURI.equals(NAMESPACE)){
+						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(AssertionPayloadParser.ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION));
+					}
+				}
+			} catch (MessageProcessingException e) {
+				throw new IllegalStateException("Error couldn't read XSD from class path: " + e.getMessage(), e);
+			}
+			return null;
+		}
+	}
 
 }

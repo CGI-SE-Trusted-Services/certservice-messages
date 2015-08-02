@@ -91,7 +91,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	public static final String SETTING_REQUIRESIGNATURE = "csmessage.requiresignature";
 	public static final String OLD_SETTING_REQUIRESIGNATURE = "pkimessage.requiresignature";
 	
-	public static final String SETTING_MESSAGE_NAME_CATALOGUE_IMPL = "pkimessage.messagenamecatalogue.impl";
+	public static final String SETTING_MESSAGE_NAME_CATALOGUE_IMPL = "csmessage.messagenamecatalogue.impl";
 	public static final String OLD_SETTING_MESSAGE_NAME_CATALOGUE_IMPL = "pkimessage.messagenamecatalogue.impl";
 	public static final String DEFAULT_MESSAGE_NAME_CATALOGUE_IMPL = DefaultMessageNameCatalogue.class.getName();
 
@@ -116,7 +116,9 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	public static final String XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION = "/xmldsig-core-schema.xsd";
 	public static final String XMLENC_XSD_SCHEMA_RESOURCE_LOCATION = "/xenc-schema.xsd";
 	
-
+	public static final String XMLDSIG_NAMESPACE = "http://www.w3.org/2000/09/xmldsig#";
+	public static final String XMLENC_NAMESPACE = "http://www.w3.org/2001/04/xmlenc#";
+	
 	private static final String[] SUPPORTED_CSMESSAGE_VERSIONS = {"2.0"};
 	
 
