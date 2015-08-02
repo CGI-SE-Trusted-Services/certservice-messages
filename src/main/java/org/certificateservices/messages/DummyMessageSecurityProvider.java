@@ -136,7 +136,7 @@ public class DummyMessageSecurityProvider implements
 		return organisationCalled;
 	}
 
-	@Override
+
 	public PrivateKey getDecryptionKey(String keyId)
 			throws MessageProcessingException {
 		KeyStore encKeyStore = getEncKeystore();
@@ -154,7 +154,6 @@ public class DummyMessageSecurityProvider implements
 		}
 	}
 
-	@Override
 	public X509Certificate getDecryptionCertificate(String keyId)
 			throws MessageProcessingException {
 		KeyStore encKeyStore = getEncKeystore();
@@ -172,7 +171,7 @@ public class DummyMessageSecurityProvider implements
 		}
 	}
 	
-	@Override
+
 	public X509Certificate[] getDecryptionCertificateChain(String keyId)
 			throws MessageProcessingException {
 		KeyStore encKeyStore = getEncKeystore();
@@ -191,19 +190,19 @@ public class DummyMessageSecurityProvider implements
 		}
 	}
 
-	@Override
+	
 	public Set<String> getDecryptionKeyIds() throws MessageProcessingException {
 		getEncKeystore();
 		return encKeyIdToAlias.keySet();
 	}
 	
-	@Override
+	
 	public EncryptionAlgorithmScheme getEncryptionAlgorithmScheme()
 			throws MessageProcessingException {
 		return EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256;
 	}
 
-	@Override
+	
 	public SigningAlgorithmScheme getSigningAlgorithmScheme()
 			throws MessageProcessingException {
 		return SigningAlgorithmScheme.RSAWithSHA256;

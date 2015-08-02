@@ -140,7 +140,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	/**
 	 * @see org.certificateservices.messages.csmessages.CSMessageParser#init(org.certificateservices.messages.MessageSecurityProvider, java.util.Properties)
 	 */
-	@Override
 	public void init(MessageSecurityProvider securityProvider, Properties config)
 			throws MessageProcessingException {
 		this.properties = config;
@@ -153,7 +152,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		final CSMessageParser thisParser = this;
 		PayloadParserRegistry.configure(new ConfigurationCallback() {
 			
-			@Override
+		
 			public void updateContext() throws MessageProcessingException {
 				jaxbData.clearAllJAXBData();
 			}
@@ -162,7 +161,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			 * There is never any need for reinitialization since auto reloading of current version
 			 * of CSMessageParser isn't supported.
 			 */
-			@Override
 			public boolean needReinitialization(String namespace)
 					throws MessageProcessingException {
 				return false;
@@ -171,7 +169,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			/**
 			 * Initialize the pay load parser with same configuration.
 			 */
-			@Override
 			public void configurePayloadParser(String namespace,
 					PayloadParser payloadParser) throws MessageProcessingException {
 				payloadParser.init(properties, thisParser);
@@ -216,7 +213,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	/**
 	 * @see org.certificateservices.messages.csmessages.CSMessageParser#parseMessage(byte[])
 	 */
-	@Override
 	public synchronized CSMessage parseMessage(byte[] messageData)
 			throws MessageContentException, MessageProcessingException {
 		try{
@@ -242,7 +238,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	/**
 	 * @see org.certificateservices.messages.csmessages.CSMessageParser#parseMessage(Document)
 	 */
-	@Override
 	public synchronized CSMessage parseMessage(Document doc) throws MessageContentException,
 			MessageProcessingException {
 		try{
@@ -301,7 +296,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateGetApprovalRequest(String, String, String, CSRequest, String Credential, List)
 	 * 
 	 */
-	@Override
 	public byte[] generateGetApprovalRequest(String requestId, String destinationId, String organisation, byte[] request, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		CSMessage csMessage = parseMessage(request);
 		CSRequest requestPayload = null;
@@ -322,7 +316,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateIsApprovedRequest(String, String, String, String, Credential, List)
 	 * 
 	 */
-	@Override
 	public byte[] generateIsApprovedRequest(String requestId, String destinationId, String organisation, String approvalId, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		IsApprovedRequest payload = objectFactory.createIsApprovedRequest();
 		payload.setApprovalId(approvalId);
@@ -334,7 +327,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateIsApprovedResponse(String, CSMessage, ApprovalStatus, Credential, List) 
 	 * 
 	 */
-	@Override
 	public CSMessageResponseData generateIsApprovedResponse(String relatedEndEntity, CSMessage request, ApprovalStatus approvalStatus, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		IsApprovedResponseType responseType = objectFactory.createIsApprovedResponseType();
 		if(request.getPayload().getAny() instanceof IsApprovedRequest){
@@ -357,7 +349,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	/**
 	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateGetApprovalResponse(String, CSMessage, String, ApprovalStatus, Credential, List)
 	 */
-	@Override
 	public CSMessageResponseData generateGetApprovalResponse(String relatedEndEntity, CSMessage request, String approvalId, ApprovalStatus approvalStatus, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		IsApprovedResponseType responseType = objectFactory.createIsApprovedResponseType();
 		responseType.setApprovalId(approvalId);
@@ -379,7 +370,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	/**
 	 * @see org.certificateservices.messages.csmessages.CSMessageParser#genCSFailureResponse(String, byte[], RequestStatus, String, String, Credential)
 	 */
-	@Override
 	public CSMessageResponseData genCSFailureResponse(String relatedEndEntity,byte[] request, RequestStatus status,
 			String failureMessage, String destinationID, Credential originator) throws MessageContentException,
 			MessageProcessingException {
@@ -448,7 +438,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	/**
 	 * @see org.certificateservices.messages.csmessages.CSMessageParser#getSigningCertificate(byte[])	 
 	 */	
-	@Override
 	public X509Certificate getSigningCertificate(byte[] request)
 			throws MessageContentException, MessageProcessingException {
 		X509Certificate retval = null;
@@ -561,7 +550,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
      * @throws MessageContentException didn't contains a valid version attribute.
      * @throws MessageProcessingException if internal problems occurred.
      */
-	@Override
     public CSMessageVersion getVersionFromMessage(byte[] messageData) throws MessageContentException, MessageProcessingException{
 
     	try{
@@ -618,12 +606,10 @@ public class DefaultCSMessageParser implements CSMessageParser {
     	return new CSMessageVersion(messageVersion, payLoadVersion);
     }
 	
-	@Override
 	public MessageSecurityProvider getMessageSecurityProvider() {
 		return securityProvider;
 	}
 	
-	@Override
 	public Marshaller getMarshaller(CSMessage message)
 			throws MessageContentException, MessageProcessingException {
 		return jaxbData.getCSMessageMarshaller(message.getVersion());
@@ -691,7 +677,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * @throws MessageProcessingException
 	 * @throws MessageContentException if the message contained invalid XML.
 	 */
-	@Override
     public void validatePayloadObject(CSMessageVersion version, Object payLoadObject) throws MessageContentException {
 		try {
 			String payLoadNamespace = jaxbData.getNamespace(payLoadObject);
@@ -992,7 +977,6 @@ public class DefaultCSMessageParser implements CSMessageParser {
 
 	public class CSMessageSignatureLocationFinder implements SignatureLocationFinder{
 
-		@Override
 		public Element getSignatureLocation(Document doc)
 				throws MessageProcessingException {
 			return doc.getDocumentElement();

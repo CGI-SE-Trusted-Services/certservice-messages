@@ -151,7 +151,6 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	/**
 	 * @see org.certificateservices.messages.csmessages.PayloadParser#getNameSpace()
 	 */
-	@Override
 	public String getNameSpace() {
 		return NAMESPACE;
 	}
@@ -159,7 +158,6 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	/**
 	 * @see org.certificateservices.messages.csmessages.PayloadParser#getJAXBPackage()
 	 */
-	@Override
 	public String getJAXBPackage() {
 		return "org.certificateservices.messages.assertion.jaxb";
 	}
@@ -167,7 +165,6 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	/**
 	 * @see org.certificateservices.messages.csmessages.PayloadParser#getSchemaAsInputStream(java.lang.String)
 	 */
-	@Override
 	public InputStream getSchemaAsInputStream(String payLoadVersion)
 			throws MessageContentException, MessageProcessingException {
     	if(payLoadVersion.equals("2.0")){
@@ -1014,7 +1011,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
      */
     public class EncryptedAssertionXMLConverter implements DecryptedXMLConverter{
 
-		@Override
+
 		public Document convert(Document doc) throws MessageContentException {
 			NodeList nodeList = doc.getElementsByTagNameNS(AssertionPayloadParser.NAMESPACE, "Attribute");
 			for(int i =0; i < nodeList.getLength(); i++){
@@ -1035,7 +1032,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
     
     public class AssertionSignatureLocationFinder implements SignatureLocationFinder{
 
-		@Override
+
 		public Element getSignatureLocation(Document doc)
 				throws MessageProcessingException {
 			try{
@@ -1054,7 +1051,6 @@ public class AssertionPayloadParser extends BasePayloadParser {
     
     public class AssertionLSResourceResolver implements  LSResourceResolver {
 		
-		@Override
 		public LSInput resolveResource(String type, String namespaceURI,
 				String publicId, String systemId, String baseURI) {
 			try {

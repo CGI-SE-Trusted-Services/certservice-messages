@@ -83,7 +83,6 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	/**
 	 * @see PayloadParser#getJAXBPackage()
 	 */
-	@Override
 	public String getJAXBPackage() {
 		return "org.certificateservices.messages.credmanagement.jaxb";
 	}
@@ -91,7 +90,6 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	/**
 	 * @see PayloadParser#getNameSpace()
 	 */
-	@Override
 	public String getNameSpace() {
 		return NAMESPACE;
 	}
@@ -99,7 +97,6 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	/**
 	 * @see PayloadParser#getSchemaAsInputStream(String)
 	 */
-	@Override
 	public InputStream getSchemaAsInputStream(String payLoadVersion)
 			throws MessageContentException, MessageProcessingException {
     	if(payLoadVersion.equals("2.0")){

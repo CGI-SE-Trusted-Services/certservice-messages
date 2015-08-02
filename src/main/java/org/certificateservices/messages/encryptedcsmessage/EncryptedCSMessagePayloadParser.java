@@ -104,7 +104,6 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
 	/**
 	 * @see org.certificateservices.messages.csmessages.PayloadParser#getNameSpace()
 	 */
-	@Override
 	public String getNameSpace() {
 		return NAMESPACE;
 	}
@@ -112,7 +111,6 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
 	/**
 	 * @see org.certificateservices.messages.csmessages.PayloadParser#getJAXBPackage()
 	 */
-	@Override
 	public String getJAXBPackage() {
 		// Return null because this is actually an enveloped CSMessage and not and a pay load inside a CS Message.
 		return null;
@@ -121,7 +119,6 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
 	/**
 	 * @see org.certificateservices.messages.csmessages.PayloadParser#getSchemaAsInputStream(java.lang.String)
 	 */
-	@Override
 	public InputStream getSchemaAsInputStream(String payLoadVersion)
 			throws MessageContentException, MessageProcessingException {
 		// Return null because this is actually an enveloped CSMessage and not and a pay load inside a CS Message.
@@ -336,7 +333,6 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
      */
     public class EncryptedCSMessageXMLConverter implements DecryptedXMLConverter{
 
-		@Override
 		public Document convert(Document doc) throws MessageContentException {
 			NodeList nodeList = doc.getElementsByTagNameNS(DefaultCSMessageParser.CSMESSAGE_NAMESPACE, "CSMessage");
 			for(int i =0; i < nodeList.getLength(); i++){
@@ -355,7 +351,6 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
 
     public class EncryptionParserLSResourceResolver implements  LSResourceResolver {
 		
-		@Override
 		public LSInput resolveResource(String type, String namespaceURI,
 				String publicId, String systemId, String baseURI) {
 			try {

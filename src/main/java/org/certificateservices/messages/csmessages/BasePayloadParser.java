@@ -35,7 +35,6 @@ public abstract class BasePayloadParser implements PayloadParser {
 	 * 
 	 * @see org.certificateservices.messages.csmessages.PayloadParser#init(java.util.Properties, org.certificateservices.messages.csmessages.CSMessageParser)
 	 */
-	@Override
 	public void init(Properties config, CSMessageParser parser)
 			throws MessageProcessingException {
 		this.csMessageParser = parser;

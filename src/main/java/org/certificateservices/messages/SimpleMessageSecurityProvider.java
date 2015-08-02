@@ -254,7 +254,6 @@ public class SimpleMessageSecurityProvider implements
 	/**
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getDecryptionKey(String)
 	 */
-	@Override
 	public PrivateKey getDecryptionKey(String keyId)
 			throws MessageProcessingException {
 		return decryptionKeys.get((keyId == null ? defaultDecryptionKeyId : keyId));
@@ -264,7 +263,6 @@ public class SimpleMessageSecurityProvider implements
 	/**
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getDecryptionCertificate(String)
 	 */
-	@Override
 	public X509Certificate getDecryptionCertificate(String keyId)
 			throws MessageProcessingException {
 		return decryptionCertificates.get((keyId == null ? defaultDecryptionKeyId : keyId))[0];
@@ -273,7 +271,6 @@ public class SimpleMessageSecurityProvider implements
 	/**
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getDecryptionCertificateChain(String)
 	 */
-	@Override
 	public X509Certificate[] getDecryptionCertificateChain(String keyId)
 			throws MessageProcessingException {
 		return decryptionCertificates.get((keyId == null ? defaultDecryptionKeyId : keyId));
@@ -282,7 +279,6 @@ public class SimpleMessageSecurityProvider implements
 	/**
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getDecryptionKeyIds()
 	 */
-	@Override
 	public Set<String> getDecryptionKeyIds() throws MessageProcessingException {
 		return decryptionKeys.keySet();
 	}
@@ -290,7 +286,6 @@ public class SimpleMessageSecurityProvider implements
 	/**
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getEncryptionAlgorithmScheme()
 	 */
-	@Override
 	public EncryptionAlgorithmScheme getEncryptionAlgorithmScheme()
 			throws MessageProcessingException {
 		return encryptionAlgorithmScheme;
@@ -299,7 +294,6 @@ public class SimpleMessageSecurityProvider implements
 	/**
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getSigningAlgorithmScheme()
 	 */
-	@Override
 	public SigningAlgorithmScheme getSigningAlgorithmScheme()
 			throws MessageProcessingException {
 		return signingAlgorithmScheme;
