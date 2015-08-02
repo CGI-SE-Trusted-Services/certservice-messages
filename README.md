@@ -116,7 +116,7 @@ For the DefaultPKIMessageParser also exists the following settings:
 
 # For Developers of this API
 
-This is a maven project, just check-it out and build with mvn 2:
+This is a maven project, just check-it out and build with mvn 2 and java 6 +:
 
 Main command to build a binary distribution is:
 
