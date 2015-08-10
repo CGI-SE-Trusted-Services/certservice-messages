@@ -4,7 +4,6 @@ import java.io.File;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.certificateservices.messages.MessageException;
 import org.certificateservices.messages.utils.SettingsUtils;
 import org.junit.Test;
 

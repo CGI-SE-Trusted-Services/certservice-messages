@@ -52,6 +52,7 @@ import spock.lang.IgnoreRest;
 import spock.lang.Specification
 
 
+@SuppressWarnings("deprecation")
 class DefaultPKIMessageParserSpec extends Specification {
 	
 	static DefaultPKIMessageParser mp = new DefaultPKIMessageParser();
@@ -368,7 +369,7 @@ class DefaultPKIMessageParserSpec extends Specification {
 		  PKIMessageResponseData result = mp.genChangeCredentialStatusResponse("SomeEntity",request, "SomeIssuerId", "SomeSerialNumber", 12, "SomeReasonInfo",new Date(1L))
 		  String message = new String(result.responseData,"UTF-8")
 		  def xmlMessage = new XmlSlurper().parseText(message)
-		  println message
+		 // println message
 		then:
 		  assert result.isForwardableResponse == true
 		  assert result.relatedEndEntity == "SomeEntity"

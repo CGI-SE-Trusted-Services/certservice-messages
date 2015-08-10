@@ -1,6 +1,6 @@
 /************************************************************************
 *                                                                       *
-*  Certificate Service - PKI Messages                                   *
+*  Certificate Service - Messages                                       *
 *                                                                       *
 *  This software is free software; you can redistribute it and/or       *
 *  modify it under the terms of the GNU Affero General Public License   *
@@ -13,11 +13,9 @@
 package org.certificateservices.messages.pkimessages;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
-import org.certificateservices.messages.pkimessages.constants.Constants;
+import org.certificateservices.messages.csmessages.CSMessageResponseData;
+
 
 /**
  * Value class containing the result of a message processing call.
@@ -27,17 +25,10 @@ import org.certificateservices.messages.pkimessages.constants.Constants;
  * @author Philip Vendil
  *
  */
-public class PKIMessageResponseData {
+
+public class PKIMessageResponseData extends CSMessageResponseData{
 	
-	private String messageId;
-	private String messageName;
-	private String relatedEndEntity;
-	private String destination;
-	private byte[] responseData;
-	private boolean isForwardableResponse = false;
-	private Map<String,String> messageProperties = new HashMap<String,String>();
-	
-	
+
 	/**
 	 * Empty constructor
 	 */
@@ -88,126 +79,7 @@ public class PKIMessageResponseData {
 		this.isForwardableResponse = isForwardableResponse;
 	}
 	
-	/**
-	 * Help method calculating if a method should be forwarded or not.
-	 * <p>
-	 * Does the following calculation:
-	 * <li>Is PKI Message Destination not in exclude list
-	 * <li>is not a failure response
-	 * <li>if both are true is true returned
-	 * @param excludedDestinations a set of excluded destinations.
-	 * @return true if this message should be forwarded
-	 */
-	public boolean isForwardable(Set<String> excludedDestinations){
-		boolean excluded = excludedDestinations.contains(destination.toUpperCase().trim());
-		return isForwardableResponse && !excluded;
-	}
-	
-	
-	/**
-	 * 
-	 * @return the PKI Message destination to send the message to.
-	 */
-	public String getDestination() {
-		return destination;
-	}
-	
-	/**
-	 * 
-	 * @param destination the PKI Message destination to send the message to.
-	 */
-	public void setDestination(String destination) {
-		this.destination = destination;
-	}
-	
-	/**
-	 * 
-	 * @return the response data
-	 */
-	public byte[] getResponseData() {
-		return responseData;
-	}
-	
-	/**
-	 * 
-	 * @param responseData the response data
-	 */
-	public void setResponseData(byte[] responseData) {
-		this.responseData = responseData;
-	}
-	
-	/**
-	 * 
-	 * @return true if response is a forwardable or not.
-	 */
-	public boolean getIsForwardableResponse() {
-		return isForwardableResponse;
-	}
 
-	/**
-	 * 
-	 * @param isFailureResponse true if response is a failure indication.
-	 */
-	public void setIsForwardableResponse(boolean isForwardableResponse) {
-		this.isForwardableResponse = isForwardableResponse;
-	}
-	
-	/**
-	 * 
-	 * @return the related id of the message
-	 */
-	public String getMessageId() {
-		return messageId;
-	}
-
-	/**
-	 * 
-	 * @param messageId the related id of the message
-	 */
-	public void setMessageId(String messageId) {
-		this.messageId = messageId;
-	}
-
-	/**
-	 * 
-	 * @return the related end entity of the message.
-	 */
-	public String getRelatedEndEntity() {
-		return relatedEndEntity != null ? relatedEndEntity : Constants.RELATED_END_ENTITY_UNKNOWN;
-	}
-
-	/**
-	 * 
-	 * @param relatedEndEntity the related end entity of the message.
-	 */
-	public void setRelatedEndEntity(String relatedEndEntity) {
-		this.relatedEndEntity = relatedEndEntity;
-	}
-
-	/**
-	 * 
-	 * @return the name of the message in the response
-	 */
-	public String getMessageName() {
-		return messageName;
-	}
-
-	/**
-	 * 
-	 * @param messageName the name of the message in the response
-	 */
-	public void setMessageName(String messageName) {
-		this.messageName = messageName;
-	}
-	
-	/**
-	 * Gets a map of extra properties related to a message, for specific purposes, for example
-	 * JMS properties in a MQ environment.
-	 * @return a map of properties, never null.
-	 */
-	public Map<String,String> getMessageProperties(){
-		return messageProperties;
-	}
 
 	@Override
 	public String toString() {

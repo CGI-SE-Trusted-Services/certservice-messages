@@ -1,7 +1,6 @@
 package org.certificateservices.messages.pkimessages.manager
 
 import org.certificateservices.messages.pkimessages.DefaultPKIMessageParser
-import org.certificateservices.messages.pkimessages.DefaultPKIMessageParserSpec
 import org.certificateservices.messages.DummyMessageSecurityProvider
 import org.certificateservices.messages.MessageException;
 import org.certificateservices.messages.pkimessages.jaxb.CredentialRequest
@@ -19,6 +18,7 @@ import org.junit.Test
 import spock.lang.Shared
 import spock.lang.Specification
 
+@SuppressWarnings("deprecation")
 class DefaultMessageManagerSpec extends Specification{
 
 	@Shared DefaultMessageManager mm = new DefaultMessageManager()
@@ -57,19 +57,30 @@ class DefaultMessageManagerSpec extends Specification{
 	def "Test to 200 concurrent request and verify all responses are ok"(){
 		final int numberOfConcurrentRequests = 200
 		when:
-		System.out.println("Generating " + numberOfConcurrentRequests + " concurrent request with a responsetime between 100 and 4100 millis");
+		System.out.println("Generating " + numberOfConcurrentRequests + " concurrent request with a responsetime between 100 and 3100 millis");
 		
 		for(int i=0;i<numberOfConcurrentRequests;i++){
 			String requestId = MessageGenerateUtils.generateRandomUUID();
 			byte[] request = parser.genGetCredentialRequest(requestId, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678",null)
-			new Thread(new SendRandomRequest(mm,requestId,request, 100,4000)).start()
+			new Thread(new SendRandomRequest(mm,requestId,request, 100,3000)).start()
 		}
 		
-		
+		int lastEntry = 0;
+		int numberOfSame = 0;
 		
 		while(SendRandomRequest.numberOfCompletedRequests < numberOfConcurrentRequests){
 			System.out.println("number of completed : " + SendRandomRequest.numberOfCompletedRequests);
-			Thread.sleep(1000);			
+			Thread.sleep(1000);		
+			
+			if(lastEntry == SendRandomRequest.numberOfCompletedRequests){
+				numberOfSame++
+				if(numberOfSame > 6){
+					assert false
+				}
+			}else{
+			  lastEntry = SendRandomRequest.numberOfCompletedRequests
+			  numberOfSame = 0
+			}
 		}
 		System.out.println("number of completed : " + SendRandomRequest.numberOfCompletedRequests);
 		

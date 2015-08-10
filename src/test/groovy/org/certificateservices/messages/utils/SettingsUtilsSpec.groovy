@@ -6,7 +6,7 @@ import java.io.File;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.utils.SettingsUtils;
 import org.junit.Test;
 
@@ -17,8 +17,6 @@ import spock.lang.Unroll;
 class SettingsUtilsSpec extends Specification{
 		
 
-
-	 @Test
 	 @Unroll
 	 def "Test that parseBoolean returns #expected for setting #value when not required."(){
 		 setup:
@@ -28,9 +26,10 @@ class SettingsUtilsSpec extends Specification{
 
 		 when:
          Boolean result =SettingsUtils.parseBoolean(config,"somekey", false)
-		 
+		 Boolean altResult = SettingsUtils.parseBoolean(config,"nonexisting", "somekey", false)
 		 then:		 
 		 assert result == expected
+		 assert altResult == expected
 		 
 		 where:
 		 value     | expected
@@ -42,7 +41,7 @@ class SettingsUtilsSpec extends Specification{
 		 null      | null
 	 }
 	 
-	 @Test
+	 
 	 @Unroll
 	 def "Test that parseBoolean throws exception for invalid setting value #value and required."(){
 		 setup:
@@ -54,14 +53,13 @@ class SettingsUtilsSpec extends Specification{
 		 Boolean result =SettingsUtils.parseBoolean(config,"somekey", true)
 		 
 		then:
-		  thrown(MessageException)
+		  thrown(MessageProcessingException)
 		 
 		 where:
 		 value     << ["untrue","maybe","", null]
 
 	 }
 	 
-	 @Test
 	 @Unroll
 	 def "Test that parseBooleanWithDefault returns #expected for setting #value with default value #defaultVal"(){
 		 setup:
@@ -71,9 +69,11 @@ class SettingsUtilsSpec extends Specification{
 
 		 when:
 		 Boolean result =SettingsUtils.parseBooleanWithDefault(config,"somekey", defaultVal)
+		 Boolean altResult =SettingsUtils.parseBooleanWithDefault(config,"nonexisting","somekey", defaultVal)
 		 
 		 then:
 		 assert result == expected
+		 assert altResult == expected
 		 
 		 where:
 		 value     | expected | defaultVal
@@ -85,7 +85,6 @@ class SettingsUtilsSpec extends Specification{
 		 null      | false    | false
 	 }
 	 
-	 @Test
 	 @Unroll
 	 def "Test that parseStringArray returns #expected for setting #value with default value #defaultVal and delimiter #delimiter"(){
 		 setup:
@@ -95,9 +94,11 @@ class SettingsUtilsSpec extends Specification{
 
 		 when:
 		 String[] result =SettingsUtils.parseStringArray(config,"somekey", delimiter, defaultVal)
+		 String[] altResult =SettingsUtils.parseStringArray(config,"nonexisting","somekey", delimiter, defaultVal)
 		 
 		 then:
 		 assert Arrays.equals(result, expected)
+		 assert Arrays.equals(altResult, expected)
 		 
 		 where:
 		 value                | expected                       | defaultVal             | delimiter
@@ -108,7 +109,6 @@ class SettingsUtilsSpec extends Specification{
 		 
 	 }
 	 
-	 @Test
 	 @Unroll
 	 def "Test that parseStringArray returns #expected for setting #value and required  #required and delimiter #delimiter"(){
 		 setup:
@@ -118,9 +118,11 @@ class SettingsUtilsSpec extends Specification{
 
 		 when:
 		 String[] result =SettingsUtils.parseStringArray(config,"somekey", delimiter, required)
+		 String[] altResult =SettingsUtils.parseStringArray(config,"nonexisting","somekey", delimiter, required)
 		 
 		then:
          assert Arrays.equals(result, expected)
+		 assert Arrays.equals(altResult, expected)
 			
 		 
 		 where:
@@ -132,20 +134,23 @@ class SettingsUtilsSpec extends Specification{
 		 
 	 }
 	 
-	 @Test
 	 def "Test that parseStringArray throws and exception when required value isn't set"(){
 		setup:
 		Properties config = new Properties()
 
 		when:
 		String[] result =SettingsUtils.parseStringArray(config,"somekey", ",", true)
-
+		
 		then:
-		thrown(MessageException)
-				 
+		thrown(MessageProcessingException)
+		
+		when:
+		String[] altResult =SettingsUtils.parseStringArray(config,"nonexisting", "somekey", ",", true)
+		then:
+		thrown(MessageProcessingException)
+		
 	 }
 	 
-	 @Test
 	 def "Test that getRequiredProperty throws and exception when required value isn't set"(){
 		setup:
 		Properties config = new Properties()
@@ -154,18 +159,31 @@ class SettingsUtilsSpec extends Specification{
 		SettingsUtils.getRequiredProperty(config,"somekey")
 
 		then:
-		thrown(MessageException)
+		thrown(MessageProcessingException)
 		
 		when:
 		config.setProperty("somekey"," ")
 		SettingsUtils.getRequiredProperty(config,"somekey")
 
 		then:
-		thrown(MessageException)
+		thrown(MessageProcessingException)
+		
+		when:
+		SettingsUtils.getRequiredProperty(config,"somekey", "someotherkey")
+
+		then:
+		thrown(MessageProcessingException)
+		
+		when:
+		config.setProperty("someotherkey"," ")
+		SettingsUtils.getRequiredProperty(config,"somekey", "someotherkey")
+
+		then:
+		thrown(MessageProcessingException)
 				 
 	 }
 	 
-	 @Test
+	 
 	 def "Test that getRequiredProperty fetches value as expected"(){
 		setup:
 		Properties config = new Properties()
@@ -178,7 +196,27 @@ class SettingsUtilsSpec extends Specification{
 				 
 	 }
 	 
+	 def "Test that getRequiredProperty fetches alternative value as expected"(){
+		 setup:
+		 Properties config = new Properties()
+		 config.setProperty("somekey","somevalue")
+		 when:
+		 String value = SettingsUtils.getRequiredProperty(config,"nonexisting","somekey")
+ 
+		 then:
+		 assert value == "somevalue"
+				  
+	  }
 	 
+	 def "Test that getProperty fetches alternative key if not first key is set"(){
+		 setup:
+		 Properties config = new Properties()
+		 config.setProperty("somekey","somevalue")
+		 expect:
+		 SettingsUtils.getProperty(config,"somekey","someotherkey") == "somevalue"
+		 SettingsUtils.getProperty(config,"notexists","somekey") == "somevalue"
+		 SettingsUtils.getProperty(config,"notexists","someotherkey") == null
+	 }
 
 	
 

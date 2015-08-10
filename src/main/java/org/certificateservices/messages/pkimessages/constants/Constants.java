@@ -1,25 +1,26 @@
-/**
- * 
- */
+/************************************************************************
+*                                                                       *
+*  Certificate Service - Messages                                   *
+*                                                                       *
+*  This software is free software; you can redistribute it and/or       *
+*  modify it under the terms of the GNU Affero General Public License   *
+*  License as published by the Free Software Foundation; either         *
+*  version 3   of the License, or any later version.                    *
+*                                                                       *
+*  See terms of license at gnu.org.                                     *
+*                                                                       *
+*************************************************************************/
 package org.certificateservices.messages.pkimessages.constants;
 
 /**
- * Class containing general constants related to the PKI message protocol
+ * Clone of org.certificateservices.messages.csmessages.constants.Constants for
+ * backward compability.
  * 
  * @author Philip Vendil
  *
  */
-public class Constants {
+@Deprecated
+public class Constants extends org.certificateservices.messages.csmessages.constants.Constants{
 	
-	/**
-	 * Special value used when forwarding CRL automatically generated requests where the CA
-	 * doesn't know which organisation the CRL belongs to and it's up the the receiver to figure this out.
-	 */
-	public static final String ORGANISATION_UNKNOWN = "UNKNOWN";
-	
-	/**
-	 * Constant used when related end entity of CA name couldn't be determined.
-	 */
-	public static final String RELATED_END_ENTITY_UNKNOWN = "UNKNOWN";
 
 }

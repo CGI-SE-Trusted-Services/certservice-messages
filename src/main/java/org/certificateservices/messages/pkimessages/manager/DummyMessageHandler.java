@@ -1,6 +1,15 @@
-/**
- * 
- */
+/************************************************************************
+*                                                                       *
+*  Certificate Service - Messages                                       *
+*                                                                       *
+*  This software is free software; you can redistribute it and/or       *
+*  modify it under the terms of the GNU Affero General Public License   *
+*  License as published by the Free Software Foundation; either         *
+*  version 3   of the License, or any later version.                    *
+*                                                                       *
+*  See terms of license at gnu.org.                                     *
+*                                                                       *
+*************************************************************************/
 package org.certificateservices.messages.pkimessages.manager;
 
 import java.io.IOException;
@@ -12,6 +21,7 @@ import java.util.Properties;
 import org.apache.xml.security.exceptions.Base64DecodingException;
 import org.apache.xml.security.utils.Base64;
 import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.pkimessages.PKIMessageGenerateUtils;
 import org.certificateservices.messages.pkimessages.PKIMessageParser;
 import org.certificateservices.messages.pkimessages.constants.AvailableCredentialStatuses;
 import org.certificateservices.messages.pkimessages.constants.AvailableCredentialTypes;
@@ -23,10 +33,9 @@ import org.certificateservices.messages.pkimessages.jaxb.GetCredentialRequest;
 import org.certificateservices.messages.pkimessages.jaxb.IssueTokenCredentialsRequest;
 import org.certificateservices.messages.pkimessages.jaxb.ObjectFactory;
 import org.certificateservices.messages.pkimessages.jaxb.PKIMessage;
-import org.certificateservices.messages.utils.MessageGenerateUtils;
 
 
-
+@SuppressWarnings({ "deprecation" })
 public class DummyMessageHandler implements MessageHandler{
 
 	private MessageResponseCallback callback;
@@ -66,13 +75,13 @@ public class DummyMessageHandler implements MessageHandler{
 			c.setCredentialSubType(gcr.getCredentialSubType());
 			c.setCredentialType(AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE);
 			c.setDisplayName("SomeDisplayName");
-			c.setExpireDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
-			c.setIssueDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
+			c.setExpireDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
+			c.setIssueDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
 			c.setIssuerId("CN=SomeIssuerId");
 			c.setSerialNumber("abc123");
 			c.setStatus(100);
 			c.setUniqueId("SomeUniqueId");
-			c.setValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
+			c.setValidFromDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
 
 			response = parser.parseMessage(parser.genGetCredentialResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, c).getResponseData());
 
@@ -86,13 +95,13 @@ public class DummyMessageHandler implements MessageHandler{
 			c.setCredentialSubType(cr.getCredentialSubType());
 			c.setCredentialType(AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE);
 			c.setDisplayName("SomeDisplayName");
-			c.setExpireDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
-			c.setIssueDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
+			c.setExpireDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1)));
+			c.setIssueDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(2)));
 			c.setIssuerId("CN=SomeIssuerId");
 			c.setSerialNumber("abc123");
 			c.setStatus(100);
 			c.setUniqueId("SomeUniqueId");
-			c.setValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
+			c.setValidFromDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date(3)));
 
 			List<Credential> credentials = new ArrayList<Credential>();
 			credentials.add(c);

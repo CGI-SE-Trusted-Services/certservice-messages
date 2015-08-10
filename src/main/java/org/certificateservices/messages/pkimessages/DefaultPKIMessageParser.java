@@ -1,6 +1,6 @@
 /************************************************************************
 *                                                                       *
-*  Certificate Service - PKI Messages                                   *
+*  Certificate Service - Messages                                       *
 *                                                                       *
 *  This software is free software; you can redistribute it and/or       *
 *  modify it under the terms of the GNU Affero General Public License   *
@@ -72,10 +72,10 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-
 import org.apache.xml.security.exceptions.Base64DecodingException;
 import org.apache.xml.security.utils.Base64;
 import org.certificateservices.messages.MessageException;
+import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.pkimessages.jaxb.ChangeCredentialStatusRequest;
 import org.certificateservices.messages.pkimessages.jaxb.ChangeCredentialStatusResponse;
@@ -107,7 +107,6 @@ import org.certificateservices.messages.pkimessages.jaxb.StoreHardTokenDataReque
 import org.certificateservices.messages.pkimessages.jaxb.StoreHardTokenDataResponse;
 import org.certificateservices.messages.pkimessages.jaxb.TokenRequest;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
-import org.certificateservices.messages.utils.SettingsUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.ls.LSInput;
@@ -123,6 +122,7 @@ import org.xml.sax.SAXException;
  * @author Philip Vendil
  *
  */
+@SuppressWarnings({ "deprecation" })
 public class DefaultPKIMessageParser implements PKIMessageParser {
 
 	public static final String SETTING_SOURCEID = "pkimessage.sourceid";
@@ -391,7 +391,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		payload.setSerialNumber(serialNumber);
 		payload.setCredentialStatus(credentialStatus);
 		payload.setReasonInformation(reasonInformation);
-		payload.setRevocationDate(MessageGenerateUtils.dateToXMLGregorianCalendar(revocationDate));
+		payload.setRevocationDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(revocationDate));
 		PKIMessage pkiMessage = genPKIMessage(request.getVersion(), request.getName(),null, request.getSourceId(), request.getOrganisation(), getOriginatorFromRequest(request), payload);		
 		byte[] responseData = marshallAndSignPKIMessage( pkiMessage);
 		return new PKIMessageResponseData(pkiMessage.getID(),pkiMessage.getName(), relatedEndEntity, pkiMessage.getDestinationId(),responseData, true);
@@ -543,8 +543,8 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		payload.setIssuerId(issuerId);
 		payload.setCredentialStatusListType(credentialStatusListType);
 		payload.setForce(force);
-		payload.setRequestedNotAfterDate(MessageGenerateUtils.dateToXMLGregorianCalendar(requestedNotAfterDate));
-		payload.setRequestedValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(requestedValidFromDate));
+		payload.setRequestedNotAfterDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(requestedNotAfterDate));
+		payload.setRequestedValidFromDate(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(requestedValidFromDate));
 		PKIMessage pkiMessage = genPKIMessage(defaultVersion,requestId, destinationId, organisation, originator, payload);		
 		return marshallAndSignPKIMessage(pkiMessage);
 	}
@@ -877,7 +877,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		}else{
 		  retval.setID(messageId);
 		}
-		retval.setTimeStamp(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date()));
+		retval.setTimeStamp(PKIMessageGenerateUtils.dateToXMLGregorianCalendar(new Date()));
 		retval.setName(messageNameCatalogue.lookupName(requestName, payload));
 		retval.setDestinationId(destinationID);
 		retval.setSourceId(sourceId);
@@ -975,7 +975,9 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 			transformer.transform(new DOMSource(doc), new StreamResult(writer));
 			String output = writer.getBuffer().toString();	
 			return output.getBytes("UTF-8");
-		} catch (JAXBException e) {
+		}catch (MessageProcessingException e) {
+			throw new MessageException("Error marshalling PKI Message, " + e.getMessage(),e);
+		}  catch (JAXBException e) {
 			throw new MessageException("Error marshalling PKI Message, " + e.getMessage(),e);
 		} catch (ParserConfigurationException e) {
 			throw new MessageException("Error marshalling PKI Message, " + e.getMessage(),e);
@@ -1010,7 +1012,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	private Boolean signMessages;
 	private boolean signMessages() throws MessageException{
 		if(signMessages == null){
-			signMessages = SettingsUtils.parseBooleanWithDefault(properties, SETTING_SIGN, true);
+			signMessages = PKISettingsUtils.parseBooleanWithDefault(properties, SETTING_SIGN, true);
 		}
 		return signMessages;
 	}
@@ -1018,7 +1020,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	private Boolean requireSignature;
 	private boolean requireSignature() throws MessageException{
 		if(requireSignature == null){
-			requireSignature = SettingsUtils.parseBooleanWithDefault(properties, SETTING_REQUIRESIGNATURE, true);
+			requireSignature = PKISettingsUtils.parseBooleanWithDefault(properties, SETTING_REQUIRESIGNATURE, true);
 		}
 		return requireSignature;
 	}

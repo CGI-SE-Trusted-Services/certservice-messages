@@ -1,6 +1,6 @@
 /************************************************************************
 *                                                                       *
-*  Certificate Service - PKI Messages                                   *
+*  Certificate Service - Messages                                       *
 *                                                                       *
 *  This software is free software; you can redistribute it and/or       *
 *  modify it under the terms of the GNU Affero General Public License   *
@@ -14,6 +14,7 @@ package org.certificateservices.messages;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Set;
 
 
 /**
@@ -25,21 +26,55 @@ import java.security.cert.X509Certificate;
  */
 public interface MessageSecurityProvider {
 	
+	public static final String DEFAULT_DECRYPTIONKEY = null;
+	
 
 	/**
 	 * Fetches the signing key used to create the digital signatures of the XML file.
 	 * @return the signing key used.
-	 * @throws MessageException if key isn't accessible or activated.
+	 * @throws MessageProcessingException if key isn't accessible or activated.
 	 */
-	PrivateKey getSigningKey() throws MessageException;
+	PrivateKey getSigningKey() throws MessageProcessingException;
 	
 	/**
 	 * Fetches the signing certificate used to create the digital signatures of the XML file.
 	 * @return the signing certificate used.
-	 * @throws MessageException if certificate isn't accessible.
+	 * @throws MessageProcessingException if certificate isn't accessible.
 	 */
-	X509Certificate getSigningCertificate()  throws MessageException;
+	X509Certificate getSigningCertificate()  throws MessageProcessingException;
 	
+	
+	/**
+	 * Fetches a private key given it's unique identifier.
+	 * @param keyId unique identifier of the key, if null should a default key be retrieved
+	 * @return the related decryption key.
+	 * @throws MessageProcessingException
+	 */
+	PrivateKey getDecryptionKey(String keyId)  throws MessageProcessingException;
+	
+	/**
+	 * Fetches the decryption certificate of related key id.
+	 * @param keyId unique identifier of the key, if null should a default key certificate be retrieved
+	 * @return the related decryption certificate.
+	 * @throws MessageProcessingException if certificate isn't accessible.
+	 */
+	X509Certificate getDecryptionCertificate(String keyId)  throws MessageProcessingException;
+	
+	/**
+	 * Fetches the decryption certificate chain of related key id can be one or more in size..
+	 * @param keyId unique identifier of the key, if null should a default key certificate be retrieved
+	 * @return the related decryption certificate chain
+	 * @throws MessageProcessingException if certificate isn't accessible.
+	 */
+	X509Certificate[] getDecryptionCertificateChain(String keyId)  throws MessageProcessingException;
+	
+	/**
+	 * Returns key identifiers of all available decryption keys.
+	 * 
+	 * @return key identifiers of all available decryption keys.
+	 * @throws MessageProcessingException
+	 */
+	Set<String> getDecryptionKeyIds() throws MessageProcessingException;
 
 	/**
 	 * Method in charge of validating a certificate used to sign a PKI message
@@ -48,7 +83,23 @@ public interface MessageSecurityProvider {
 	 * @param organisation the related organisation to the message
 	 * @return true if the 
 	 * @throws IllegalArgumentException if arguments were invalid.
-	 * @throws MessageException if internal error occurred validating the certificate.
+	 * @throws MessageProcessingException if internal error occurred validating the certificate.
 	 */
-	boolean isValidAndAuthorized(X509Certificate signCertificate, String organisation) throws IllegalArgumentException, MessageException;
+	boolean isValidAndAuthorized(X509Certificate signCertificate, String organisation) throws IllegalArgumentException, MessageProcessingException;
+	
+	/**
+	 * Method to fetch the EncryptionAlgorithmScheme to use when encrypting messages.
+	 * 
+	 * @return Configured EncryptionAlgorithmScheme to use.
+	 * @throws MessageProcessingException if internal error determining algorithm scheme to use
+	 */
+	EncryptionAlgorithmScheme getEncryptionAlgorithmScheme() throws MessageProcessingException;
+	
+	/**
+	 * Method to fetch the SigningAlgorithmScheme to use when signing messages.
+	 * 
+	 * @return Configured SigningAlgorithmScheme to use.
+	 * @throws MessageProcessingException if internal error determining algorithm scheme to use
+	 */
+	SigningAlgorithmScheme getSigningAlgorithmScheme() throws MessageProcessingException;
 }

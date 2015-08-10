@@ -14,7 +14,14 @@ package org.certificateservices.messages;
 
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.certificateservices.messages.utils.XMLEncrypter;
 
 
 /**
@@ -28,21 +35,43 @@ public class DummyMessageSecurityProvider implements
 		MessageSecurityProvider {
 
 	private KeyStore dummyKS = null;
+	private KeyStore encKeyStore = null;
+	private String defaultEncKeyId;
+	private Map<String,String> encKeyIdToAlias = new HashMap<String,String>();
 	
 	private boolean validCallDone = false;
 	private String organisationCalled = null;
 	
-	private KeyStore getDummyKeystore() throws MessageException{
+	private KeyStore getDummyKeystore() throws MessageProcessingException{
 		if(dummyKS == null){
 			try {
 				dummyKS = KeyStore.getInstance("JKS");
 				dummyKS.load(this.getClass().getResourceAsStream("/dummykeystore.jks"), "tGidBq0Eep".toCharArray());
 			} catch (Exception e) {
-				throw new MessageException("Error loading dummy key store: " + e.getMessage(),e);
+				throw new MessageProcessingException("Error loading dummy key store: " + e.getMessage(),e);
 			}
 			
 		}
 		return dummyKS;
+	}
+	
+	private KeyStore getEncKeystore() throws MessageProcessingException{
+		if(encKeyStore == null){
+			try {
+				encKeyStore = KeyStore.getInstance("JKS");
+				encKeyStore.load(this.getClass().getResourceAsStream("/decryptionks.jks"), "password".toCharArray());
+				
+				defaultEncKeyId = XMLEncrypter.generateKeyId(encKeyStore.getCertificate("key1").getPublicKey());
+				encKeyIdToAlias.put(defaultEncKeyId, "key1");
+				encKeyIdToAlias.put(XMLEncrypter.generateKeyId(encKeyStore.getCertificate("key2").getPublicKey()), "key2");
+				encKeyIdToAlias.put(XMLEncrypter.generateKeyId(encKeyStore.getCertificate("key3").getPublicKey()), "key3");
+				
+			} catch (Exception e) {
+				throw new MessageProcessingException("Error loading dummy enc key store: " + e.getMessage(),e);
+			}
+			
+		}
+		return encKeyStore;
 	}
 	
 	/**
@@ -50,12 +79,12 @@ public class DummyMessageSecurityProvider implements
 	 * 
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getSigningKey()
 	 */
-	public PrivateKey getSigningKey() throws MessageException {
+	public PrivateKey getSigningKey() throws MessageProcessingException {
 	
 		try {
 			return (PrivateKey) getDummyKeystore().getKey("test", "tGidBq0Eep".toCharArray());
 		} catch (Exception e) {
-			throw new MessageException("Error fetching dummy signing key: " + e.getMessage(),e);
+			throw new MessageProcessingException("Error fetching dummy signing key: " + e.getMessage(),e);
 		}
 	}
 
@@ -64,11 +93,11 @@ public class DummyMessageSecurityProvider implements
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getSigningCertificate()
 	 */
 	public X509Certificate getSigningCertificate()
-			throws IllegalArgumentException, MessageException {
+			throws IllegalArgumentException, MessageProcessingException {
 		try {
 			return (X509Certificate) getDummyKeystore().getCertificate("test");
 		} catch (Exception e) {
-			throw new MessageException("Error fetching dummy signing certificate: " + e.getMessage(),e);
+			throw new MessageProcessingException("Error fetching dummy signing certificate: " + e.getMessage(),e);
 		}
 	}
 
@@ -77,7 +106,7 @@ public class DummyMessageSecurityProvider implements
 	 * @see org.certificateservices.messages.MessageSecurityProvider#isValidAndAuthorized(X509Certificate)
 	 */
 	public boolean isValidAndAuthorized(X509Certificate signCertificate, String organisation)
-			throws IllegalArgumentException, MessageException {
+			throws IllegalArgumentException, MessageProcessingException {
 
 		if(signCertificate == null){
 			throw new IllegalArgumentException("Error sign certificate cannot be null when validating.");
@@ -106,5 +135,78 @@ public class DummyMessageSecurityProvider implements
 	public String getOrganisationCalled(){
 		return organisationCalled;
 	}
+
+
+	public PrivateKey getDecryptionKey(String keyId)
+			throws MessageProcessingException {
+		KeyStore encKeyStore = getEncKeystore();
+		if(keyId == DEFAULT_DECRYPTIONKEY){
+			keyId = defaultEncKeyId;
+		}
+		String alias =  encKeyIdToAlias.get(keyId);
+		if(alias == null){
+		  throw new MessageProcessingException("Error no decryption key with key id; " + keyId + " found in message security provider");
+		}
+		try {
+			return (PrivateKey) encKeyStore.getKey(alias, "password".toCharArray());
+		} catch (Exception e) {
+			 throw new MessageProcessingException("Error no decryption key with key id; " + keyId + " found in message security provider");
+		}
+	}
+
+	public X509Certificate getDecryptionCertificate(String keyId)
+			throws MessageProcessingException {
+		KeyStore encKeyStore = getEncKeystore();
+		if(keyId == DEFAULT_DECRYPTIONKEY){
+			keyId = defaultEncKeyId;
+		}
+		String alias =  encKeyIdToAlias.get(keyId);
+		if(alias == null){
+		  throw new MessageProcessingException("Error no decryption key with key id; " + keyId + " found in message security provider");
+		}
+		try {
+			return  (X509Certificate) encKeyStore.getCertificate(alias);
+		} catch (Exception e) {
+			 throw new MessageProcessingException("Error no decryption key with key id; " + keyId + " found in message security provider");
+		}
+	}
+	
+
+	public X509Certificate[] getDecryptionCertificateChain(String keyId)
+			throws MessageProcessingException {
+		KeyStore encKeyStore = getEncKeystore();
+		if(keyId == DEFAULT_DECRYPTIONKEY){
+			keyId = defaultEncKeyId;
+		}
+		String alias =  encKeyIdToAlias.get(keyId);
+		if(alias == null){
+		  throw new MessageProcessingException("Error no decryption key with key id; " + keyId + " found in message security provider");
+		}
+		try {
+			Certificate[] certChain =  encKeyStore.getCertificateChain(alias);
+			return (X509Certificate[]) Arrays.copyOf(certChain,certChain.length, X509Certificate[].class);
+		} catch (Exception e) {
+			 throw new MessageProcessingException("Error no decryption key with key id; " + keyId + " found in message security provider");
+		}
+	}
+
+	
+	public Set<String> getDecryptionKeyIds() throws MessageProcessingException {
+		getEncKeystore();
+		return encKeyIdToAlias.keySet();
+	}
+	
+	
+	public EncryptionAlgorithmScheme getEncryptionAlgorithmScheme()
+			throws MessageProcessingException {
+		return EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256;
+	}
+
+	
+	public SigningAlgorithmScheme getSigningAlgorithmScheme()
+			throws MessageProcessingException {
+		return SigningAlgorithmScheme.RSAWithSHA256;
+	}
+
 
 }
