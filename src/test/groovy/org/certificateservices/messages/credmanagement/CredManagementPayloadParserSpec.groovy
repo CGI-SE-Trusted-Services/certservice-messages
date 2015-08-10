@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.xml.datatype.DatatypeFactory;
 
+import org.apache.xml.security.Init;
 import org.apache.xml.security.utils.Base64;
 import org.certificateservices.messages.DummyMessageSecurityProvider;
 import org.certificateservices.messages.MessageContentException;
@@ -37,6 +38,10 @@ class CredManagementPayloadParserSpec extends Specification {
 	org.certificateservices.messages.csmessages.jaxb.ObjectFactory csMessageOf = new org.certificateservices.messages.csmessages.jaxb.ObjectFactory()
 	Calendar cal = Calendar.getInstance();
 	
+	
+	def setupSpec(){
+		Init.init();
+	}
 	
 
 	def setup(){

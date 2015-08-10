@@ -62,7 +62,6 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 	/**
 	 * @see PayloadParser#getJAXBPackage()
 	 */
-	@Override
 	public String getJAXBPackage() {
 		return "org.certificateservices.messages.keystoremgmt.jaxb";
 	}
@@ -70,7 +69,6 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 	/**
 	 * @see PayloadParser#getNameSpace()
 	 */
-	@Override
 	public String getNameSpace() {
 		return NAMESPACE;
 	}
@@ -78,7 +76,6 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 	/**
 	 * @see PayloadParser#getSchemaAsInputStream(String)
 	 */
-	@Override
 	public InputStream getSchemaAsInputStream(String payLoadVersion)
 			throws MessageContentException, MessageProcessingException {
     	if(payLoadVersion.equals("2.0")){

@@ -9,12 +9,13 @@
 package org.certificateservices.messages.xenc.jaxb;
 
 import java.math.BigInteger;
+
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlElementDecl;
 import javax.xml.bind.annotation.XmlRegistry;
 import javax.xml.namespace.QName;
+
 import org.certificateservices.messages.xmldsig.jaxb.KeyInfoType;
-import org.certificateservices.messages.xmldsig.jaxb.TransformType;
 
 
 /**
@@ -41,8 +42,6 @@ public class ObjectFactory {
     private final static QName _CipherData_QNAME = new QName("http://www.w3.org/2001/04/xmlenc#", "CipherData");
     private final static QName _CipherReference_QNAME = new QName("http://www.w3.org/2001/04/xmlenc#", "CipherReference");
     private final static QName _AgreementMethod_QNAME = new QName("http://www.w3.org/2001/04/xmlenc#", "AgreementMethod");
-    private final static QName _KeyInfo_QNAME = new QName("http://www.w3.org/2000/09/xmldsig#", "KeyInfo");
-    private final static QName _Transform_QNAME = new QName("http://www.w3.org/2000/09/xmldsig#", "Transform");
     private final static QName _ReferenceListDataReference_QNAME = new QName("http://www.w3.org/2001/04/xmlenc#", "DataReference");
     private final static QName _ReferenceListKeyReference_QNAME = new QName("http://www.w3.org/2001/04/xmlenc#", "KeyReference");
     private final static QName _EncryptionMethodTypeKeySize_QNAME = new QName("http://www.w3.org/2001/04/xmlenc#", "KeySize");
@@ -209,23 +208,6 @@ public class ObjectFactory {
         return new JAXBElement<AgreementMethodType>(_AgreementMethod_QNAME, AgreementMethodType.class, null, value);
     }
 
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link KeyInfoType }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://www.w3.org/2000/09/xmldsig#", name = "KeyInfo")
-    public JAXBElement<KeyInfoType> createKeyInfo(KeyInfoType value) {
-        return new JAXBElement<KeyInfoType>(_KeyInfo_QNAME, KeyInfoType.class, null, value);
-    }
-
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link TransformType }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://www.w3.org/2000/09/xmldsig#", name = "Transform")
-    public JAXBElement<TransformType> createTransform(TransformType value) {
-        return new JAXBElement<TransformType>(_Transform_QNAME, TransformType.class, null, value);
-    }
 
     /**
      * Create an instance of {@link JAXBElement }{@code <}{@link ReferenceType }{@code >}}

@@ -38,7 +38,7 @@ public class DummyPayloadParser implements PayloadParser{
 
 	ObjectFactory of = new ObjectFactory();
 
-	@Override
+	
 	public void init(Properties config, CSMessageParser parser) throws MessageProcessingException {
 		this.config = config;
 		this.parser = parser;
@@ -51,17 +51,17 @@ public class DummyPayloadParser implements PayloadParser{
 		return retval;
 	}
 
-	@Override
+	
 	public String getNameSpace() {
 		return NAMESPACE;
 	}
 
-	@Override
+	
 	public String getJAXBPackage() {
 		return "org.certificateservices.messages.dummy.jaxb";
 	}
 
-	@Override
+	
 	public InputStream getSchemaAsInputStream(String payLoadVersion)
 			throws MessageContentException, MessageProcessingException {
 		return getClass().getResourceAsStream("/dummypayload_schema2_0.xsd");
