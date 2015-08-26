@@ -44,7 +44,8 @@ public interface ReceiptParser {
 	List<ReceiptMessage> parseMessage(byte[] messageData) throws IllegalArgumentException, ReceiptMessageException;
 	
 	/**
-	 * Method to generate a receipt message from the supplied data.
+	 * Method to generate a receipt message from the supplied data. Using destination node
+	 * specified in configuration (if applicable).
 	 * 
 	 * @param messageId the unique message id
 	 * @param status the status of the receipt message
@@ -55,4 +56,17 @@ public interface ReceiptParser {
 	 */
 	byte[] genReceiptMessage(String messageId, ReceiptStatus status, String errorDescription)  throws IllegalArgumentException, ReceiptMessageException;
 
+	/**
+	 * Alternative method to generate a receipt message from the supplied data but with a specified
+	 * destination in header data. (if applicable).
+	 * 
+	 * @param messageId the unique message id
+	 * @param status the status of the receipt message
+	 * @param errorDescription optional error description, null if not applicable
+	 * @return a generated receipt message, never null.
+	 * @throws IllegalArgumentException if supplied arguments were invalid.
+	 * @throws ReceiptMessageException if internal problems occurred when generating the receipt message.
+	 */
+	byte[] genReceiptMessage(String destinationNode, String messageId, ReceiptStatus status, String errorDescription)  throws IllegalArgumentException, ReceiptMessageException;
+	
 }
