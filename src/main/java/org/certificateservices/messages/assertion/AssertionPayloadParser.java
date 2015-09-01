@@ -114,6 +114,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	static final String ATTRIBUTE_NAME_DISPLAYNAME = "DisplayName";
 	static final String ATTRIBUTE_NAME_ROLES = "Roles";
 	static final String ATTRIBUTE_NAME_USERDATA = "UserData";
+	static final String ATTRIBUTE_NAME_TOKENTYPE = "TokenType";
 	static final String ATTRIBUTE_NAME_DESTINATIONID = "DestinationId";
 	static final String ATTRIBUTE_NAME_APPROVALID = "ApprovalId";
 	static final String ATTRIBUTE_NAME_APPROVEDREQUESTS = "ApprovedRequests";
@@ -206,7 +207,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	 * @throws MessageProcessingException if internal error occurred generating the message.
 	 */
 	public byte[] genDistributedAuthorizationRequest(String subjectId) throws MessageContentException, MessageProcessingException{
-		return genAttributeQuery(subjectId, ATTRIBUTE_NAME_ROLES);
+		return genAttributeQuery(subjectId, ATTRIBUTE_NAME_ROLES, null);
 	}
 	
 	/**
@@ -215,12 +216,13 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	 * This method will generate an unsigned SAMLP Attribute Query Message
 	 * 
 	 * @param subjectId The unique id of the user to look-up, could be UPN or SAM account name depending on implementation.
+	 * @param tokenType token type of the related user data (optional)
 	 * @return a generated SAMLP Attribute Query Message
 	 * @throws MessageContentException if given parameters where invalid
 	 * @throws MessageProcessingException if internal error occurred generating the message.
 	 */
-	public byte[] genUserDataRequest(String subjectId) throws MessageContentException, MessageProcessingException{
-		return genAttributeQuery(subjectId, ATTRIBUTE_NAME_USERDATA);
+	public byte[] genUserDataRequest(String subjectId, String tokenType) throws MessageContentException, MessageProcessingException{
+		return genAttributeQuery(subjectId, ATTRIBUTE_NAME_USERDATA, tokenType);
 	}
 	
 	
@@ -283,6 +285,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	 * @param notBefore beginning of the validity of the ticket.
 	 * @param notOnOrAfter end validity of the ticket.
 	 * @param subjectId the subject id string having the roles.
+	 * @param tokenType the related token type associated with the user data. Unencrypted (optional, use null not to set this attribute).
 	 * @param displayName unencrypted display name of the related user (optional, use null not to set this attribute).
 	 * @param fieldValues list of field values that will be encrypted as UserData attribute.
 	 * @param receipients list of certificates the roles will be encrypted for.
@@ -290,7 +293,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if parameters where invalid.
 	 * @throws MessageProcessingException if internal problems occurred generated the message.
 	 */
-	public byte[] genUserDataTicket(String inResponseTo, String issuer, Date notBefore, Date notOnOrAfter, String subjectId, String displayName, List<FieldValue> fieldValues, List<X509Certificate> receipients) throws MessageContentException, MessageProcessingException{
+	public byte[] genUserDataTicket(String inResponseTo, String issuer, Date notBefore, Date notOnOrAfter, String subjectId, String displayName, String tokenType, List<FieldValue> fieldValues, List<X509Certificate> receipients) throws MessageContentException, MessageProcessingException{
 		try{
 			List<Object> attributes = new ArrayList<Object>();
 			
@@ -306,6 +309,15 @@ public class AssertionPayloadParser extends BasePayloadParser {
 				
 				attributes.add(displayNameAttributeType);
 			}
+			
+			if(tokenType != null){
+				AttributeType tokenTypeAttributeType = of.createAttributeType();
+				tokenTypeAttributeType.setName(ATTRIBUTE_NAME_TOKENTYPE);
+				tokenTypeAttributeType.getAttributeValue().add(tokenType);
+				
+				attributes.add(tokenTypeAttributeType);
+			}
+			
 
 			AttributeType userDataAttributeType = of.createAttributeType();
 			userDataAttributeType.setName(ATTRIBUTE_NAME_USERDATA);
@@ -809,11 +821,12 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	 * 
 	 * @param subjectId The unique id of the user to look-up, could be UPN or SAM account name depending on implementation.
 	 * @param attributeName the name of the attribute to query.
+	 * @param tokenType, value of TokenType attribute parameter, null if not used.
 	 * @return a generated SAMLP Attribute Query Message
 	 * @throws MessageContentException if given parameters where invalid
 	 * @throws MessageProcessingException if internal error occurred generating the message.
 	 */
-	private byte[] genAttributeQuery(String subjectId, String attributeName) throws MessageContentException, MessageProcessingException{
+	private byte[] genAttributeQuery(String subjectId, String attributeName, String tokenType) throws MessageContentException, MessageProcessingException{
 		if(subjectId == null || subjectId.trim().equals("")){
 			throw new MessageContentException("Error subject id cannot be null in attribute query");
 		}
@@ -833,6 +846,12 @@ public class AssertionPayloadParser extends BasePayloadParser {
 		attributeType.setName(attributeName);
 		attributeQueryType.getAttribute().add(attributeType);
 		
+		if(tokenType != null){
+			AttributeType tokenTypeAttributeType = of.createAttributeType();
+			tokenTypeAttributeType.setName(ATTRIBUTE_NAME_TOKENTYPE);
+			tokenTypeAttributeType.getAttributeValue().add(tokenType);
+			attributeQueryType.getAttribute().add(tokenTypeAttributeType);
+		}
 		return marshall(samlpOf.createAttributeQuery(attributeQueryType));
 	}
 	

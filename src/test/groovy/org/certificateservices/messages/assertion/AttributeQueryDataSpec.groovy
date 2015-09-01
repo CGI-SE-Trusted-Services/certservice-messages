@@ -80,7 +80,7 @@ class AttributeQueryDataSpec extends Specification {
 			case AUTHORIZATION_TICKET:
 			 return assertionPayloadParser.genDistributedAuthorizationRequest(subjectId)
 			 case USER_DATA: 
-			 return assertionPayloadParser.genUserDataRequest(subjectId)
+			 return assertionPayloadParser.genUserDataRequest(subjectId, "SomeTokenType")
 		}
 		return null
 	}

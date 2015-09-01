@@ -25,6 +25,7 @@ public class UserDataAssertionData extends AssertionData {
 
 	private String displayName;
 	private List<FieldValue> fieldValues;
+	private String tokenType;
 
 	/**
 	 * Main Constructor
@@ -48,6 +49,9 @@ public class UserDataAssertionData extends AssertionData {
 						if(attr instanceof AttributeType){
 							if(((AttributeType) attr).getName().equals(AssertionPayloadParser.ATTRIBUTE_NAME_DISPLAYNAME)){
 								displayName = (String) ((AttributeType) attr).getAttributeValue().get(0);
+							}
+							if(((AttributeType) attr).getName().equals(AssertionPayloadParser.ATTRIBUTE_NAME_TOKENTYPE)){
+								tokenType = (String) ((AttributeType) attr).getAttributeValue().get(0);
 							}
 							if(((AttributeType) attr).getName().equals(AssertionPayloadParser.ATTRIBUTE_NAME_USERDATA)){
 								fieldValues = new ArrayList<FieldValue>();
@@ -74,6 +78,12 @@ public class UserDataAssertionData extends AssertionData {
 		return displayName;
 	}
 
+	/**
+	 * @return related token type of the data requested  (optional might be null if no token type exists).
+	 */
+	public String getTokenType() {
+		return tokenType;
+	}
 
 	/**
 	 * @return list of field values that will be used as a complement when generating credential for a user.
@@ -87,7 +97,8 @@ public class UserDataAssertionData extends AssertionData {
 
 	@Override
 	public String toString() {
-		return "ApprovalAssertionData [displayName=" + displayName
+		return "ApprovalAssertionData [displayName=" + displayName 
+				+ ", tokenType=" + tokenType 
 				+ ", fieldValues=" + fieldValues + ", id="
 				+ getId() + ", notBefore=" + getNotBefore()
 				+ ", notOnOrAfter=" + getNotOnOrAfter()
