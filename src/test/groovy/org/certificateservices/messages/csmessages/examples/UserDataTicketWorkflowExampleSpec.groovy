@@ -100,7 +100,7 @@ csmessage.sourceid=SomeClientSystem
 		when: "Step 1: The client should know that it needs to complement it's data with data from a local user repository"
 		// On Client:
 		// Generate a UserData AttributeQuery
-		byte[] attributeQuery = app.genUserDataRequest("SomeUserId")
+		byte[] attributeQuery = app.genUserDataRequest("SomeUserId","SomeTokenType")
 		// This query is sent to the local user repostory with a attribute query interface, (CS Proxy)
 		
 		// On User Repository:
@@ -122,7 +122,7 @@ csmessage.sourceid=SomeClientSystem
 		f2.setValue("Some Department")
 		// The repostory then generates a user data ticket sent back to the client, all field values are encrypted for the server to see only. Display name is optional and unencrypted for
 		// the client to display in it's application.
-		byte[] samlpUserDataTicket = app.genUserDataTicket(attributeQueryData.getID(), "SomeIssuer", new Date(System.currentTimeMillis() - 15000L), new Date(System.currentTimeMillis() + 15000L), attributeQueryData.subjectId, "SomeDisplayName", [f1,f2], [receipient])
+		byte[] samlpUserDataTicket = app.genUserDataTicket(attributeQueryData.getID(), "SomeIssuer", new Date(System.currentTimeMillis() - 15000L), new Date(System.currentTimeMillis() + 15000L), attributeQueryData.subjectId, "SomeDisplayName","SomeTokenType", [f1,f2], [receipient])
 		// the SAMLP response is sent back to the client.
 		
 		// On Client:
