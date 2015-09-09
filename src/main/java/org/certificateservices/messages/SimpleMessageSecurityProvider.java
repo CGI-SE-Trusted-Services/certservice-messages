@@ -246,7 +246,7 @@ public class SimpleMessageSecurityProvider implements
 	 * Checks that the two certificate is exactly the same.
 	 * 
 	 */
-	private boolean isTrusted(X509Certificate signCertificate, X509Certificate trustedCertificate) throws CertificateEncodingException{
+	protected boolean isTrusted(X509Certificate signCertificate, X509Certificate trustedCertificate) throws CertificateEncodingException{
 		return Arrays.equals(signCertificate.getEncoded(), trustedCertificate.getEncoded());
 	}
 	
@@ -306,7 +306,7 @@ public class SimpleMessageSecurityProvider implements
 	 * @return the specified keystore from configuration.
 	 * @throws MessageProcessingException if configuration of security provider was faulty.
 	 */
-	private KeyStore getSigningKeyStore(Properties config) throws MessageProcessingException {
+	protected KeyStore getSigningKeyStore(Properties config) throws MessageProcessingException {
 		return getKeyStore(config, SETTING_SIGNINGKEYSTORE_PATH, SETTING_SIGNINGKEYSTORE_PASSWORD);
 	}
 
@@ -318,7 +318,7 @@ public class SimpleMessageSecurityProvider implements
 	 * @return the specified keystore from configuration.
 	 * @throws MessageProcessingException if configuration of security provider was faulty.
 	 */
-	private KeyStore getDecryptionKeyStore(Properties config) throws MessageProcessingException {
+	protected KeyStore getDecryptionKeyStore(Properties config) throws MessageProcessingException {
 		String encryptPath = config.getProperty(SETTING_DECRYPTKEYSTORE_PATH);
 		if(encryptPath == null || encryptPath.trim().equals("")){
 			return getSigningKeyStore(config);
@@ -335,7 +335,7 @@ public class SimpleMessageSecurityProvider implements
 	 * @return the specified keystore from configuration.
 	 * @throws MessageProcessingException if configuration of security provider was faulty.
 	 */
-	private char[] getDecryptionKeyStorePassword(Properties config) throws MessageProcessingException {
+	protected char[] getDecryptionKeyStorePassword(Properties config) throws MessageProcessingException {
 		String encryptPath = config.getProperty(SETTING_DECRYPTKEYSTORE_PATH);
 		if(encryptPath == null || encryptPath.trim().equals("")){
 			return SettingsUtils.getRequiredProperty(config, SETTING_SIGNINGKEYSTORE_PASSWORD).toCharArray();
@@ -346,14 +346,14 @@ public class SimpleMessageSecurityProvider implements
 	/**
 	 * Help method that reads default key alias and failbacks on signature keystore alias.
 	 */
-	private String getDefaultDecryptionAlias(Properties config) throws MessageProcessingException {
+	protected String getDefaultDecryptionAlias(Properties config) throws MessageProcessingException {
 		return SettingsUtils.getRequiredProperty(config, SETTING_DECRYPTKEYSTORE_DEFAULTKEY_ALIAS, SETTING_SIGNINGKEYSTORE_ALIAS);
 	}
 	
 	/**
 	 * Help method reading a JKS keystore from configuration and specified settings.
 	 */
-	private KeyStore getKeyStore(Properties config, String pathSetting, String passwordSetting) throws MessageProcessingException {
+	protected KeyStore getKeyStore(Properties config, String pathSetting, String passwordSetting) throws MessageProcessingException {
 		String keyStorePath = SettingsUtils.getRequiredProperty(config, pathSetting);
 		
 		InputStream keyStoreInputStream = this.getClass().getClassLoader().getResourceAsStream(keyStorePath);
@@ -382,7 +382,7 @@ public class SimpleMessageSecurityProvider implements
 	}
 
 	
-	private Object findAlgorithm(Enum<?>[] algorithms, Properties config, String setting, Object defaultValue) throws MessageProcessingException{
+	protected Object findAlgorithm(Enum<?>[] algorithms, Properties config, String setting, Object defaultValue) throws MessageProcessingException{
 		String settingValue = config.getProperty(setting);
 		if(settingValue == null || settingValue.trim().equals("")){
 			return defaultValue;

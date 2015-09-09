@@ -22,6 +22,7 @@ public class AttributeQueryData {
 	protected String id;
 	protected AttributeQueryTypeEnum type;
 	protected String subjectId;
+	protected String tokenType;
 
 	/**
 	 * Main Constructor.
@@ -52,7 +53,11 @@ public class AttributeQueryData {
 							break;
 						}
 					}
-				}
+					if(((AttributeType) attr).getName().equals(AssertionPayloadParser.ATTRIBUTE_NAME_TOKENTYPE) && ((AttributeType) attr).getAttributeValue().size() > 0){
+						tokenType = ((AttributeType) attr).getAttributeValue().get(0).toString();
+						break;
+					}
+				}	
 			}
 
 
@@ -92,6 +97,14 @@ public class AttributeQueryData {
 	 */
 	public String getSubjectId() {
 		return subjectId;
+	}
+	
+	/**
+	 * 
+	 * @return the related token type in attribute query. only set for UserData Attribute queries, otherwise null.
+	 */
+	public String getTokenType() {
+		return tokenType;
 	}
 
 	@Override
