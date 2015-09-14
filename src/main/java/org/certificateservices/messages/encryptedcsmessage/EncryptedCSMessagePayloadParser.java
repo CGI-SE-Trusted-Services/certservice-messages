@@ -16,6 +16,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Properties;
@@ -30,6 +31,12 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -86,6 +93,8 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
 	
 	ObjectFactory of = new ObjectFactory();
 	org.certificateservices.messages.csmessages.jaxb.ObjectFactory csMessageOf = new org.certificateservices.messages.csmessages.jaxb.ObjectFactory();
+
+	private Transformer transformer;
 	
 	@Override
 	public void init(Properties config, CSMessageParser parser)
@@ -98,6 +107,13 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
 			
 		} catch (Exception e) {
 			throw new MessageProcessingException("Error initializing JAXB in AssertionPayloadParser: " + e.getMessage(),e);
+		}
+		
+		TransformerFactory tf = TransformerFactory.newInstance();
+		try {
+			transformer = tf.newTransformer();
+		} catch (TransformerConfigurationException e) {
+			throw new MessageProcessingException("Error instanciating Transformer for XMLSigner: " + e.getMessage(),e);
 		}
 	}
 	
@@ -220,6 +236,59 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
 			throw new MessageProcessingException("Error parsing configuration error when parsing message: " + e.getMessage(), e);
 		} catch (NoDecryptionKeyFoundException e) {
 			throw new MessageContentException("Error no related decryption key found for message: " + e.getMessage(), e);
+		}
+	}
+	
+	/**
+	 * Message that checks if message is encrypted and returns the related Document object if it is, otherwise null.
+	 * @param messageData the message data to check if it was encrypted
+	 * @return the encrypted Document of the encrypted doc or null if document isn't encrypted document.
+	 * @throws MessageContentException if message content was faulty or decryption key wasn't found
+	 * @throws MessageProcessingException if internal error occurred encrypting the CS Message.
+	 */
+	public Document isEncryptedCSMessage(byte[] messageData) throws MessageContentException, MessageProcessingException{
+		try {
+			Document retval = null;
+			Document doc = getDocumentBuilder().parse(new ByteArrayInputStream(messageData));
+			Element rootElement = doc.getDocumentElement();
+			if(rootElement.getLocalName().equals(ObjectFactory._EncryptedCSMessage_QNAME.getLocalPart()) &&
+			   rootElement.getNamespaceURI().equals(NAMESPACE)){
+				retval = doc;
+			}
+			
+			return retval;
+			
+		} catch (SAXException e) {
+			throw new MessageContentException("Error parsing message: " + e.getMessage(), e);
+		} catch (IOException e) {
+			throw new MessageContentException("Error parsing message: " + e.getMessage(), e);
+		} catch (ParserConfigurationException e) {
+			throw new MessageProcessingException("Error parsing configuration error when parsing message: " + e.getMessage(), e);
+		} 
+	}
+	/**
+	 * Method that decrypts a EncryptedCSMessage Document and returns the plain text data.
+	 * 
+	 * @param doc Document encrypted CS message data.
+	 * @return an decrypted CS Message data
+	 * @throws MessageContentException if message content was faulty or decryption key wasn't found
+	 * @throws MessageProcessingException if internal error occurred encrypting the CS Message.
+	 */
+	public byte[] decryptDoc(Document doc)
+			throws MessageContentException, MessageProcessingException {
+		try {
+			doc = xmlEncrypter.decryptDoc(doc, xmlConverter);
+
+			StringWriter writer = new StringWriter();
+			transformer.transform(new DOMSource(doc), new StreamResult(writer));
+			String output = writer.getBuffer().toString();	
+			return output.getBytes("UTF-8");			
+		} catch (IOException e) {
+			throw new MessageContentException("Error parsing message: " + e.getMessage(), e);
+		} catch (NoDecryptionKeyFoundException e) {
+			throw new MessageContentException("Error no related decryption key found for message: " + e.getMessage(), e);
+		} catch (TransformerException e) {
+			throw new MessageContentException("Error converting Doc into XML String: " + e.getMessage(), e);
 		}
 	}
 
