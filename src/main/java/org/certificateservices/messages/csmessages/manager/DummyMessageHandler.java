@@ -15,6 +15,7 @@ package org.certificateservices.messages.csmessages.manager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
@@ -27,6 +28,7 @@ import org.certificateservices.messages.credmanagement.jaxb.ChangeCredentialStat
 import org.certificateservices.messages.credmanagement.jaxb.GetCredentialRequest;
 import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsRequest;
 import org.certificateservices.messages.csmessages.CSMessageParser;
+import org.certificateservices.messages.csmessages.CSMessageParserManager;
 import org.certificateservices.messages.csmessages.PayloadParserRegistry;
 import org.certificateservices.messages.csmessages.constants.AvailableCredentialStatuses;
 import org.certificateservices.messages.csmessages.constants.AvailableCredentialTypes;
@@ -41,23 +43,25 @@ import org.certificateservices.messages.utils.MessageGenerateUtils;
 @SuppressWarnings("all")
 public class DummyMessageHandler implements MessageHandler{
 
-	private MessageResponseCallback callback;
+	
+	
+	
 	private CSMessageParser parser;
 	private CredManagementPayloadParser credManagementPayloadParser;
 	private ObjectFactory of = new ObjectFactory();
 	private long waitTime;	
 
+	private HashMap<String, MessageComponent> components = new HashMap<String,MessageComponent>();
+	
 	public boolean revokeMessageRecieved = false;
 
 	public static final String SETTING_WAITTIME = "dummy.waittime";
 
-	public void init(Properties config, CSMessageParser parser,
-			MessageResponseCallback callback) throws MessageProcessingException {
-		this.parser = parser;
-		this.callback = callback;
-
+	public void init(Properties config) throws MessageProcessingException {
+		
 		waitTime = Long.parseLong(config.getProperty(SETTING_WAITTIME));
 
+		
 		credManagementPayloadParser = (CredManagementPayloadParser) PayloadParserRegistry.getParser(CredManagementPayloadParser.NAMESPACE);
 	}
 
@@ -66,10 +70,10 @@ public class DummyMessageHandler implements MessageHandler{
 
 	}
 
-	public void sendMessage(String messageId, byte[] messageData) throws MessageProcessingException,
+	public void sendMessage(String componentName, String messageId, byte[] messageData) throws MessageProcessingException,
 	IOException {
 		try{
-			CSMessage response = null;	
+			byte[] response = null;	
 			CSMessage request = parser.parseMessage(messageData);
 
 			if(request.getPayload().getAny() instanceof GetCredentialRequest){
@@ -91,7 +95,7 @@ public class DummyMessageHandler implements MessageHandler{
 
 
 
-				response = parser.parseMessage(credManagementPayloadParser.genGetCredentialResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, c, null).getResponseData());
+				response = credManagementPayloadParser.genGetCredentialResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, c, null).getResponseData();
 
 			}
 			if(request.getPayload().getAny() instanceof IssueTokenCredentialsRequest){
@@ -113,7 +117,7 @@ public class DummyMessageHandler implements MessageHandler{
 
 				List<Credential> credentials = new ArrayList<Credential>();
 				credentials.add(c);
-				response = parser.parseMessage(credManagementPayloadParser.genIssueTokenCredentialsResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, credentials, null,null).getResponseData());
+				response = credManagementPayloadParser.genIssueTokenCredentialsResponse(Constants.RELATED_END_ENTITY_UNKNOWN,request, credentials, null,null).getResponseData();
 			}
 			if(request.getPayload().getAny() instanceof ChangeCredentialStatusRequest){
 				ChangeCredentialStatusRequest r = (ChangeCredentialStatusRequest) request.getPayload().getAny();
@@ -144,9 +148,9 @@ public class DummyMessageHandler implements MessageHandler{
 
 	private class WaitAndSend implements Runnable{
 
-		private CSMessage responseMessage;
+		private byte[] responseMessage;
 
-		public WaitAndSend(CSMessage responseMessage){
+		public WaitAndSend(byte[] responseMessage){
 			this.responseMessage = responseMessage;
 		}
 
@@ -154,8 +158,16 @@ public class DummyMessageHandler implements MessageHandler{
 			try {
 				Thread.sleep(waitTime);
 			} catch (InterruptedException e) {
-			}				
-			callback.responseReceived(responseMessage);	
+			}	
+			for(MessageComponent mc : components.values()){
+				if(mc instanceof MessageListener){
+					try {
+						((MessageListener) mc).responseReceived(responseMessage);
+					} catch (Exception e) {
+						assert false;
+					}
+				}
+			}
 		}
 	}
 
@@ -201,6 +213,36 @@ public class DummyMessageHandler implements MessageHandler{
 		} catch (Base64DecodingException e) {
 			throw new MessageProcessingException("Base64 Decoding Exception: " + e.getMessage(),e);
 		}
+	}
+
+	@Override
+	public void addSender(MessageSender sender) {
+		components.put(sender.getName(), sender);
+	}
+
+	@Override
+	public void addListener(MessageListener listener) {
+		components.put(listener.getName(), listener);
+	}
+
+	@Override
+	public MessageSender getMessageSender(String name)
+			throws MessageProcessingException {
+		MessageComponent retval = components.get(name);
+		if(retval == null || !(retval instanceof MessageSender)){
+			throw new MessageProcessingException("");
+		}
+		return (MessageSender) retval;
+	}
+
+	@Override
+	public MessageListener getMessageListener(String name)
+			throws MessageProcessingException {
+		MessageComponent retval = components.get(name);
+		if(retval == null || !(retval instanceof MessageListener)){
+			throw new MessageProcessingException("");
+		}
+		return (MessageListener) retval;
 	}
 
 }

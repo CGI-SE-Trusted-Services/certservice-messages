@@ -1,8 +1,13 @@
 package org.certificateservices.messages.csmessages.manager
 
+import java.io.IOException;
+import java.util.Set;
+
 import org.certificateservices.messages.DummyMessageSecurityProvider;
+import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.credmanagement.CredManagementPayloadParser
+import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
+import org.certificateservices.messages.csmessages.CSMessageParser;
 import org.certificateservices.messages.credmanagement.jaxb.GetCredentialResponse;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.csmessages.PayloadParserRegistry;
@@ -22,9 +27,9 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 
-class DefaultMessageManagerSpec extends Specification{
+class DefaultReqRespManagerSpec extends Specification{
 
-	@Shared DefaultMessageManager mm = new DefaultMessageManager()
+	@Shared DefaultReqRespManager drrm;
 		
 	@Shared ObjectFactory of = new ObjectFactory()
 	@Shared org.certificateservices.messages.credmanagement.jaxb.ObjectFactory credOf = new org.certificateservices.messages.credmanagement.jaxb.ObjectFactory()
@@ -35,27 +40,41 @@ class DefaultMessageManagerSpec extends Specification{
 	@Shared Properties config
 	
 	private static final String TEST_ID = "12345678-1234-4444-8000-123456789012"
-
+	
 	def setupSpec(){
-        config = new Properties();
-		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "somesourceId");		
-		config.setProperty(DefaultMessageManager.SETTING_MESSAGEHANDLER_CLASSPATH, DummyMessageHandler.class.getName());		
-		config.setProperty(DummyMessageHandler.SETTING_WAITTIME, "100");
+		config = new Properties();
+        config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "somesourceId");
+		config.setProperty(DummyMessageHandler.SETTING_WAITTIME, "100")
 		
-		parser.init(new DummyMessageSecurityProvider(), config);
-		mm.init(config,parser, "SomeDestination");
-		
+		parser.init(new DummyMessageSecurityProvider(), config);	
 		credManagementPayloadParser = PayloadParserRegistry.getParser(CredManagementPayloadParser.NAMESPACE)
 	}
 	
-	// TODO repeat the same request messages
+	def setup(){
+		DummyMessageHandler dmh = new DummyMessageHandler()
+		dmh.init(config)
+		dmh.parser = parser
+		
+		dmh.addSender(new TestMessageSender())
+		dmh.addListener(new TestMessageListener(parser))
+				
+		drrm = new DefaultReqRespManager(5000, dmh, "TestSender1","TestListener1")
+	}
 	
+	def "Verify that init sets private fields and registers callback in message handler correctly"(){
+		expect:
+		drrm.messageHandler.components["TestListener1"].callbacks.get(DefaultReqRespManager.CALLBACK_ALIAS) == drrm
+		drrm.timeOut == 5000
+		drrm.messageSenderName == "TestSender1"
+		drrm.messageListenerName == "TestListener1"
+		drrm.messageHandler != null
+	}	
 
 	def "Test to send a simple get credential request message and expect a get credential response"(){
 		setup:
 		byte[] request = credManagementPayloadParser.genGetCredentialRequest(TEST_ID, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678",null,null)
 		when:
-		CSMessage response = mm.sendMessage(TEST_ID, request)
+		CSMessage response = drrm.sendRequest(TEST_ID, request)
 		then:
 		assert response != null;
 		assert response.getPayload().getAny() instanceof GetCredentialResponse
@@ -70,7 +89,7 @@ class DefaultMessageManagerSpec extends Specification{
 		for(int i=0;i<numberOfConcurrentRequests;i++){
 			String requestId = MessageGenerateUtils.generateRandomUUID();
 			byte[] request = credManagementPayloadParser.genGetCredentialRequest(requestId, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678",null,null)
-			new Thread(new SendRandomRequest(mm,requestId,request, 100,3000)).start()
+			new Thread(new SendRandomRequest(drrm,requestId,request, 100,3000)).start()
 		}
 		
 		int lastEntry = 0;
@@ -98,41 +117,18 @@ class DefaultMessageManagerSpec extends Specification{
 
 	def "Check that time out expeption is thrown when message takes longer time than set timeout."(){
 		setup:
-		((DummyMessageHandler) mm.messageHandler).waitTime = 10000
-		mm.timeout = 200
+		((DummyMessageHandler) drrm.messageHandler).waitTime = 10000
+		drrm.timeOut = 200
 		byte[] request = credManagementPayloadParser.genGetCredentialRequest(TEST_ID, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678",null,null)
 		when:
-		mm.sendMessage(TEST_ID, request)
+		drrm.sendRequest(TEST_ID, request)
 		then:
 		thrown(IOException)
 		cleanup:
-		((DummyMessageHandler) mm.messageHandler).waitTime = 100
-		mm.timeout = 10000
+		((DummyMessageHandler) drrm.messageHandler).waitTime = 100
+		drrm.timeOut = 10000
 	}
 
-	def "Check that revoce message is sent for issue token request responses where wait thread has timed out."(){
-		setup:
-		((DummyMessageHandler) mm.messageHandler).waitTime = 1000
-		mm.timeout = 200
-		byte[] request = credManagementPayloadParser.genIssueTokenCredentialsRequest(TEST_ID, "somedestination", "someorg", createDummyTokenRequest(),null,null,null)
-		when:
-		mm.sendMessage(TEST_ID, request)
-		then:
-		thrown(IOException)
-		when:
-		
-		while(!((DummyMessageHandler) mm.messageHandler).revokeMessageRecieved){
-			System.out.println("Waiting for revoce message to be sent ...");
-			Thread.sleep(1000);
-		}
-		System.out.println("Waiting sent successfully");
-		then:
-		assert ((DummyMessageHandler) mm.messageHandler).revokeMessageRecieved
-		cleanup:
-		((DummyMessageHandler) mm.messageHandler).waitTime = 100
-		mm.timeout = 10000
-	}
-	
 
 	def "Check findRequestId returns the correct request id from the message"(){
 		when:
@@ -140,53 +136,32 @@ class DefaultMessageManagerSpec extends Specification{
 		response.setInResponseTo(TEST_ID);		
 		CSMessage csMessage = parser.genCSMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,"2.0",null, null, "somedest", "someorg", null,response,null)
 		then:
-		assert mm.findRequestId(csMessage) == TEST_ID
+		assert drrm.findRequestId(csMessage) == TEST_ID
 		when:
 		response = credOf.createIssueTokenCredentialsResponse();
 		response.setInResponseTo(TEST_ID);
 		csMessage = parser.genCSMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,"2.0",null,null, "somedest", "someorg", null,response,null)
 		then:
-		assert mm.findRequestId(csMessage) == TEST_ID
+		assert drrm.findRequestId(csMessage) == TEST_ID
 		when:
 		response = credOf.createGetCredentialResponse();
 		response.setInResponseTo(TEST_ID);
 		csMessage = parser.genCSMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,"2.0",null,null, "somedest", "someorg", null,response,null)
 		then:
-		assert mm.findRequestId(csMessage) == TEST_ID
+		assert drrm.findRequestId(csMessage) == TEST_ID
 		when:
 		response = credOf.createIsIssuerResponse();
 		response.setInResponseTo(TEST_ID);
 		csMessage = parser.genCSMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,"2.0",null,null, "somedest", "someorg", null,response,null)
 		then:
-		assert mm.findRequestId(csMessage) == TEST_ID
+		assert drrm.findRequestId(csMessage) == TEST_ID
 		when:
 		csMessage = parser.genCSMessage(DefaultCSMessageParser.CSMESSAGE_VERSION_2_0,"2.0",null,null, "somedest", "someorg", null,credOf.createIsIssuerRequest(),null)
 		then:
-		assert mm.findRequestId(csMessage) == null
+		assert drrm.findRequestId(csMessage) == null
 
 
 	}
-	
-
-
-	def "Check getTimeOutInMillis verifies the responses properly"(){
-		when:
-		Properties config = new Properties();
-		config.setProperty(DefaultMessageManager.SETTING_MESSAGE_TIMEOUT_MILLIS, "123")
-		then:
-		assert mm.getTimeOutInMillis(config) == 123
-		when:
-		config.setProperty(DefaultMessageManager.SETTING_MESSAGE_TIMEOUT_MILLIS, "abc")
-		mm.getTimeOutInMillis(config)
-		then:
-		thrown (MessageProcessingException)
-		when:
-		config = new Properties();		
-		then:
-		assert mm.getTimeOutInMillis(config) == 60000L
-
-	}
-	
 	
 	
 	private class SendRandomRequest implements Runnable{
@@ -197,17 +172,17 @@ class DefaultMessageManagerSpec extends Specification{
 		
 		private String requestId
 		private byte[] requestData
-		private MessageManager mm
+		private ReqRespManager rrm
 		
 		int minTime
 		int randomTime
 		
-		private SendRandomRequest(MessageManager mm, String requestId, byte[] requestData, int minTime, int maxTime){
+		private SendRandomRequest(ReqRespManager rrm, String requestId, byte[] requestData, int minTime, int maxTime){
 			this.requestId = requestId
 			this.requestData = requestData;
 			this.minTime = minTime;
 			this.randomTime =  maxTime- minTime;
-			this.mm = mm;
+			this.rrm = rrm;
 		}
 
 		@Override
@@ -218,7 +193,7 @@ class DefaultMessageManagerSpec extends Specification{
 			}
 			Thread.sleep(waitTime);
 			
-			def result = mm.sendMessage(requestId, requestData)
+			def result = rrm.sendRequest(requestId, requestData)
 			assert result != null;	
 			
 			synchronized (numberOfCompletedRequests) {
@@ -246,6 +221,67 @@ class DefaultMessageManagerSpec extends Specification{
 		retval.getCredentialRequests().getCredentialRequest().add(cr)
 
 		return retval
+	}
+	
+	class TestMessageSender implements MessageSender{
+
+		@Override
+		public String getName() {
+			return "TestSender1";
+		}
+
+		@Override
+		public void sendMessage(String requestId, byte[] message)
+				throws IOException, MessageProcessingException,
+				MessageContentException {
+			
+		}
+		
+	}
+	
+	class TestMessageListener implements MessageListener{
+		
+		
+		
+		Map callbacks = [:]
+		CSMessageParser parser;
+
+		TestMessageListener(CSMessageParser parser){
+		   this.parser = parser
+	    }
+		
+		@Override
+		public String getName() {
+			return "TestListener1";
+		}
+
+		@Override
+		public void registerCallback(String alias,
+				MessageResponseCallback callback) {
+			callbacks[alias] = callback
+			
+		}
+
+		@Override
+		public Set<String> getCallbackAliases() {
+			callbacks.keySet()
+		}
+
+		@Override
+		public void unregisterCallback(String alias) {
+			callbacks.remove(alias)
+		}
+
+		@Override
+		public void responseReceived(byte[] responseMessage)
+				throws IOException, MessageProcessingException,
+				MessageContentException {
+			for(MessageResponseCallback c : callbacks.values()){
+				c.responseReceived(parser.parseMessage(responseMessage))
+			}
+			
+		}
+		
 	}
 
 }

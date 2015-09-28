@@ -100,8 +100,8 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	
 	public static String ANY_DESTINATION = "ANY";
 	
-	private static final String ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/saml-schema-assertion-2.0.xsd";
-	private static final String SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/saml-schema-protocol-2.0.xsd";
+	private static final String ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/cs-message-saml-schema-assertion-2.0.xsd";
+	private static final String SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/cs-message-saml-schema-protocol-2.0.xsd";
 
 	private ObjectFactory of = new ObjectFactory();
 	private org.certificateservices.messages.samlp.jaxb.ObjectFactory samlpOf = new org.certificateservices.messages.samlp.jaxb.ObjectFactory();
