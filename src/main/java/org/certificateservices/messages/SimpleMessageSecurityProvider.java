@@ -223,6 +223,7 @@ public class SimpleMessageSecurityProvider implements
 			return false;
 		}
 		
+		// TODO Check validity
 		
 		boolean foundMatching = true;
 		try{

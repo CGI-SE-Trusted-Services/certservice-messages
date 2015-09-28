@@ -12,32 +12,30 @@
 *************************************************************************/
 package org.certificateservices.messages.csmessages.manager;
 
+import java.io.IOException;
+
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 
 /**
- * Callback interface used to signal that a response targeted for this client (i.e destinationId = current sourceId)
- * <p>
- * Main method is responseRecieved
- * <p>
- * <b>Important</b> only messages with a destination matching this source id should be sent through
- * this callback.
+ * 
+ * Message Sender is a component in charge of sending a message.
  * 
  * @author Philip Vendil
  *
  */
-public interface MessageResponseCallback {
+public interface MessageSender extends MessageComponent{
+	
 	
 	/**
-	 * Method signaling that a response was received.
-     * <p>
-     * <b>Important</b> only messages with a destination matching this source id should be sent through
-     * this callback.
-	 * @param responseMessage the response message that was received.
-	 * @throws MessageContentException if content of the message was invalid.
-	 * @throws MessageProcessingException if internal error occurred processing the message.
+	 * Method to use to send a message 
+	 * 
+	 * @param requestId the requestId.
+	 * @param message the message data to send.
+	 * @throws IOException if communication problems occurred when communicating with underlying system. 
+	 * @throws MessageProcessingException if internal problems occurred sending the message.
+	 * @throws MessageContentException if message content invalid.
 	 */
-	public void responseReceived(CSMessage responseMessage) throws MessageContentException, MessageProcessingException;
+	void sendMessage(String requestId, byte[] message) throws IOException, MessageProcessingException, MessageContentException;
 
 }

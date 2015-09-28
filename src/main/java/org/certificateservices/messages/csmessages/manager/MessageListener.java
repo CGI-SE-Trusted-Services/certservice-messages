@@ -12,32 +12,49 @@
 *************************************************************************/
 package org.certificateservices.messages.csmessages.manager;
 
+import java.io.IOException;
+import java.util.Set;
+
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 
 /**
- * Callback interface used to signal that a response targeted for this client (i.e destinationId = current sourceId)
- * <p>
- * Main method is responseRecieved
- * <p>
- * <b>Important</b> only messages with a destination matching this source id should be sent through
- * this callback.
+ * Interface of a message listener implementation.
  * 
  * @author Philip Vendil
  *
  */
-public interface MessageResponseCallback {
+public interface MessageListener extends MessageComponent {
+
+	/**
+	 * Used to add a messageResponse Callback to a message lister.
+	 * 
+	 * @param alias of the response callback. Should be unique within the message listener.
+	 * @param messageResponseCallback the callback to register.
+	 * @param messageResponseCallback
+	 */
+	void registerCallback(String alias, MessageResponseCallback messageResponseCallback);
+	
+	/**
+	 * 
+	 * @return a list of registered aliases of response callbacks.
+	 */
+	Set<String> getCallbackAliases();
+	
+	/**
+	 * Method to unregister a callback from a message listener.
+	 * @param alias  of the response callback. Should be unique within the message listener.
+	 */
+	void unregisterCallback(String alias);
 	
 	/**
 	 * Method signaling that a response was received.
-     * <p>
-     * <b>Important</b> only messages with a destination matching this source id should be sent through
-     * this callback.
+     * 
 	 * @param responseMessage the response message that was received.
-	 * @throws MessageContentException if content of the message was invalid.
-	 * @throws MessageProcessingException if internal error occurred processing the message.
+	 * @throws IOException if communication problems occurred when communicating with underlying system. 
+	 * @throws MessageProcessingException if internal problems occurred sending the message.
+	 * @throws MessageContentException if message content invalid.
 	 */
-	public void responseReceived(CSMessage responseMessage) throws MessageContentException, MessageProcessingException;
-
+	public void responseReceived(byte[] responseMessage) throws IOException, MessageProcessingException, MessageContentException;
+	
 }

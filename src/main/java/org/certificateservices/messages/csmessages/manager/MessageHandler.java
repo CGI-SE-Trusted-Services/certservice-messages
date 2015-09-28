@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.util.Properties;
 
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.csmessages.CSMessageParser;
 
 
 /**
@@ -37,7 +36,7 @@ public interface MessageHandler {
 	 * @param callback the callback interface where response messages are sent.
 	 * @throws MessageProcessingException if configuration problems or other internal problems occurred.
 	 */
-	void init(Properties config, CSMessageParser parser, MessageResponseCallback callback) throws MessageProcessingException;
+	void init(Properties config) throws MessageProcessingException;
 	
 	/**
 	 * Method returning the connection factory used to set-up the message queues. Used only
@@ -52,6 +51,35 @@ public interface MessageHandler {
 	 */
 	Object getConnectionFactory() throws MessageProcessingException, IOException;
 	
+	
+	/**
+	 * Method to add a sender to this  Message Handler, this method should be called before a connection.
+	 * 
+	 * @param sender a MessageSender implementation.
+	 */
+	public void addSender(MessageSender sender);
+	
+	/**
+	 * Method to add a listener to this  Message Handler, this method should be called before a connection.
+	 * 
+	 * @param listener a MessageListener implementation.
+	 */
+	public void addListener(MessageListener listener);
+	
+	/**
+	 * Method to retrieved a message sender given it's name.
+	 * @param name the unique name of the sender.
+	 * @throws MessageProcessingException if given name didn't exist or didn't correspond to a MessageSender.
+	 */
+	public MessageSender getMessageSender(String name) throws MessageProcessingException;
+	
+	/**
+	 * Method to retrieved a message listener given it's name.
+	 * @param name the unique name of the listener.
+	 * @throws MessageProcessingException if given name didn't exist or didn't correspond to a MessageListener.
+	 */
+	public MessageListener getMessageListener(String name) throws MessageProcessingException;
+	
 	/**
 	 * Method called by service if the MessageHandler should connect to the MessageQueue server and start processing incoming calls.
 	 * @throws MessageProcessingException if configuration problems or other internal problems occurred connecting to the MQ server.
@@ -62,12 +90,13 @@ public interface MessageHandler {
 	/**
 	 * Method to send a message to the MQ server out queue.
 	 * 
+	 * @param componentName the componentName to use for sending.
 	 * @param messageId the id of the message
 	 * @param the message data to send
 	 * @throws MessageProcessingException if configuration problems or other internal problems occurred connecting to the MQ server.
 	 * @throws IOException if communication problems occurred connecting and sending to the message server.
 	 */
-	void sendMessage(String messageId, byte[] message)  throws MessageProcessingException, IOException;	
+	void sendMessage(String componentName, String messageId, byte[] message)  throws MessageProcessingException, IOException;	
 
 	/**
 	 * Method returning if the handler is currently connected to the JMS broker.
