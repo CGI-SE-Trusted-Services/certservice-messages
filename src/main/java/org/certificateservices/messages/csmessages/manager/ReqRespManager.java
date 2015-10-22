@@ -12,32 +12,25 @@
 *************************************************************************/
 package org.certificateservices.messages.csmessages.manager;
 
-import org.certificateservices.messages.MessageContentException;
+import java.io.IOException;
+
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 
 /**
- * Callback interface used to signal that a response targeted for this client (i.e destinationId = current sourceId)
- * <p>
- * Main method is responseRecieved
- * <p>
- * <b>Important</b> only messages with a destination matching this source id should be sent through
- * this callback.
+ * Interface for simulating a synchronous request and response call for asynchronous communication channels such as MQ.
  * 
  * @author Philip Vendil
  *
  */
-public interface MessageResponseCallback {
-	
+public interface ReqRespManager {
+
 	/**
-	 * Method signaling that a response was received.
-     * <p>
-     * <b>Important</b> only messages with a destination matching this source id should be sent through
-     * this callback.
-	 * @param responseMessage the response message that was received.
-	 * @throws MessageContentException if content of the message was invalid.
-	 * @throws MessageProcessingException if internal error occurred processing the message.
+	 * Main method signaling sending a request with given id and waits for a response
+	 * for a given time before a time-out IO exception is thrown.
 	 */
-	public void responseReceived(CSMessage responseMessage) throws MessageContentException, MessageProcessingException;
+	 CSMessage sendRequest(String requestId, byte[] request)
+			throws IllegalArgumentException, IOException,
+			MessageProcessingException;
 
 }

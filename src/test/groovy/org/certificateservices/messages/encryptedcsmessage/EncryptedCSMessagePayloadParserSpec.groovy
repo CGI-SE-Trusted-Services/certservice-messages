@@ -20,6 +20,7 @@ import org.certificateservices.messages.csmessages.jaxb.Organisation;
 import org.certificateservices.messages.encryptedcsmessage.jaxb.ObjectFactory;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 import org.certificateservices.messages.utils.SystemTime;
+import org.w3c.dom.Document;
 
 import spock.lang.IgnoreRest;
 import spock.lang.Specification;
@@ -88,6 +89,7 @@ class EncryptedCSMessagePayloadParserSpec extends Specification {
 	}
 	
 	def "Verify that generateGetAvailableKeyStoreInfoRequest() generates a valid xml message and generateGetAvailableKeyStoreInfoResponse() generates a valid CSMessageResponseData"(){
+		setup:
 		String requestId = MessageGenerateUtils.generateRandomUUID()
 		byte[] req = genCSMessage(requestId)
 		when:
@@ -112,6 +114,32 @@ class EncryptedCSMessagePayloadParserSpec extends Specification {
 		xml.@version =="SomeVersion"
 
 		
+	}
+	
+	def "Verify that isEncryptedCSMessage() returns null for a plain text messages"(){
+		setup:
+		byte[] req = genCSMessage(MessageGenerateUtils.generateRandomUUID())
+		expect:
+		pp.isEncryptedCSMessage(req) == null
+	}
+	
+	def "Verify that isEncryptedCSMessage() returns encrypted Doc for an encrypted message and that decryptDoc() returns a decrypted message with signature unbroken."(){
+		setup:
+		byte[] req = genCSMessage(MessageGenerateUtils.generateRandomUUID())
+		byte[] encMessage = pp.genEncryptedCSMessage(req, [recipient])
+		when:
+		Document encDoc = pp.isEncryptedCSMessage(encMessage)
+		then:
+		encDoc != null
+		when:
+		byte[] req2 = pp.decryptDoc(encDoc)
+		then:
+		req == req2
+		req2 != encMessage
+		when: "Verify that the signature verifies"
+		CSMessage csMessage = pp.parseMessage(req2)
+		then:
+		csMessage.getSignature() != null
 	}
 
 	def "Verify that parseMessage parses an encrypted CS message into a CS Message"(){

@@ -61,6 +61,7 @@ class UserDataAssertionDataSpec extends Specification {
 		ad.getId() == assertion.value.getID()
 		
 		ad.getDisplayName() == "someDisplayName"
+		ad.getTokenType() == "someTokenType"
 		ad.getFieldValues().size() == 2
 		ad.getFieldValues()[0].key == "someKey1"
 		ad.getFieldValues()[0].value == "someValue1"
@@ -76,7 +77,7 @@ class UserDataAssertionDataSpec extends Specification {
 	}
 	
 	private JAXBElement<AssertionType> genUserDataAssertion(){
-		byte[] ticketData = assertionPayloadParser.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","someDisplayName",[fv1, fv2], [cert])
+		byte[] ticketData = assertionPayloadParser.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","someDisplayName","someTokenType",[fv1, fv2], [cert])
 		JAXBElement<AssertionType> assertion = assertionPayloadParser.getAssertionFromResponseType(assertionPayloadParser.parseAttributeQueryResponse(ticketData))
 		
 	}

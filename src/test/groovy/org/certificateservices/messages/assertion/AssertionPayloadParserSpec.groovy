@@ -139,7 +139,7 @@ class AssertionPayloadParserSpec extends Specification {
 	@Unroll
 	def "Verify that genDistributedAuthorizationRequest() throws MessageContentException for invalid subject id: #subjectId"(){
 		when:
-		pp.genAttributeQuery(subjectId, "someattr")
+		pp.genAttributeQuery(subjectId, "someattr",null)
 		then:
 		thrown MessageContentException
 		where:
@@ -175,9 +175,10 @@ class AssertionPayloadParserSpec extends Specification {
 		xml.Attribute[0].@Name == AssertionPayloadParser.ATTRIBUTE_NAME_ROLES
 	}
 	
+	
 	def "Verify that genUserDataRequest() generates a valid SAMLP Attribute Query"(){
 		when:
-		def xmlData = pp.genUserDataRequest("SomeSubjectId@someorg")
+		def xmlData = pp.genUserDataRequest("SomeSubjectId@someorg","someTokenType")
 		//printXML(xmlData)
 		def xml = new XmlSlurper().parse(new ByteArrayInputStream(xmlData))
 		then:
@@ -185,6 +186,16 @@ class AssertionPayloadParserSpec extends Specification {
 		xml.@IssueInstant == "2015-07-07T16:26:53.000+02:00"
 		xml.@Version == AssertionPayloadParser.DEFAULT_ASSERTION_VERSION
 		xml.Subject.NameID == "SomeSubjectId@someorg"
+		xml.Attribute[0].@Name == AssertionPayloadParser.ATTRIBUTE_NAME_USERDATA
+		xml.Attribute[1].@Name == AssertionPayloadParser.ATTRIBUTE_NAME_TOKENTYPE
+		xml.Attribute[1].AttributeValue == "someTokenType"
+		
+		when: // Verify that token type attribute isn't set if null
+		xmlData = pp.genUserDataRequest("SomeSubjectId@someorg",null)
+		//printXML(xmlData)
+		xml = new XmlSlurper().parse(new ByteArrayInputStream(xmlData))
+		then:
+		xml.Attribute.size() == 1
 		xml.Attribute[0].@Name == AssertionPayloadParser.ATTRIBUTE_NAME_USERDATA
 	}
 	
@@ -235,10 +246,9 @@ class AssertionPayloadParserSpec extends Specification {
 		
 	}
 	
-	
 	def "Verify that genUserDataTicket() generates a valid user data ticket"(){
 		when:
-		byte[] ticketData = pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","SomeDisplayName",[fv1, fv2], twoReceiptiensValidFirst)
+		byte[] ticketData = pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","SomeDisplayName","SomeTokenType",[fv1, fv2], twoReceiptiensValidFirst)
 		//printXML(ticketData)
 
 		def xml = new XmlSlurper().parse(new ByteArrayInputStream(ticketData))
@@ -246,16 +256,18 @@ class AssertionPayloadParserSpec extends Specification {
 		then:
 		xml.@ID.toString().length() > 0
 		xml.Assertion.@ID.toString().length() > 0
-		xml.Assertion.AttributeStatement.Attribute.size() == 2
+		xml.Assertion.AttributeStatement.Attribute.size() == 3
 		xml.Assertion.AttributeStatement.Attribute[0].@Name == AssertionPayloadParser.ATTRIBUTE_NAME_TYPE
 		xml.Assertion.AttributeStatement.Attribute[0].AttributeValue == AssertionTypeEnum.USER_DATA.getAttributeValue()
 		xml.Assertion.AttributeStatement.Attribute[1].@Name == "DisplayName"
 		xml.Assertion.AttributeStatement.Attribute[1].AttributeValue == "SomeDisplayName"
+		xml.Assertion.AttributeStatement.Attribute[2].@Name == "TokenType"
+		xml.Assertion.AttributeStatement.Attribute[2].AttributeValue == "SomeTokenType"
 		xml.Assertion.AttributeStatement.EncryptedAttribute.size() == 1
 		verifySignature(ticketData)
 		
-		when: "Verify that if displayName is null isn't related attribute set."
-		byte[] ticketData2 = pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",null,[fv1, fv2], twoReceiptiensValidFirst)
+		when: "Verify that if displayName and token type is null isn't related attribute set."
+		byte[] ticketData2 = pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",null,null,[fv1, fv2], twoReceiptiensValidFirst)
 		
 		xml = new XmlSlurper().parse(new ByteArrayInputStream(ticketData2))
 		then:
@@ -348,7 +360,7 @@ class AssertionPayloadParserSpec extends Specification {
 	
 	def "Verify parseAttributeQueryResponse() parses User Data Ticket successfully"(){
 		when:
-		ResponseType resp = pp.parseAttributeQueryResponse(pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","SomeDisplayName",[fv1, fv2], twoReceiptiensValidFirst))
+		ResponseType resp = pp.parseAttributeQueryResponse(pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","SomeDisplayName","SomeTokenType",[fv1, fv2], twoReceiptiensValidFirst))
 		then:
 		resp.getInResponseTo() == "_123456789"
 		resp.getAssertionOrEncryptedAssertion().get(0) instanceof AssertionType
@@ -373,7 +385,7 @@ class AssertionPayloadParserSpec extends Specification {
 	
 	def "Verify getAssertionFromResponseType() returns assertion if it exists in respinse"(){
 		setup:
-		ResponseType resp = pp.parseAttributeQueryResponse(pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","SomeDisplayName",[fv1, fv2], twoReceiptiensValidFirst))
+		ResponseType resp = pp.parseAttributeQueryResponse(pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","SomeDisplayName","SomeTokenType",[fv1, fv2], twoReceiptiensValidFirst))
 		when:
 		def assertion = pp.getAssertionFromResponseType(resp) 
 		then:
@@ -462,7 +474,7 @@ class AssertionPayloadParserSpec extends Specification {
 
 	def "Verify that getAssertionType finds the correct assertion type for each type of assertion"(){
 		setup:
-		ResponseType userDataResp =  pp.parseAttributeQueryResponse(pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","SomeDisplayName",[fv1, fv2], twoReceiptiensValidFirst))
+		ResponseType userDataResp =  pp.parseAttributeQueryResponse(pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","SomeDisplayName","SomeTokenType",[fv1, fv2], twoReceiptiensValidFirst))
 		ResponseType ticketResp =  pp.parseAttributeQueryResponse(pp.genDistributedAuthorizationTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",["role1", "role2"], twoReceiptiensValidFirst))
 		JAXBElement<AssertionType> userDataAssertion = pp.getAssertionFromResponseType(userDataResp)
 		JAXBElement<AssertionType> ticketAssertion = pp.getAssertionFromResponseType(ticketResp)
@@ -484,7 +496,7 @@ class AssertionPayloadParserSpec extends Specification {
 	
 	def "Verify that parseAssertion filters out authorization and user data tickets and returns undecrypted approval tickets"(){
 		setup:
-		ResponseType userDataResp =  pp.parseAttributeQueryResponse(pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","SomeDisplayName",[fv1, fv2], twoReceiptiensValidFirst))
+		ResponseType userDataResp =  pp.parseAttributeQueryResponse(pp.genUserDataTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","SomeDisplayName","SomeTokenType",[fv1, fv2], twoReceiptiensValidFirst))
 		ResponseType ticketResp =  pp.parseAttributeQueryResponse(pp.genDistributedAuthorizationTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",["role1", "role2"], twoReceiptiensValidFirst))
 		JAXBElement<AssertionType> userDataAssertion = pp.getAssertionFromResponseType(userDataResp)
 		JAXBElement<AssertionType> authAssertion = pp.getAssertionFromResponseType(ticketResp)

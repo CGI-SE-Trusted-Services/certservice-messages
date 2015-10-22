@@ -39,17 +39,25 @@ class AttributeQueryDataSpec extends Specification {
 		assertionPayloadParser.systemTime = new DefaultSystemTime()
 	}
 
-	@Unroll
-	def "Verify that parse() method sets all fields propely for type: #type"(){
+	def "Verify that parse() method sets all fields propely for type: AUTHORIZATION_TICKET"(){
 		when:
-		AttributeQueryData aqd  = assertionPayloadParser.parseAttributeQuery(genAttributeQuery(type, "SomeSubject"))
+		AttributeQueryData aqd  = assertionPayloadParser.parseAttributeQuery(genAttributeQuery(AttributeQueryTypeEnum.AUTHORIZATION_TICKET, "SomeSubject"))
 		
 		then:
 		aqd.getID() != null
 		aqd.getSubjectId() == "SomeSubject"
-		aqd.getType() == type
-		where:
-		type << AttributeQueryTypeEnum.values()
+		aqd.getType() == AttributeQueryTypeEnum.AUTHORIZATION_TICKET
+	}
+	
+	def "Verify that parse() method sets all fields propely for type: USER_DATA"(){
+		when:
+		AttributeQueryData aqd  = assertionPayloadParser.parseAttributeQuery(genAttributeQuery(AttributeQueryTypeEnum.USER_DATA, "SomeSubject"))
+		
+		then:
+		aqd.getID() != null
+		aqd.getSubjectId() == "SomeSubject"
+		aqd.getType() == AttributeQueryTypeEnum.USER_DATA
+		aqd.getTokenType() == "SomeTokenType"
 	}
 	
 	def "Verify that hashCode() and equals() only compares id"(){
@@ -80,7 +88,7 @@ class AttributeQueryDataSpec extends Specification {
 			case AUTHORIZATION_TICKET:
 			 return assertionPayloadParser.genDistributedAuthorizationRequest(subjectId)
 			 case USER_DATA: 
-			 return assertionPayloadParser.genUserDataRequest(subjectId)
+			 return assertionPayloadParser.genUserDataRequest(subjectId, "SomeTokenType")
 		}
 		return null
 	}

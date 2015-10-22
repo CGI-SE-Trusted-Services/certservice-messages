@@ -16,7 +16,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.cert.X509Certificate;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,8 +63,10 @@ import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
 import org.certificateservices.messages.csmessages.jaxb.Originator;
 import org.certificateservices.messages.csmessages.jaxb.Payload;
 import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
+import org.certificateservices.messages.utils.DefaultSystemTime;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 import org.certificateservices.messages.utils.SettingsUtils;
+import org.certificateservices.messages.utils.SystemTime;
 import org.certificateservices.messages.utils.XMLSigner;
 import org.certificateservices.messages.utils.XMLSigner.SignatureLocationFinder;
 import org.w3c.dom.Document;
@@ -130,6 +131,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	private MessageSecurityProvider securityProvider = null;
 	private MessageNameCatalogue messageNameCatalogue = null;
 	private JAXBRelatedData jaxbData = new JAXBRelatedData();
+	private SystemTime systemTime = new DefaultSystemTime();
 	
 	private String sourceId = null;
 	private XMLSigner xmlSigner;
@@ -217,6 +219,8 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			throws MessageContentException, MessageProcessingException {
 		try{
 			Document doc = getDocumentBuilder().parse(new ByteArrayInputStream(messageData));
+			
+			
 			CSMessageVersion version = getVersionFromMessage(messageData);
 			verifyCSMessageVersion(version.getMessageVersion());
 		
@@ -459,7 +463,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		}else{
 		  retval.setID(messageId);
 		}
-		retval.setTimeStamp(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date()));
+		retval.setTimeStamp(MessageGenerateUtils.dateToXMLGregorianCalendar(systemTime.getSystemTime()));
 		retval.setName(messageNameCatalogue.lookupName(requestName, payload));
 		retval.setDestinationId(destinationID);
 		retval.setSourceId(sourceId);
@@ -819,7 +823,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	     */
 	    JAXBContext getJAXBContext() throws JAXBException, MessageProcessingException{
 	    	if(jaxbContext== null){
-	    		jaxbClassPath = "org.certificateservices.messages.csmessages.jaxb";
+	    		jaxbClassPath = "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.xmldsig.jaxb:org.certificateservices.messages.xenc.jaxb";
 	    			    		
 	    		for(String namespace : PayloadParserRegistry.getRegistredNamespaces()){
 	    			String jaxbPackage = PayloadParserRegistry.getParser(namespace).getJAXBPackage();

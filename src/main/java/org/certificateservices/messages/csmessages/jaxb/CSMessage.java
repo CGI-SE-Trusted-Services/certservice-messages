@@ -17,6 +17,8 @@ import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.certificateservices.messages.xmldsig.jaxb.SignatureType;
+
 
 /**
  * <p>Java class for anonymous complex type.
@@ -75,8 +77,8 @@ public class CSMessage {
     protected Assertions assertions;
     @XmlElement(namespace = "http://certificateservices.org/xsd/csmessages2_0", required = true)
     protected Payload payload;
-    @XmlElement(name = "Signature")
-    protected Object signature;
+    @XmlElement(name = "Signature", namespace = "http://www.w3.org/2000/09/xmldsig#")
+    protected SignatureType signature;
     @XmlAttribute(name = "version", required = true)
     protected String version;
     @XmlAttribute(name = "payLoadVersion", required = true)
@@ -263,7 +265,7 @@ public class CSMessage {
      *     {@link SignatureType }
      *     
      */
-    public Object getSignature() {
+    public SignatureType getSignature() {
         return signature;
     }
 
@@ -275,7 +277,7 @@ public class CSMessage {
      *     {@link SignatureType }
      *     
      */
-    public void setSignature(Object value) {
+    public void setSignature(SignatureType value) {
         this.signature = value;
     }
 
