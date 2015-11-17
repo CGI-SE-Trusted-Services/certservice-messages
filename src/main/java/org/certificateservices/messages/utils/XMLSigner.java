@@ -182,7 +182,7 @@ public class XMLSigner {
 	 * @throws MessageProcessingException if internal error occured verifying the signature.
 	 */
 	public void verifyEnvelopedSignature(Document doc, boolean authorizeAgainstOrganisation) throws MessageContentException, MessageProcessingException{
-
+		
 		try{
 			NodeList signedObjects = doc.getElementsByTagNameNS(signedElementNS, signedElementLocalName);
 			if(signedObjects.getLength() == 0){
@@ -327,6 +327,7 @@ public class XMLSigner {
 					signContext = new DOMSignContext(messageSecurityProvider.getSigningKey(),signatureLocation);	
 				}
 				signContext.setIdAttributeNS(signatureLocation, null, signedElementIDAttr);
+				signContext.putNamespacePrefix("http://www.w3.org/2000/09/xmldsig#", "ds");
 
 				KeyInfoFactory kif = KeyInfoFactory.getInstance("DOM",new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
 				List<X509Certificate> certs = new ArrayList<X509Certificate>();
@@ -337,9 +338,6 @@ public class XMLSigner {
 
 				XMLSignature signature = fac.newXMLSignature(signedInfo,ki);
 				signature.sign(signContext);
-
-				org.w3c.dom.Node signatureElement = doc.getElementsByTagName("Signature").item(0);
-				signatureElement.setPrefix("ds");
 			}
 
 			StringWriter writer = new StringWriter();
