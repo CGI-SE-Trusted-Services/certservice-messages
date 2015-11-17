@@ -81,15 +81,15 @@ class DefaultReqRespManagerSpec extends Specification{
 	}
 	
 
-	def "Test to 200 concurrent request and verify all responses are ok"(){
-		final int numberOfConcurrentRequests = 200
+	def "Test to 100 concurrent request and verify all responses are ok"(){
+		final int numberOfConcurrentRequests = 100
 		when:
 		System.out.println("Generating " + numberOfConcurrentRequests + " concurrent request with a responsetime between 100 and 3100 millis");
 		
 		for(int i=0;i<numberOfConcurrentRequests;i++){
 			String requestId = MessageGenerateUtils.generateRandomUUID();
 			byte[] request = credManagementPayloadParser.genGetCredentialRequest(requestId, "somedestination", "someorg", "someCredentialSubType", "CN=someIssuerId", "12345678",null,null)
-			new Thread(new SendRandomRequest(drrm,requestId,request, 100,3000)).start()
+			new Thread(new SendRandomRequest(drrm,requestId,request, 100,300)).start()
 		}
 		
 		int lastEntry = 0;
