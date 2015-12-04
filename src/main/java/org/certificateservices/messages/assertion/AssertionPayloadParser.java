@@ -355,14 +355,14 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	 * @param issuer the issuer of the assertion.
 	 * @param notBefore beginning of the validity of the ticket.
 	 * @param notOnOrAfter end validity of the ticket.
-	 * @param subjectId the subject id string having the roles.
+	 * @param subjectId the subject id string having the approval.
 	 * @param approvalId  the request unique approval id
 	 * @param approvalRequests containing one or more AttributeValue with the digest values of the calculated request actions. 
 	 * It’s up to the approval workflow engine to to determine how the digest is calculated from an approval request and how to verify that subsequent 
 	 * request matches the given approval.
 	 * @param destinationId the id to the target system processing the ticket. null for ANY destination.
 	 * @param approvers if encrypted approver data should be included, used to send information about an approval to more sensitive inner systems for audit purposes.
-	 * @param receipients receiptents of the encrypted approvers data. null if no approvers is null.
+	 * @param receipients receiptents of the encrypted approvers data. null if approvers is null.
 	 * @return a generated and signed SAMLP message.
 	 * @throws MessageContentException if parameters where invalid.
 	 * @throws MessageProcessingException if internal problems occurred generated the message.

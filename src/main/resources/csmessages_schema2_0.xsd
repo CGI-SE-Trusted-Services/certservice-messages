@@ -27,12 +27,19 @@
 			<xs:maxLength value="5000" />
 		</xs:restriction>
 	</xs:simpleType>
+	
+    <xs:simpleType name="between1and250string">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1" />
+			<xs:maxLength value="250" />
+		</xs:restriction>
+	</xs:simpleType>
 
 	<xs:element name="CSMessage">
 		<xs:complexType>
 			<xs:sequence>
 				<xs:element minOccurs="1" maxOccurs="1" name="name"
-					type="tns:notemptystring" />
+					type="tns:between1and250string" />
 				<xs:element minOccurs="1" maxOccurs="1" name="sourceId"
 					type="tns:notemptystring" />
 				<xs:element minOccurs="1" maxOccurs="1" name="destinationId"
@@ -143,6 +150,8 @@
 	<xs:simpleType name="ApprovalStatus">
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="WAITING" />
+			<xs:enumeration value="INPROCESS" />
+			<xs:enumeration value="PROCESSED" />
 			<xs:enumeration value="APPROVED" />
 			<xs:enumeration value="DENIED" />
 			<xs:enumeration value="EXPIRED" />
@@ -155,7 +164,7 @@
 				<xs:extension base="tns:CSRequest">
 					<xs:sequence>
 						<xs:element minOccurs="1" maxOccurs="1" name="approvalId"
-							type="tns:notemptystring" />
+							type="tns:between1and250string" />
 					</xs:sequence>
 				</xs:extension>
 			</xs:complexContent>
@@ -167,7 +176,7 @@
 			<xs:extension base="tns:CSResponse">
 				<xs:sequence>
 					<xs:element minOccurs="1" maxOccurs="1" name="approvalId"
-						type="tns:notemptystring" />
+						type="tns:between1and250string" />
 					<xs:element minOccurs="1" maxOccurs="1" name="approvalStatus"
 						type="tns:ApprovalStatus" />
 					<xs:element minOccurs="0" maxOccurs="unbounded" name="assertions"
