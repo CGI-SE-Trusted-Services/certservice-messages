@@ -61,6 +61,14 @@ public class CSMessageParserManager {
 	}
 	
 	/**
+	 * 
+	 * @return true if CSMessageParser have been initialized.
+	 */
+	public static boolean isInitialized(){
+		return parser != null;
+	}
+	
+	/**
 	 * Method to fetch an initialized CSMessageParser.
 	 * 
 	 * @return the CSMessageParser singleton, initialized.

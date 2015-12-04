@@ -84,5 +84,19 @@ public class CSMessageParserManagerSpec extends Specification{
 		then:
 		thrown MessageProcessingException
 	}
+	
+	def "Verify that isInitialized() returns false for uninitialized and true for initialized CSMessageParserManger"(){
+		setup:
+		CSMessageParserManager.parser = null
+		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID")
+		
+		expect:
+		CSMessageParserManager.isInitialized() == false
+		
+		when:
+		CSMessageParserManager.initCSMessageParser(secprov, config)
+		then:
+		CSMessageParserManager.isInitialized() == true
+	}
 
 }
