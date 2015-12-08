@@ -12,6 +12,8 @@
 *************************************************************************/
 package org.certificateservices.messages.csmessages.manager;
 
+import java.util.Map;
+
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
@@ -36,9 +38,10 @@ public interface MessageResponseCallback {
      * this callback.
      * @param requestData the original request data
 	 * @param responseMessage the response message that was received.
+	 * @param messageAttributes meta data related to the message such as reply-to queues or correlation id etc if underlying implementation supports it.
 	 * @throws MessageContentException if content of the message was invalid.
 	 * @throws MessageProcessingException if internal error occurred processing the message.
 	 */
-	public void responseReceived(byte[] requestData, CSMessage responseMessage) throws MessageContentException, MessageProcessingException;
+	public void responseReceived(byte[] requestData, CSMessage responseMessage, Map<String,String> messageAttributes) throws MessageContentException, MessageProcessingException;
 
 }
