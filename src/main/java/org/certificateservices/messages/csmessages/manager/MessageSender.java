@@ -13,6 +13,7 @@
 package org.certificateservices.messages.csmessages.manager;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
@@ -32,10 +33,11 @@ public interface MessageSender extends MessageComponent{
 	 * 
 	 * @param requestId the requestId.
 	 * @param message the message data to send.
+	 * @param messageAttributes meta data related to the message such as reply-to queues or correlation id etc if underlying implementation supports it.
 	 * @throws IOException if communication problems occurred when communicating with underlying system. 
 	 * @throws MessageProcessingException if internal problems occurred sending the message.
 	 * @throws MessageContentException if message content invalid.
 	 */
-	void sendMessage(String requestId, byte[] message) throws IOException, MessageProcessingException, MessageContentException;
+	void sendMessage(String requestId, byte[] message, Map<String,String> messageAttributes) throws IOException, MessageProcessingException, MessageContentException;
 
 }

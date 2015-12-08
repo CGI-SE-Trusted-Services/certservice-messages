@@ -231,7 +231,7 @@ class DefaultReqRespManagerSpec extends Specification{
 		}
 
 		@Override
-		public void sendMessage(String requestId, byte[] message)
+		public void sendMessage(String requestId, byte[] message, Map<String,String> messageAttributes)
 				throws IOException, MessageProcessingException,
 				MessageContentException {
 			
@@ -277,7 +277,7 @@ class DefaultReqRespManagerSpec extends Specification{
 				throws IOException, MessageProcessingException,
 				MessageContentException {
 			for(MessageResponseCallback c : callbacks.values()){
-				c.responseReceived(parser.parseMessage(responseMessage))
+				c.responseReceived(responseMessage, parser.parseMessage(responseMessage))
 			}
 			
 		}
