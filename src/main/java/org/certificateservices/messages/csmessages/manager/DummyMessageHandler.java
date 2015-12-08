@@ -163,7 +163,7 @@ public class DummyMessageHandler implements MessageHandler{
 			for(MessageComponent mc : components.values()){
 				if(mc instanceof MessageListener){
 					try {
-						((MessageListener) mc).responseReceived(responseMessage);
+						((MessageListener) mc).responseReceived(responseMessage, null);
 					} catch (Exception e) {
 						assert false;
 					}

@@ -273,11 +273,11 @@ class DefaultReqRespManagerSpec extends Specification{
 		}
 
 		@Override
-		public void responseReceived(byte[] responseMessage)
+		public void responseReceived(byte[] responseMessage, Map<String, String> messageAttributes)
 				throws IOException, MessageProcessingException,
 				MessageContentException {
 			for(MessageResponseCallback c : callbacks.values()){
-				c.responseReceived(responseMessage, parser.parseMessage(responseMessage))
+				c.responseReceived(responseMessage, parser.parseMessage(responseMessage), messageAttributes)
 			}
 			
 		}
