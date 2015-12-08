@@ -13,6 +13,7 @@
 package org.certificateservices.messages.csmessages.manager;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 import org.certificateservices.messages.MessageContentException;
@@ -56,7 +57,7 @@ public class AutoRevokeReqRespManager extends DefaultReqRespManager {
 	 * message manager.
 	 */
 	@Override
-	public void responseReceived(CSMessage responseMessage){
+	public void responseReceived(byte[] requestData, CSMessage responseMessage){
 		String requestId = findRequestId(responseMessage);
 		if(requestId != null){
 			boolean stillWaiting = populateResponseMapIfStillExist(requestId, responseMessage);
@@ -71,7 +72,7 @@ public class AutoRevokeReqRespManager extends DefaultReqRespManager {
 								try {
 									String messageId = MessageGenerateUtils.generateRandomUUID();
 									byte[] revokeMessage = credManagementPayloadParser.genChangeCredentialStatusRequest(messageId, responseMessage.getSourceId(), responseMessage.getOrganisation(), c.getIssuerId(), c.getSerialNumber(), AvailableCredentialStatuses.REVOKED, REVOKE_REASON_REASONINFORMATION_CESSATIONOFOPERATION, csMessageParser.getOriginatorFromRequest(responseMessage), null);
-									messageHandler.sendMessage(messageSenderName, messageId, revokeMessage);
+									messageHandler.sendMessage(messageSenderName, messageId, revokeMessage, new HashMap<String,String>());
 								} catch (IOException e) {
 									log.error("Error revoking timed-out certificate, io exception: " + e.getMessage());
 								} catch (MessageProcessingException e) {

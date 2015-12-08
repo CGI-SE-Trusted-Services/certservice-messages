@@ -34,10 +34,11 @@ public interface MessageResponseCallback {
      * <p>
      * <b>Important</b> only messages with a destination matching this source id should be sent through
      * this callback.
+     * @param requestData the original request data
 	 * @param responseMessage the response message that was received.
 	 * @throws MessageContentException if content of the message was invalid.
 	 * @throws MessageProcessingException if internal error occurred processing the message.
 	 */
-	public void responseReceived(CSMessage responseMessage) throws MessageContentException, MessageProcessingException;
+	public void responseReceived(byte[] requestData, CSMessage responseMessage) throws MessageContentException, MessageProcessingException;
 
 }

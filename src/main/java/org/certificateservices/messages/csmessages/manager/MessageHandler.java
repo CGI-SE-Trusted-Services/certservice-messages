@@ -13,6 +13,7 @@
 package org.certificateservices.messages.csmessages.manager;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 
 import org.certificateservices.messages.MessageProcessingException;
@@ -93,10 +94,12 @@ public interface MessageHandler {
 	 * @param componentName the componentName to use for sending.
 	 * @param messageId the id of the message
 	 * @param the message data to send
+	 * @param messageAttributes meta data related to the message such as reply-to queues or correlation id etc if underlying implementation supports it. use null if no related
+	 * message attributes exists.
 	 * @throws MessageProcessingException if configuration problems or other internal problems occurred connecting to the MQ server.
 	 * @throws IOException if communication problems occurred connecting and sending to the message server.
 	 */
-	void sendMessage(String componentName, String messageId, byte[] message)  throws MessageProcessingException, IOException;	
+	void sendMessage(String componentName, String messageId, byte[] message, Map<String,String> messageAttributes)  throws MessageProcessingException, IOException;	
 
 	/**
 	 * Method returning if the handler is currently connected to the JMS broker.
