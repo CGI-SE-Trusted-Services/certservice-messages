@@ -13,6 +13,7 @@
 package org.certificateservices.messages.csmessages.manager;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 
 import org.certificateservices.messages.MessageContentException;
@@ -51,10 +52,11 @@ public interface MessageListener extends MessageComponent {
 	 * Method signaling that a response was received.
      * 
 	 * @param responseMessage the response message that was received.
+	 * @param messageAttributes meta data related to the message such as reply-to queues or correlation id etc if underlying implementation supports it.
 	 * @throws IOException if communication problems occurred when communicating with underlying system. 
 	 * @throws MessageProcessingException if internal problems occurred sending the message.
 	 * @throws MessageContentException if message content invalid.
 	 */
-	public void responseReceived(byte[] responseMessage) throws IOException, MessageProcessingException, MessageContentException;
+	public void responseReceived(byte[] responseMessage, Map<String, String> messageAttributes) throws IOException, MessageProcessingException, MessageContentException;
 	
 }
