@@ -34,6 +34,8 @@ import javax.xml.bind.annotation.XmlType;
 public enum ApprovalStatus {
 
     WAITING,
+    INPROCESS,
+    PROCESSED,
     APPROVED,
     DENIED,
     EXPIRED;

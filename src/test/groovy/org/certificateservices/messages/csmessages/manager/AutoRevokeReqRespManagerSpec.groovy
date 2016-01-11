@@ -1,6 +1,7 @@
 package org.certificateservices.messages.csmessages.manager
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 
 import org.certificateservices.messages.DummyMessageSecurityProvider;
@@ -154,7 +155,7 @@ class AutoRevokeReqRespManagerSpec extends Specification{
 		}
 
 		@Override
-		public void sendMessage(String requestId, byte[] message)
+		public void sendMessage(String requestId, byte[] message, Map<String,String> attributes)
 				throws IOException, MessageProcessingException,
 				MessageContentException {
 			
@@ -196,11 +197,11 @@ class AutoRevokeReqRespManagerSpec extends Specification{
 		}
 
 		@Override
-		public void responseReceived(byte[] responseMessage)
+		public void responseReceived(byte[] responseMessage, Map<String, String> messageAttributes)
 				throws IOException, MessageProcessingException,
 				MessageContentException {
 			for(MessageResponseCallback c : callbacks.values()){
-				c.responseReceived(parser.parseMessage(responseMessage))
+				c.responseReceived(responseMessage, parser.parseMessage(responseMessage), messageAttributes)
 			}
 			
 		}

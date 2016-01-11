@@ -75,7 +75,7 @@ public class DefaultReqRespManager implements ReqRespManager,
 		
 		registerWaitForRequestId(requestId);
 		
-		messageHandler.sendMessage(messageSenderName,requestId, request);
+		messageHandler.sendMessage(messageSenderName,requestId, request, null);
 				
 		long waitTime = 0;
 		while(waitTime < timeOut){
@@ -101,10 +101,10 @@ public class DefaultReqRespManager implements ReqRespManager,
 	}
 	
 	/**
-	 * @see org.certificateservices.messages.csmessages.manager.MessageResponseCallback#responseReceived(org.certificateservices.messages.csmessages.jaxb.CSMessage)
+	 * @see org.certificateservices.messages.csmessages.manager.MessageResponseCallback#responseReceived(org.certificateservices.messages.csmessages.jaxb.CSMessage, Map<String, String>)
 	 */
 	@Override
-	public void responseReceived(CSMessage responseMessage) {
+	public void responseReceived(byte[] requestData, CSMessage responseMessage, Map<String, String> messageAttributes) {
 		String requestId = findRequestId(responseMessage);
 		if(requestId != null){
 			populateResponseMapIfStillExist(requestId, responseMessage);
