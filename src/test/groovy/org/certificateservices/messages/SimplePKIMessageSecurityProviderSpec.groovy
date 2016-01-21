@@ -1,21 +1,19 @@
 package org.certificateservices.messages
 
-import java.security.KeyStore;
-import java.security.PrivateKey
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
-
-import org.apache.xml.security.utils.Base64;
-import org.certificateservices.messages.DummyMessageSecurityProvider;
-import org.certificateservices.messages.SimpleMessageSecurityProvider;
-import org.certificateservices.messages.utils.XMLEncrypter;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import spock.lang.Shared;
-import spock.lang.Specification
 import static org.certificateservices.messages.SimpleMessageSecurityProvider.*
+
+import java.security.KeyStore
+import java.security.PrivateKey
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
+import java.security.interfaces.RSAPrivateKey
+import java.text.SimpleDateFormat
+
+import org.apache.xml.security.utils.Base64
+import org.certificateservices.messages.utils.SystemTime
+import org.certificateservices.messages.utils.XMLEncrypter
+
+import spock.lang.Specification
 
 class SimplePKIMessageSecurityProviderSpec extends Specification {
 	
@@ -64,16 +62,42 @@ class SimplePKIMessageSecurityProviderSpec extends Specification {
 		 assert cert instanceof X509Certificate
 	}
 	
+	
 	def "Test that isValidAndAuthorized() trust a trusted certificate"(){
+		setup:
+		prov.systemTime = TestUtils.mockSystemTime("2013-10-01")
 		when:
-		  X509Certificate cert = prov.getSigningCertificate();
+		X509Certificate cert = prov.getSigningCertificate();
 		then:
-		 assert prov.isValidAndAuthorized(cert, "someorg")
+		prov.isValidAndAuthorized(cert, "someorg")
 	}
 	
+	
 	def "Test that isValidAndAuthorized() does not trust an untrusted certificate"(){
+		setup:
+		prov.systemTime = TestUtils.mockSystemTime("2013-10-01")
 		expect:
 		  !prov.isValidAndAuthorized(testCert, "someorg")
+	}
+	
+	
+	def "Test that isValidAndAuthorized() does not trust an expired certificate"(){
+		setup:
+		prov.systemTime = TestUtils.mockSystemTime("2017-10-01")
+		when:
+		X509Certificate cert = prov.getSigningCertificate();
+		then:
+		!prov.isValidAndAuthorized(cert, "someorg")
+	}
+	
+	
+	def "Test that isValidAndAuthorized() does not trust an not yet valid certificate"(){
+		setup:
+		prov.systemTime = TestUtils.mockSystemTime("2001-10-01")
+		when:
+		X509Certificate cert = prov.getSigningCertificate();
+		then:
+		!prov.isValidAndAuthorized(cert, "someorg")
 	}
 	
 	def "Verify that signature key is used as decryption key if no decrytion key has been specified."(){
@@ -231,4 +255,6 @@ class SimplePKIMessageSecurityProviderSpec extends Specification {
 		"NzHWz92kL6UKUFzyBXBiBbY7TSVjO+bV/uPaTEVP7QhJk4Cahg1a7h8iMdF78ths" +
 		"+xMeZX1KyiL4Dpo2rocZAvdL/C8qkt/uEgOjwOTdmoRVxkFWcm+DRNa26cclBQ4t" +
 		"Vw==").getBytes();
+	
+
 }
