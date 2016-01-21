@@ -6,6 +6,7 @@ import javax.xml.bind.JAXBElement;
 
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.SimpleMessageSecurityProvider;
+import org.certificateservices.messages.TestUtils;
 import org.certificateservices.messages.assertion.AssertionData;
 import org.certificateservices.messages.assertion.AssertionPayloadParser;
 import org.certificateservices.messages.assertion.jaxb.AssertionType;
@@ -73,6 +74,8 @@ csmessage.sourceid=SomeClientSystem
 		// Start with setting up MessageSecurityProvider, one implementation is SimpleMessageSecurityProvider
 		// using Java key stores to store it's signing and encryption keys.
 		MessageSecurityProvider secProv = new SimpleMessageSecurityProvider(config);
+		// This mocking is for testing only (to avoid failure due to expired certificates)
+		secProv.systemTime = TestUtils.mockSystemTime("2013-10-01")
 		
 		// Create and initialize the Default Message Provider with the security provider.
 		// For client should the usually not need a reference to the CSMessageParser, use the PayloadParser
@@ -116,6 +119,8 @@ csmessage.sourceid=SomeClientSystem
 		// On Client:
 		byte[] approvalRequest = cmpp.generateGetApprovalRequest(MessageGenerateUtils.generateRandomUUID(), "SomeServerSystem", "SomeOrg", request, null, null)
 				
+		println new String(approvalRequest)
+		
 		// On Server:
 		// The server will add the request for approval by the approval engine and return an approval Id in the response
 		CSMessage approvalRequestMessage =  mp.parseMessage(approvalRequest)
