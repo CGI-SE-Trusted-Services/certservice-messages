@@ -119,7 +119,7 @@ csmessage.sourceid=SomeClientSystem
 		// On Client:
 		byte[] approvalRequest = cmpp.generateGetApprovalRequest(MessageGenerateUtils.generateRandomUUID(), "SomeServerSystem", "SomeOrg", request, null, null)
 				
-		println new String(approvalRequest)
+		//println new String(approvalRequest)
 		
 		// On Server:
 		// The server will add the request for approval by the approval engine and return an approval Id in the response
