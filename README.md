@@ -9,6 +9,7 @@ It mainly consists of the following parts:
 	* Key Store Managment Payload Parser
 	* System Configuration Payload Parser
 	* Assertion Payload Parser
+	* Authorization Payload Parser
 	* Encrypted CS Message Payload Parser
 
 * PKI Message generator (Older core message format) containing messages for credential management. 
