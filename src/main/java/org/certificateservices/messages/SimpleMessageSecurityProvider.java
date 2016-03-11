@@ -24,13 +24,17 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+import org.certificateservices.messages.utils.DefaultSystemTime;
 import org.certificateservices.messages.utils.SettingsUtils;
+import org.certificateservices.messages.utils.SystemTime;
 import org.certificateservices.messages.utils.XMLEncrypter;
 
 /**
@@ -45,6 +49,7 @@ import org.certificateservices.messages.utils.XMLEncrypter;
 public class SimpleMessageSecurityProvider implements
 		MessageSecurityProvider {
 	
+	Logger log = Logger.getLogger(SimpleMessageSecurityProvider.class);
 	
 	/**
 	 * Setting indicating the path to the signing JKS key store (required) 
@@ -112,6 +117,7 @@ public class SimpleMessageSecurityProvider implements
 	
 	private SigningAlgorithmScheme signingAlgorithmScheme;
 	private EncryptionAlgorithmScheme encryptionAlgorithmScheme;
+	SystemTime systemTime = new DefaultSystemTime();
 
 	
 	/**
@@ -223,7 +229,16 @@ public class SimpleMessageSecurityProvider implements
 			return false;
 		}
 		
-		// TODO Check validity
+		Date currentTime = systemTime.getSystemTime();
+		if(currentTime.after(signCertificate.getNotAfter())){
+			log.error("Error processing Certificate Services message signing certificate expired: " + signCertificate.getNotAfter());
+			return false;
+		}
+		if(currentTime.before(signCertificate.getNotBefore())){
+			log.error("Error processing Certificate Services message signing certificate not yet valid: " + signCertificate.getNotBefore());
+			return false;
+		}
+		
 		
 		boolean foundMatching = true;
 		try{

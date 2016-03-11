@@ -2,8 +2,10 @@ package org.certificateservices.messages;
 
 import org.certificateservices.messages.csmessages.CSMessageResponseData;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
+import org.certificateservices.messages.utils.SystemTime;
 
 import groovy.xml.XmlUtil;
+import java.text.SimpleDateFormat
 
 public class TestUtils {
 	
@@ -53,5 +55,17 @@ public class TestUtils {
 		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID");
 		DefaultCSMessageParser mp = new DefaultCSMessageParser();
 		mp.init(secprov, config)
+	}
+	
+	/**
+	 * Help method to mock a system time to return given date
+	 * @param date in format YYYY-MM-dd
+	 * @return a mocked system time
+	 */
+	public static SystemTime mockSystemTime(String date){
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd")
+		long time = sdf.parse(date).time
+		SystemTime retval = [ getSystemTime : {new Date(time)}, getSystemTimeMS : {time} ] as SystemTime
+		return retval
 	}
 }
