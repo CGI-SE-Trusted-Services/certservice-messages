@@ -83,7 +83,6 @@ import javax.xml.bind.annotation.XmlType;
 })
 public class TokenRequest {
 
-    @XmlElement(required = true)
     protected TokenRequest.CredentialRequests credentialRequests;
     @XmlElement(required = true)
     protected String user;
