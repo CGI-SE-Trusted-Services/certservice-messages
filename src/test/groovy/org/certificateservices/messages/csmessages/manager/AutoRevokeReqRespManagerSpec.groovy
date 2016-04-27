@@ -103,7 +103,7 @@ class AutoRevokeReqRespManagerSpec extends Specification{
 		setup:
 		((DummyMessageHandler) arrrm.messageHandler).waitTime = 1000
 		arrrm.timeOut = 200
-		byte[] request = credManagementPayloadParser.genIssueTokenCredentialsRequest(TEST_ID, "somedestination", "someorg", createDummyTokenRequest(),null,null,null)
+		byte[] request = credManagementPayloadParser.genIssueTokenCredentialsRequest(TEST_ID, "somedestination", "someorg", createDummyTokenRequest(),null,null,null,null)
 		when:
 		arrrm.sendRequest(TEST_ID, request)
 		then:

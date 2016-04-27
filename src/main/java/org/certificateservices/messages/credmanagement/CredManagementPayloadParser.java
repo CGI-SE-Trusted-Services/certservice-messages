@@ -19,35 +19,10 @@ import java.util.List;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.credmanagement.jaxb.ChangeCredentialStatusRequest;
-import org.certificateservices.messages.credmanagement.jaxb.ChangeCredentialStatusResponse;
-import org.certificateservices.messages.credmanagement.jaxb.FetchHardTokenDataRequest;
-import org.certificateservices.messages.credmanagement.jaxb.FetchHardTokenDataResponse;
-import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
-import org.certificateservices.messages.credmanagement.jaxb.GetCredentialRequest;
-import org.certificateservices.messages.credmanagement.jaxb.GetCredentialResponse;
-import org.certificateservices.messages.credmanagement.jaxb.GetCredentialStatusListRequest;
-import org.certificateservices.messages.credmanagement.jaxb.GetCredentialStatusListResponse;
-import org.certificateservices.messages.credmanagement.jaxb.GetIssuerCredentialsRequest;
-import org.certificateservices.messages.credmanagement.jaxb.GetIssuerCredentialsResponse;
-import org.certificateservices.messages.credmanagement.jaxb.GetTokensRequest;
-import org.certificateservices.messages.credmanagement.jaxb.GetTokensResponse;
-import org.certificateservices.messages.credmanagement.jaxb.GetUsersRequest;
-import org.certificateservices.messages.credmanagement.jaxb.GetUsersResponse;
-import org.certificateservices.messages.credmanagement.jaxb.IsIssuerRequest;
-import org.certificateservices.messages.credmanagement.jaxb.IsIssuerResponse;
-import org.certificateservices.messages.credmanagement.jaxb.IssueCredentialStatusListRequest;
-import org.certificateservices.messages.credmanagement.jaxb.IssueCredentialStatusListResponse;
-import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsRequest;
+import org.certificateservices.messages.credmanagement.jaxb.*;
 import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsRequest.FieldValues;
-import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsResponse;
 import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsResponse.Credentials;
 import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsResponse.RevokedCredentials;
-import org.certificateservices.messages.credmanagement.jaxb.ObjectFactory;
-import org.certificateservices.messages.credmanagement.jaxb.RemoveCredentialRequest;
-import org.certificateservices.messages.credmanagement.jaxb.RemoveCredentialResponse;
-import org.certificateservices.messages.credmanagement.jaxb.StoreHardTokenDataRequest;
-import org.certificateservices.messages.credmanagement.jaxb.StoreHardTokenDataResponse;
 import org.certificateservices.messages.csmessages.BasePayloadParser;
 import org.certificateservices.messages.csmessages.CSMessageResponseData;
 import org.certificateservices.messages.csmessages.PayloadParser;
@@ -131,14 +106,15 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @param destinationId the destinationId used in the CSMessage.
 	 * @param organisation the related organisation
 	 * @param tokenRequest the tokenRequest to add to the CSRequest.
-	 * @param fieldValues containing complementary input data to the request. Can be null if no complementary data is available. 
+	 * @param fieldValues containing complementary input data to the request. Can be null if no complementary data is available.
+	 * @param hardTokenData related hard token data to be stored in encrypted storage. Null if not applicable
 	 * @param originator the original requester of a message, null if not applicable
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
 	 * @return generated and signed CSMessage in byte[] format.
 	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
-	public byte[] genIssueTokenCredentialsRequest(String requestId, String destinationId, String organisation, TokenRequest tokenRequest, List<FieldValue> fieldValues, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
+	public byte[] genIssueTokenCredentialsRequest(String requestId, String destinationId, String organisation, TokenRequest tokenRequest, List<FieldValue> fieldValues, HardTokenData hardTokenData, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		IssueTokenCredentialsRequest payload = of.createIssueTokenCredentialsRequest();
 		payload.setTokenRequest(tokenRequest);
 		
@@ -147,6 +123,10 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 			values.getFieldValue().addAll(fieldValues);
 			
 			payload.setFieldValues(values);
+		}
+
+		if(hardTokenData != null){
+			payload.setHardTokenData(hardTokenData);
 		}
 		
 		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
