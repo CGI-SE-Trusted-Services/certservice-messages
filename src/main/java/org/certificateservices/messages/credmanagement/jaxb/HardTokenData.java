@@ -11,25 +11,24 @@ package org.certificateservices.messages.credmanagement.jaxb;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import org.certificateservices.messages.csmessages.jaxb.CSResponse;
 
 
 /**
- * <p>Java class for anonymous complex type.
+ * <p>Java class for HardTokenData complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType>
+ * &lt;complexType name="HardTokenData">
  *   &lt;complexContent>
- *     &lt;extension base="{http://certificateservices.org/xsd/csmessages2_0}CSResponse">
+ *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="tokenSerial" type="{http://certificateservices.org/xsd/csmessages2_0}notemptystring"/>
+ *         &lt;element name="relatedCredentialSerialNumber" type="{http://certificateservices.org/xsd/csmessages2_0}notemptystring"/>
+ *         &lt;element name="relatedCredentialIssuerId" type="{http://certificateservices.org/xsd/csmessages2_0}notemptystring"/>
  *         &lt;element name="encryptedData" type="{http://www.w3.org/2001/XMLSchema}base64Binary"/>
  *       &lt;/sequence>
- *     &lt;/extension>
+ *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
@@ -37,42 +36,66 @@ import org.certificateservices.messages.csmessages.jaxb.CSResponse;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "", propOrder = {
-    "tokenSerial",
+@XmlType(name = "HardTokenData", propOrder = {
+    "relatedCredentialSerialNumber",
+    "relatedCredentialIssuerId",
     "encryptedData"
 })
-@XmlRootElement(name = "FetchHardTokenDataResponse")
-public class FetchHardTokenDataResponse
-    extends CSResponse
-{
+public class HardTokenData {
 
     @XmlElement(required = true)
-    protected String tokenSerial;
+    protected String relatedCredentialSerialNumber;
+    @XmlElement(required = true)
+    protected String relatedCredentialIssuerId;
     @XmlElement(required = true)
     protected byte[] encryptedData;
 
     /**
-     * Gets the value of the tokenSerial property.
+     * Gets the value of the relatedCredentialSerialNumber property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getTokenSerial() {
-        return tokenSerial;
+    public String getRelatedCredentialSerialNumber() {
+        return relatedCredentialSerialNumber;
     }
 
     /**
-     * Sets the value of the tokenSerial property.
+     * Sets the value of the relatedCredentialSerialNumber property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setTokenSerial(String value) {
-        this.tokenSerial = value;
+    public void setRelatedCredentialSerialNumber(String value) {
+        this.relatedCredentialSerialNumber = value;
+    }
+
+    /**
+     * Gets the value of the relatedCredentialIssuerId property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getRelatedCredentialIssuerId() {
+        return relatedCredentialIssuerId;
+    }
+
+    /**
+     * Sets the value of the relatedCredentialIssuerId property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setRelatedCredentialIssuerId(String value) {
+        this.relatedCredentialIssuerId = value;
     }
 
     /**

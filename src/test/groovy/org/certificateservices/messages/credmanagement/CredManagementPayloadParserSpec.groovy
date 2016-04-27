@@ -1,33 +1,19 @@
-package org.certificateservices.messages.credmanagement;
+package org.certificateservices.messages.credmanagement
 
-import java.security.KeyStore;
-import java.util.List;
+import org.apache.xml.security.Init
+import org.apache.xml.security.utils.Base64
+import org.certificateservices.messages.MessageContentException
+import org.certificateservices.messages.credmanagement.jaxb.FieldValue
+import org.certificateservices.messages.credmanagement.jaxb.HardTokenData
+import org.certificateservices.messages.credmanagement.jaxb.ObjectFactory
+import org.certificateservices.messages.csmessages.CSMessageResponseData
+import org.certificateservices.messages.csmessages.PayloadParserRegistry
+import org.certificateservices.messages.csmessages.jaxb.*
+import org.certificateservices.messages.utils.MessageGenerateUtils
+import spock.lang.Specification
 
-import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.DatatypeFactory
 
-import org.apache.xml.security.Init;
-import org.apache.xml.security.utils.Base64;
-import org.certificateservices.messages.DummyMessageSecurityProvider;
-import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.TestUtils;
-import org.certificateservices.messages.csmessages.CSMessageResponseData;
-import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
-import org.certificateservices.messages.csmessages.PayloadParserRegistry;
-import org.certificateservices.messages.csmessages.jaxb.Attribute;
-import org.certificateservices.messages.csmessages.jaxb.CSMessage;
-import org.certificateservices.messages.csmessages.jaxb.Credential;
-import org.certificateservices.messages.csmessages.jaxb.CredentialRequest;
-import org.certificateservices.messages.csmessages.jaxb.Organisation;
-import org.certificateservices.messages.csmessages.jaxb.Token;
-import org.certificateservices.messages.csmessages.jaxb.User;
-import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
-import org.certificateservices.messages.credmanagement.jaxb.ObjectFactory;
-import org.certificateservices.messages.csmessages.jaxb.CredentialStatusList;
-import org.certificateservices.messages.csmessages.jaxb.TokenRequest;
-import org.certificateservices.messages.utils.MessageGenerateUtils;
-
-import spock.lang.IgnoreRest;
-import spock.lang.Specification;
 import static org.certificateservices.messages.TestUtils.*
 import static org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.*
 
@@ -64,7 +50,7 @@ class CredManagementPayloadParserSpec extends Specification {
 		
 		when:
 		pp.csMessageParser.sourceId = "SOMEREQUESTER"
-		byte[] requestMessage = pp.genIssueTokenCredentialsRequest(TEST_ID, "SOMESOURCEID", "someorg", createTokenRequest(), null,  createOriginatorCredential(), null)
+		byte[] requestMessage = pp.genIssueTokenCredentialsRequest(TEST_ID, "SOMESOURCEID", "someorg", createTokenRequest(), null,  null, createOriginatorCredential(), null)
 		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.IssueTokenCredentialsRequest
@@ -77,10 +63,11 @@ class CredManagementPayloadParserSpec extends Specification {
 
 		payloadObject.tokenRequest.user == "someuser"
 		payloadObject.fieldValues.size() == 0
+		payloadObject.hardTokenData.size() == 0
 		
 		when:
 		pp.csMessageParser.sourceId = "SOMEREQUESTER"
-		requestMessage = pp.genIssueTokenCredentialsRequest(TEST_ID, "SOMESOURCEID", "someorg", createTokenRequest(), createFieldValues(),  createOriginatorCredential(), null)
+		requestMessage = pp.genIssueTokenCredentialsRequest(TEST_ID, "SOMESOURCEID", "someorg", createTokenRequest(), createFieldValues(), createHardTokenData(), createOriginatorCredential(), null)
 		//printXML(requestMessage)
 		xml = slurpXml(requestMessage)
 		payloadObject = xml.payload.IssueTokenCredentialsRequest
@@ -92,6 +79,7 @@ class CredManagementPayloadParserSpec extends Specification {
 		payloadObject.tokenRequest.user == "someuser"
 		payloadObject.fieldValues.fieldValue[0].key == "someKey1"
 		payloadObject.fieldValues.fieldValue[1].key == "someKey2"
+		payloadObject.hardTokenData.relatedCredentialSerialNumber == "12345678"
 		
 		
 		when:
@@ -785,6 +773,13 @@ class CredManagementPayloadParserSpec extends Specification {
 		
 		return retval
 	}
-	
+
+	private HardTokenData createHardTokenData(){
+		def retval = new HardTokenData()
+		retval.encryptedData="123".bytes
+		retval.relatedCredentialIssuerId="CN=SomeIssuerId"
+		retval.relatedCredentialSerialNumber="12345678"
+		return retval
+	}
 	
 }

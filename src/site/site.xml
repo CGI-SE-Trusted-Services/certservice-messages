@@ -32,6 +32,7 @@
             <item name="Credential Manangement 2.0 Specification" href="Credential_Management_Protocol_Specification_2.0_Revision_1.1.doc"/>
             <item name="Key Store Message 2.0 Specification" href="KeyStore_Management_Protocol_Specification_2.0_Revision_1.0.doc"/>
             <item name="System Configuration 2.0 Specification" href="System_Configuration_Protocol_Specification_2.0_Revision_1.0.doc"/>
+            <item name="Authorization Protocol 2.0 Specification" href="Authorization_Protocol_Specification_2.0_Revision_1.0.doc"/>
             <item name="PKI Message 1.0 Specification, Rev 1.1" href="PKIMessage_Protocol_Specification_1.0_Revision_1.1.doc"/>
         </menu>
 

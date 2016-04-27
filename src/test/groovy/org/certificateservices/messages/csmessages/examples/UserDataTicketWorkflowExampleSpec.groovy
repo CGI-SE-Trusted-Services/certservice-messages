@@ -151,7 +151,7 @@ csmessage.sourceid=SomeClientSystem
 		tr.userData.getAny().add(userDataTicket)
 		
 		
-		byte[] tokenCredentialRequest = cmpp.genIssueTokenCredentialsRequest(MessageGenerateUtils.generateRandomUUID(), "SomeDestionation", "SomeOrg", tr, [f3], null, null)
+		byte[] tokenCredentialRequest = cmpp.genIssueTokenCredentialsRequest(MessageGenerateUtils.generateRandomUUID(), "SomeDestionation", "SomeOrg", tr, [f3], null, null, null)
 		// This request is sent to server
 		
 		// On Server:
