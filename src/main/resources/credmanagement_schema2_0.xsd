@@ -24,6 +24,8 @@
 								</xs:sequence>
 							</xs:complexType>
 						</xs:element>
+						<xs:element minOccurs="0" maxOccurs="1" name="hardTokenData"
+									type="tns:HardTokenData" />
 					</xs:sequence>
 				</xs:extension>
 			</xs:complexContent>
@@ -36,6 +38,17 @@
 			<xs:element minOccurs="1" maxOccurs="1" name="key"
 				type="cs:notemptystring" />
 			<xs:element minOccurs="1" maxOccurs="1" name="value" type="xs:string" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="HardTokenData">
+		<xs:sequence>
+			<xs:element minOccurs="1" maxOccurs="1"
+						name="relatedCredentialSerialNumber" type="cs:notemptystring" />
+			<xs:element minOccurs="1" maxOccurs="1"
+						name="relatedCredentialIssuerId" type="cs:notemptystring" />
+			<xs:element minOccurs="1" maxOccurs="1" name="encryptedData"
+						type="xs:base64Binary" />
 		</xs:sequence>
 	</xs:complexType>
 
