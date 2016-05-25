@@ -213,7 +213,7 @@ public interface CSMessageParser {
 	 * @param request the request data.
 	 * @param status the request status of the response
 	 * @param failureMessage a readable failure message.
-	 * @param destinationID the destination id of the message.
+	 * @param destinationID the destination id of the message. If null will destination id be extracted from request data.
 	 * @param originator originator of the request, null if no originator could be found.
 	 * @return
 	 * @throws MessageContentException, if no signer certificate was found and parser required it.

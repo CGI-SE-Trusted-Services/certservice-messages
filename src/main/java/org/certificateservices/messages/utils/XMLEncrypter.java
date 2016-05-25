@@ -176,7 +176,7 @@ public class XMLEncrypter {
 	 * @throws MessageContentException if content of message was invalid
 	 * @throws NoDecryptionKeyFoundException if no related decryption key could be found with the message.
 	 */
-	public JAXBElement<?> decryptDocument(Document doc) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
+	public Object decryptDocument(Document doc) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
 		return decryptDocument(doc, null);
 	}
 	
@@ -191,9 +191,9 @@ public class XMLEncrypter {
 	 * @throws MessageContentException if content of message was invalid
 	 * @throws NoDecryptionKeyFoundException if no related decryption key could be found with the message.
 	 */
-	public JAXBElement<?> decryptDocument(Document doc, DecryptedXMLConverter converter) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
+	public Object decryptDocument(Document doc, DecryptedXMLConverter converter) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
 		try{			
-			return (JAXBElement<?>) unmarshaller.unmarshal(decryptDoc(doc,converter));
+			return unmarshaller.unmarshal(decryptDoc(doc,converter));
 		}catch(Exception e){
 			if(e instanceof NoDecryptionKeyFoundException){
 				throw (NoDecryptionKeyFoundException) e;
