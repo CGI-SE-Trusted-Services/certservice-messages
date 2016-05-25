@@ -75,7 +75,6 @@ public class HardTokenDataParser {
 	private ObjectFactory of = new ObjectFactory();
 	
 	private XMLEncrypter xmlEncrypter;
-	//private EncryptedHardTokenDataXMLConverter converter = new EncryptedHardTokenDataXMLConverter();
 	
 	/**
 	 * Constructor for Hard Token Data Parser, this is the default method to create a parser, it should
@@ -340,26 +339,6 @@ public class HardTokenDataParser {
 			return null;
 		}
 	}
-//    
-//    /**
-//     * Converter that replaces all decrypted EncryptedAssertions with Assertions
-//     */
-//    public class EncryptedHardTokenDataXMLConverter implements DecryptedXMLConverter{
-//
-//		public Document convert(Document doc) throws MessageContentException {
-//			NodeList nodeList = doc.getElementsByTagNameNS(NAMESPACE, "HardTokenData");
-//			for(int i =0; i < nodeList.getLength(); i++){
-//				Element attribute= (Element) nodeList.item(i);
-//				Element parent = (Element) attribute.getParentNode();
-//				if(parent.getLocalName().equals("EncryptedHardTokenData") && parent.getNamespaceURI().equals(NAMESPACE)){
-//					parent.getParentNode().replaceChild(attribute, parent);
-//				}
-//				
-//			}
-//
-//			return doc;
-//		}
-//		
-//	}
+
 	
 }
