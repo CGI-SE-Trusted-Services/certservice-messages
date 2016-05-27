@@ -499,7 +499,6 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @param destinationId the destinationId used in the CSMessage.
 	 * @param organisation the related organisation
 	 * @param tokenSerial The unique serial number of the hard token within the organisation
-	 * @param relatedCredentialSerialNumber The serial number of the most related credential in hexadecimal encoding lowercase (for X509 certificates).
 	 * @param relatedCredentialIssuerId The unique id of the issuer of the related credential, usually the subject DN name of the issuer.
 	 * @param adminCredential the credential of the requesting card administrator that need the hard token data. The response data is encrypted with this administrator as recipient.
 	 * @param originator the original requester of a message, null if not applicable.
@@ -508,10 +507,9 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
-	public byte[] genFetchHardTokenDataRequest(String requestId, String destinationId, String organisation, String tokenSerial, String relatedCredentialSerialNumber, String relatedCredentialIssuerId, Credential adminCredential, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+	public byte[] genFetchHardTokenDataRequest(String requestId, String destinationId, String organisation, String tokenSerial, String relatedCredentialIssuerId, Credential adminCredential, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
 		FetchHardTokenDataRequest payload = of.createFetchHardTokenDataRequest();
 		payload.setTokenSerial(tokenSerial);
-		payload.setRelatedCredentialSerialNumber(relatedCredentialSerialNumber);
 		payload.setRelatedCredentialIssuerId(relatedCredentialIssuerId);
 		payload.setAdminCredential(adminCredential);
 		
@@ -545,7 +543,6 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @param destinationId the destinationId used in the CSMessage.
 	 * @param organisation the related organisation
 	 * @param tokenSerial The unique serial number of the hard token within the organisation
-	 * @param relatedCredentialSerialNumber The serial number of the most related credential in hexadecimal encoding lowercase (for X509 certificates).
 	 * @param relatedCredentialIssuerId The unique id of the issuer of the related credential, usually the subject DN name of the issuer.
 	 * @param encryptedData The token data encrypted with a credential provided out-of-bands by the CS administrator to protect the data during transport.
 	 * @param originator the original requester of a message, null if not applicable.
@@ -554,10 +551,9 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
-	public byte[] genStoreHardTokenDataRequest(String requestId, String destinationId, String organisation, String tokenSerial, String relatedCredentialSerialNumber, String relatedCredentialIssuerId, byte[] encryptedData, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+	public byte[] genStoreHardTokenDataRequest(String requestId, String destinationId, String organisation, String tokenSerial, String relatedCredentialIssuerId, byte[] encryptedData, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
 		StoreHardTokenDataRequest payload = of.createStoreHardTokenDataRequest();
 		payload.setTokenSerial(tokenSerial);
-		payload.setRelatedCredentialSerialNumber(relatedCredentialSerialNumber);
 		payload.setRelatedCredentialIssuerId(relatedCredentialIssuerId);
 		payload.setEncryptedData(encryptedData);
 		

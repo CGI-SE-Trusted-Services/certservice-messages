@@ -367,8 +367,6 @@
 						<xs:element minOccurs="1" maxOccurs="1" name="tokenSerial"
 							type="cs:notemptystring" />
 						<xs:element minOccurs="1" maxOccurs="1"
-							name="relatedCredentialSerialNumber" type="xs:string" />
-						<xs:element minOccurs="1" maxOccurs="1"
 							name="relatedCredentialIssuerId" type="xs:string" />
 						<xs:element minOccurs="1" maxOccurs="1" name="adminCredential"
 							type="cs:Credential" />
@@ -400,8 +398,6 @@
 					<xs:sequence>
 						<xs:element minOccurs="1" maxOccurs="1" name="tokenSerial"
 							type="cs:notemptystring" />
-						<xs:element minOccurs="1" maxOccurs="1"
-							name="relatedCredentialSerialNumber" type="cs:notemptystring" />
 						<xs:element minOccurs="1" maxOccurs="1"
 							name="relatedCredentialIssuerId" type="cs:notemptystring" />
 						<xs:element minOccurs="1" maxOccurs="1" name="encryptedData"

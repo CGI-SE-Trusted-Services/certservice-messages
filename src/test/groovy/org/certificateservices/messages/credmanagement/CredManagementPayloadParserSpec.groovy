@@ -458,7 +458,7 @@ class CredManagementPayloadParserSpec extends Specification {
 	def "Verify that genFetchHardTokenDataRequest() generates a valid xml message and genFetchHardTokenDataResponse() generates a valid CSMessageResponseData"(){
 		when:
 		pp.csMessageParser.sourceId = "SOMEREQUESTER"
-		byte[] requestMessage = pp.genFetchHardTokenDataRequest(TEST_ID, "SOMESOURCEID", "someorg", "someTokenSerial", "someRelatedCredentialSerialNumber", "someRelatedCredentialIssuerId", createCredential(), createOriginatorCredential(), null)
+		byte[] requestMessage = pp.genFetchHardTokenDataRequest(TEST_ID, "SOMESOURCEID", "someorg", "someTokenSerial", "someRelatedCredentialIssuerId", createCredential(), createOriginatorCredential(), null)
 		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.FetchHardTokenDataRequest
@@ -467,7 +467,6 @@ class CredManagementPayloadParserSpec extends Specification {
 		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","FetchHardTokenDataRequest", createOriginatorCredential(), pp.csMessageParser)
 
 		payloadObject.tokenSerial == "someTokenSerial"
-		payloadObject.relatedCredentialSerialNumber == "someRelatedCredentialSerialNumber"
 		payloadObject.relatedCredentialIssuerId == "someRelatedCredentialIssuerId"
 		payloadObject.adminCredential.displayName == "SomeDisplayName"
 		
@@ -498,7 +497,7 @@ class CredManagementPayloadParserSpec extends Specification {
 	def "Verify that genStoreHardTokenDataRequest() generates a valid xml message and genStoreHardTokenDataResponse() generates a valid CSMessageResponseData"(){
 		when:
 		pp.csMessageParser.sourceId = "SOMEREQUESTER"
-		byte[] requestMessage = pp.genStoreHardTokenDataRequest(TEST_ID, "SOMESOURCEID", "someorg", "someTokenSerial", "someRelatedCredentialSerialNumber", "someRelatedCredentialIssuerId", "someencrypteddata".getBytes(), createOriginatorCredential(), null)
+		byte[] requestMessage = pp.genStoreHardTokenDataRequest(TEST_ID, "SOMESOURCEID", "someorg", "someTokenSerial",  "someRelatedCredentialIssuerId", "someencrypteddata".getBytes(), createOriginatorCredential(), null)
 		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.StoreHardTokenDataRequest
@@ -507,7 +506,6 @@ class CredManagementPayloadParserSpec extends Specification {
 		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","StoreHardTokenDataRequest", createOriginatorCredential(), pp.csMessageParser)
 
 		payloadObject.tokenSerial == "someTokenSerial"
-		payloadObject.relatedCredentialSerialNumber == "someRelatedCredentialSerialNumber"
 		payloadObject.relatedCredentialIssuerId == "someRelatedCredentialIssuerId"
 		new String(Base64.decode(((String)payloadObject.encryptedData))) == "someencrypteddata"
 		

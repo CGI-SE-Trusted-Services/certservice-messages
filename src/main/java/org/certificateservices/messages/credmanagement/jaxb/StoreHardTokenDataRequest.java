@@ -27,7 +27,6 @@ import org.certificateservices.messages.csmessages.jaxb.CSRequest;
  *     &lt;extension base="{http://certificateservices.org/xsd/csmessages2_0}CSRequest">
  *       &lt;sequence>
  *         &lt;element name="tokenSerial" type="{http://certificateservices.org/xsd/csmessages2_0}notemptystring"/>
- *         &lt;element name="relatedCredentialSerialNumber" type="{http://certificateservices.org/xsd/csmessages2_0}notemptystring"/>
  *         &lt;element name="relatedCredentialIssuerId" type="{http://certificateservices.org/xsd/csmessages2_0}notemptystring"/>
  *         &lt;element name="encryptedData" type="{http://www.w3.org/2001/XMLSchema}base64Binary"/>
  *       &lt;/sequence>
@@ -41,7 +40,6 @@ import org.certificateservices.messages.csmessages.jaxb.CSRequest;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
     "tokenSerial",
-    "relatedCredentialSerialNumber",
     "relatedCredentialIssuerId",
     "encryptedData"
 })
@@ -52,8 +50,6 @@ public class StoreHardTokenDataRequest
 
     @XmlElement(required = true)
     protected String tokenSerial;
-    @XmlElement(required = true)
-    protected String relatedCredentialSerialNumber;
     @XmlElement(required = true)
     protected String relatedCredentialIssuerId;
     @XmlElement(required = true)
@@ -81,30 +77,6 @@ public class StoreHardTokenDataRequest
      */
     public void setTokenSerial(String value) {
         this.tokenSerial = value;
-    }
-
-    /**
-     * Gets the value of the relatedCredentialSerialNumber property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getRelatedCredentialSerialNumber() {
-        return relatedCredentialSerialNumber;
-    }
-
-    /**
-     * Sets the value of the relatedCredentialSerialNumber property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setRelatedCredentialSerialNumber(String value) {
-        this.relatedCredentialSerialNumber = value;
     }
 
     /**
