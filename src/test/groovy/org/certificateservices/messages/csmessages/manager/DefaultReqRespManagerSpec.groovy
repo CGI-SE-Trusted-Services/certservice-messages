@@ -78,6 +78,7 @@ class DefaultReqRespManagerSpec extends Specification{
 		then:
 		assert response != null;
 		assert response.getPayload().getAny() instanceof GetCredentialResponse
+		
 	}
 	
 
@@ -115,7 +116,7 @@ class DefaultReqRespManagerSpec extends Specification{
 	}
 	
 
-	def "Check that time out expeption is thrown when message takes longer time than set timeout."(){
+	def "Check that time out exception is thrown when message takes longer time than set timeout."(){
 		setup:
 		((DummyMessageHandler) drrm.messageHandler).waitTime = 10000
 		drrm.timeOut = 200

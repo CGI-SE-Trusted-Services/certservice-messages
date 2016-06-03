@@ -69,7 +69,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	/** 
 	 * Method that initializes the message manager
 	 * 
-	 * @see org.certificateservices.custom.vcc.vccpieclient.mq.MessageManager#init(Properties, PKIMessageParser, String, String)
+	 * @see org.certificateservices.messages.pkimessages.manager.MessageManager#init(Properties, PKIMessageParser, String, String)
 	 */	
 	public void init(Properties config, PKIMessageParser parser, String destination) throws IllegalArgumentException,
 			IOException, MessageException {

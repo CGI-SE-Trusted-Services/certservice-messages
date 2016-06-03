@@ -77,6 +77,7 @@ import org.apache.xml.security.utils.Base64;
 import org.certificateservices.messages.MessageException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
+import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.pkimessages.jaxb.ChangeCredentialStatusRequest;
 import org.certificateservices.messages.pkimessages.jaxb.ChangeCredentialStatusResponse;
 import org.certificateservices.messages.pkimessages.jaxb.Credential;
@@ -107,6 +108,7 @@ import org.certificateservices.messages.pkimessages.jaxb.StoreHardTokenDataReque
 import org.certificateservices.messages.pkimessages.jaxb.StoreHardTokenDataResponse;
 import org.certificateservices.messages.pkimessages.jaxb.TokenRequest;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
+import org.certificateservices.messages.utils.SettingsUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.ls.LSInput;
@@ -188,9 +190,9 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 			getPKIMessageUnmarshaller(version);
 		}
 
-		sourceId = config.getProperty(SETTING_SOURCEID);
+		sourceId = SettingsUtils.getProperty(config, SETTING_SOURCEID, DefaultCSMessageParser.SETTING_SOURCEID);
 		if(sourceId == null || sourceId.trim().equals("")){
-			throw new MessageException("Error setting " + SETTING_SOURCEID + " must be set.");
+			throw new MessageException("Error setting " + DefaultCSMessageParser.SETTING_SOURCEID + " must be set.");
 		}
 
 		
