@@ -4,6 +4,9 @@
 package org.certificateservices.messages.utils;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.security.PublicKey;
@@ -11,7 +14,9 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
+import java.util.InvalidPropertiesFormatException;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.crypto.KeyGenerator;
@@ -19,6 +24,18 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.xml.security.encryption.EncryptedData;
 import org.apache.xml.security.encryption.EncryptedKey;
@@ -38,6 +55,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 /**
  * Helper methods to perform XML Encryption and Decryption tasks on JAXB Elements.
@@ -248,6 +266,73 @@ public class XMLEncrypter {
 			}
 			throw new MessageProcessingException("Internal error occurred when decrypting XML: " + e.getMessage(),e);
 		}
+	}
+	
+	/**
+	 * Method to encrypt java.util.Properties in XML-format
+	 * @param properties properties to encrypt
+	 * @param receipients a list of recipients of the properties.
+	 * @param useKeyId if in key info should be included the shorter KeyName tag instead of X509Certificate
+	 * @return a new DOM Document with the encrypted properties.
+	 * @throws MessageProcessingException if internal problems occurred encrypting the message.
+	 */
+	public Document encryptProperties(Properties properties, List<X509Certificate> receipients, boolean useKeyId) throws MessageProcessingException {
+		Document encDocument = null, document = null;
+		try {
+			DocumentBuilder documentBuilder;
+			ByteArrayOutputStream os = new ByteArrayOutputStream();		
+			properties.storeToXML(os, null, "UTF-8");			
+			InputStream is = new ByteArrayInputStream(os.toByteArray());
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			documentBuilder = dbf.newDocumentBuilder();
+			document = documentBuilder.parse(is);
+			encDocument = encryptElement(document, receipients, useKeyId);
+		} catch(Exception e){
+			if(e instanceof MessageProcessingException){
+				throw (MessageProcessingException) e;
+			}
+			throw new MessageProcessingException("Internal error occurred when encrypting properties: " + e.getMessage(), e);
+		}
+
+		return encDocument;
+	}
+	
+	/**
+	 * Method to decrypt document containing properties in XML-format.
+	 * @param encDocument the document containing encrypted data.
+	 * @return decrypted properties
+	 * @throws NoDecryptionKeyFoundException if no related decryption key could be found.
+	 * @throws MessageProcessingException if internal problems occurred decrypting the message.
+	 * @throws MessageContentException if content of document was invalid
+	 */
+	public Properties decryptProperties(Document encDocument) throws NoDecryptionKeyFoundException, MessageProcessingException, MessageContentException {
+		Properties properties = null;
+		
+		try {
+			Document document = decryptDoc(encDocument, null);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();		
+			Source src = new DOMSource(document);
+			Result res = new StreamResult(baos);
+			Transformer trf = TransformerFactory.newInstance().newTransformer();
+			trf.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, "http://java.sun.com/dtd/properties.dtd");
+			trf.transform(src, res);
+			InputStream is = new ByteArrayInputStream(baos.toByteArray());
+			properties = new Properties();
+			properties.loadFromXML(is);
+		} catch(Exception e){
+			if(e instanceof NoDecryptionKeyFoundException){
+				throw (NoDecryptionKeyFoundException) e;
+			}
+			if(e instanceof MessageContentException){
+				throw (MessageContentException) e;
+			}
+			if(e instanceof MessageProcessingException){
+				throw (MessageProcessingException) e;
+			}
+			throw new MessageProcessingException("Internal error occurred when decrypting properties: " + e.getMessage(), e);
+		}
+		
+		return properties;
 	}
 	
 	/**
