@@ -32,7 +32,7 @@
 					type="tns:notemptystring" />
 				<xs:element minOccurs="1" maxOccurs="1" name="serialNumber"
 					type="tns:notemptystring" />
-				<xs:element minOccurs="1" maxOccurs="1" name="copyOfSN"
+				<xs:element minOccurs="0" maxOccurs="1" name="copyOfSN"
 					type="tns:notemptystring" />
 				<xs:element minOccurs="0" maxOccurs="1" name="copies">
 					<xs:complexType>

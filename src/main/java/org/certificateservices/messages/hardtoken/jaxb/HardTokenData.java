@@ -91,7 +91,6 @@ public class HardTokenData {
     protected String tokenClass;
     @XmlElement(required = true)
     protected String serialNumber;
-    @XmlElement(required = true)
     protected String copyOfSN;
     protected HardTokenData.Copies copies;
     @XmlElement(required = true)
