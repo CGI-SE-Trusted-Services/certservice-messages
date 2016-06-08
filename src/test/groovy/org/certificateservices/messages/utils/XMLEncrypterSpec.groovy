@@ -235,6 +235,23 @@ public class XMLEncrypterSpec extends Specification {
 		attr2.getName() == "SomeAttribute2"
 	}
 	
+	def "Verify encryption and decryption of properties"() {
+		setup:
+		Properties properties = new Properties();
+		properties.setProperty("prop1", "somevalue11");
+		properties.setProperty("prop2", "somevalue22");
+		properties.setProperty("prop3", "somevalue33");
+		properties.setProperty("prop4", "somevalue44");
+		when:
+		Document encDocument = xmlEncrypter.encryptProperties(properties, threeReceipients, true)
+		Properties decProperties = xmlEncrypter.decryptProperties(encDocument);
+		then:
+		decProperties.getProperty("prop1") == "somevalue11"
+		decProperties.getProperty("prop2") == "somevalue22"
+		decProperties.getProperty("prop3") == "somevalue33"
+		decProperties.getProperty("prop4") == "somevalue44"
+	}
+	
 	def "Verify that generateKeyId generates a valid id as Base64 encoded SHA-256 hash or throws MessageProcessingException if generation fails"(){
 		expect:
 		XMLEncrypter.generateKeyId(testCert.getPublicKey()) == "yrhA2ngreu9CwRBvbfKReRFRmZk/GB50/vT6IhgT8no="
