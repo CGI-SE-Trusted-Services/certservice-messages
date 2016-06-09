@@ -37,42 +37,15 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "HardTokenData", propOrder = {
-    "relatedCredentialSerialNumber",
     "relatedCredentialIssuerId",
     "encryptedData"
 })
 public class HardTokenData {
 
     @XmlElement(required = true)
-    protected String relatedCredentialSerialNumber;
-    @XmlElement(required = true)
     protected String relatedCredentialIssuerId;
     @XmlElement(required = true)
     protected byte[] encryptedData;
-
-    /**
-     * Gets the value of the relatedCredentialSerialNumber property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getRelatedCredentialSerialNumber() {
-        return relatedCredentialSerialNumber;
-    }
-
-    /**
-     * Sets the value of the relatedCredentialSerialNumber property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setRelatedCredentialSerialNumber(String value) {
-        this.relatedCredentialSerialNumber = value;
-    }
 
     /**
      * Gets the value of the relatedCredentialIssuerId property.

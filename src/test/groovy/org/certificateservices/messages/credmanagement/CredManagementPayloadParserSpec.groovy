@@ -79,7 +79,7 @@ class CredManagementPayloadParserSpec extends Specification {
 		payloadObject.tokenRequest.user == "someuser"
 		payloadObject.fieldValues.fieldValue[0].key == "someKey1"
 		payloadObject.fieldValues.fieldValue[1].key == "someKey2"
-		payloadObject.hardTokenData.relatedCredentialSerialNumber == "12345678"
+		payloadObject.hardTokenData.relatedCredentialIssuerId == "CN=SomeIssuerId"
 		
 		
 		when:
@@ -776,7 +776,6 @@ class CredManagementPayloadParserSpec extends Specification {
 		def retval = new HardTokenData()
 		retval.encryptedData="123".bytes
 		retval.relatedCredentialIssuerId="CN=SomeIssuerId"
-		retval.relatedCredentialSerialNumber="12345678"
 		return retval
 	}
 	

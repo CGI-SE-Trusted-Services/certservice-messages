@@ -44,8 +44,6 @@
 	<xs:complexType name="HardTokenData">
 		<xs:sequence>
 			<xs:element minOccurs="1" maxOccurs="1"
-						name="relatedCredentialSerialNumber" type="cs:notemptystring" />
-			<xs:element minOccurs="1" maxOccurs="1"
 						name="relatedCredentialIssuerId" type="cs:notemptystring" />
 			<xs:element minOccurs="1" maxOccurs="1" name="encryptedData"
 						type="xs:base64Binary" />
