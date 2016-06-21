@@ -104,7 +104,7 @@ public abstract class BasePayloadParser implements PayloadParser {
 	 * @param isApprovedResponse the payload if a IsApprovedResponse or GetApprovedResponse
 	 * @return the list of assertions or null if no assertions could be found.
 	 */
-	List<Object> getAssertions(IsApprovedResponseType isApprovedResponse){
+	public List<Object> getAssertions(IsApprovedResponseType isApprovedResponse){
 		if(isApprovedResponse.getAssertions() != null && isApprovedResponse.getAssertions().size() > 0){
 			return isApprovedResponse.getAssertions().get(0).getAny();
 		}
