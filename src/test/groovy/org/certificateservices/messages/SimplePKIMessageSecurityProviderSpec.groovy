@@ -1,5 +1,9 @@
 package org.certificateservices.messages
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+
+import java.security.Security
+
 import static org.certificateservices.messages.SimpleMessageSecurityProvider.*
 
 import java.security.KeyStore
@@ -23,8 +27,12 @@ class SimplePKIMessageSecurityProviderSpec extends Specification {
 	Properties config
 	String signKeyKeyId
 
+	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
+	}
 	def setup(){
-		CertificateFactory cf = CertificateFactory.getInstance("X.509")
+
+		CertificateFactory cf = CertificateFactory.getInstance("X.509","BC")
 		testCert = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(base64Cert)))
 		
 		config = new Properties();

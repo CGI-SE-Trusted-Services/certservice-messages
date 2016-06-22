@@ -13,8 +13,10 @@
 package org.certificateservices.messages.csmessages;
 
 import groovy.util.slurpersupport.GPathResult;
-import groovy.xml.XmlUtil;
+import groovy.xml.XmlUtil
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 
+import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -82,6 +84,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 	def fv2
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Init.init()
 	}
 	

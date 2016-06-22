@@ -12,7 +12,10 @@
  *************************************************************************/
 package org.certificateservices.messages.csmessages
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+
 import java.security.PrivateKey
+import java.security.Security
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 
@@ -34,7 +37,8 @@ public class DefaultMessageNameCatalogueSpec extends Specification {
 	static MessageNameCatalogue messageNameCatalogue;
 	
 
-	def setupSpec(){		
+	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Properties config = new Properties();
 		config.setProperty(DefaultMessageNameCatalogue.SETTING_MESSAGE_NAME_PREFIX + "getactiveconfigurationrequest", "SomeOtherName");
 		config.setProperty(DefaultMessageNameCatalogue.OLD_SETTING_MESSAGE_NAME_PREFIX + "publishconfigurationrequest", "SomeAltOtherName");

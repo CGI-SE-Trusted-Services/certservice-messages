@@ -1,5 +1,8 @@
 package org.certificateservices.messages.assertion
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+
+import java.security.Security
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
@@ -30,6 +33,7 @@ class UserDataAssertionDataSpec extends Specification {
 	@Shared AssertionPayloadParser assertionPayloadParser
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Init.init()
 		setupRegisteredPayloadParser();
 		

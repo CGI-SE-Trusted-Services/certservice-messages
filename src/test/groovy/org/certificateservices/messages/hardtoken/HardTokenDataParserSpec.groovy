@@ -1,5 +1,8 @@
-package org.certificateservices.messages.hardtoken;
+package org.certificateservices.messages.hardtoken
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+
+import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -33,6 +36,7 @@ class HardTokenDataParserSpec extends Specification {
 	
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Init.init();
 	}
 	
