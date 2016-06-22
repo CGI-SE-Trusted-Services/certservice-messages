@@ -1,5 +1,8 @@
-package org.certificateservices.messages.encryptedcsmessage;
+package org.certificateservices.messages.encryptedcsmessage
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+
+import java.security.Security;
 import java.security.cert.X509Certificate;
 
 import javax.xml.datatype.DatatypeFactory;
@@ -36,6 +39,7 @@ class EncryptedCSMessagePayloadParserSpec extends Specification {
 	
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Init.init();
 	}
 	

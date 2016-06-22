@@ -1,6 +1,9 @@
 package org.certificateservices.messages.csmessages.manager
 
-import java.io.IOException;
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+
+import java.io.IOException
+import java.security.Security;
 import java.util.Set;
 
 import org.certificateservices.messages.DummyMessageSecurityProvider;
@@ -42,6 +45,7 @@ class DefaultReqRespManagerSpec extends Specification{
 	private static final String TEST_ID = "12345678-1234-4444-8000-123456789012"
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		config = new Properties();
         config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "somesourceId");
 		config.setProperty(DummyMessageHandler.SETTING_WAITTIME, "100")
@@ -78,7 +82,7 @@ class DefaultReqRespManagerSpec extends Specification{
 		then:
 		assert response != null;
 		assert response.getPayload().getAny() instanceof GetCredentialResponse
-		
+
 	}
 	
 

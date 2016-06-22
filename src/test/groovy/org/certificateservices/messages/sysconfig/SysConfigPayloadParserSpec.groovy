@@ -1,6 +1,7 @@
 package org.certificateservices.messages.sysconfig;
 
-import org.apache.xml.security.Init;
+import org.apache.xml.security.Init
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.certificateservices.messages.DummyMessageSecurityProvider;
 import org.certificateservices.messages.TestUtils;
 import org.certificateservices.messages.csmessages.CSMessageResponseData;
@@ -13,7 +14,10 @@ import org.certificateservices.messages.sysconfig.jaxb.ObjectFactory;
 import org.certificateservices.messages.sysconfig.jaxb.Property;
 import org.certificateservices.messages.sysconfig.jaxb.SystemConfiguration;
 
-import spock.lang.Specification;
+import spock.lang.Specification
+
+import java.security.Security;
+
 import static org.certificateservices.messages.TestUtils.*
 import static org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.*
 
@@ -24,6 +28,7 @@ class SysConfigPayloadParserSpec extends Specification {
 	org.certificateservices.messages.csmessages.jaxb.ObjectFactory csMessageOf = new org.certificateservices.messages.csmessages.jaxb.ObjectFactory()
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Init.init();
 	}
 	

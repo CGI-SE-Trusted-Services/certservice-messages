@@ -111,15 +111,15 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	
 	private static final String DEFAULT_ASSERTION_VERSION = "2.0";
 
-    static final String ATTRIBUTE_NAME_TYPE = "Type";
-	static final String ATTRIBUTE_NAME_DISPLAYNAME = "DisplayName";
-	static final String ATTRIBUTE_NAME_ROLES = "Roles";
-	static final String ATTRIBUTE_NAME_USERDATA = "UserData";
-	static final String ATTRIBUTE_NAME_TOKENTYPE = "TokenType";
-	static final String ATTRIBUTE_NAME_DESTINATIONID = "DestinationId";
-	static final String ATTRIBUTE_NAME_APPROVALID = "ApprovalId";
-	static final String ATTRIBUTE_NAME_APPROVEDREQUESTS = "ApprovedRequests";
-	static final String ATTRIBUTE_NAME_APPROVERS = "Approvers";
+    public static final String ATTRIBUTE_NAME_TYPE = "Type";
+	public static final String ATTRIBUTE_NAME_DISPLAYNAME = "DisplayName";
+	public static final String ATTRIBUTE_NAME_ROLES = "Roles";
+	public static final String ATTRIBUTE_NAME_USERDATA = "UserData";
+	public static final String ATTRIBUTE_NAME_TOKENTYPE = "TokenType";
+	public static final String ATTRIBUTE_NAME_DESTINATIONID = "DestinationId";
+	public static final String ATTRIBUTE_NAME_APPROVALID = "ApprovalId";
+	public static final String ATTRIBUTE_NAME_APPROVEDREQUESTS = "ApprovedRequests";
+	public static final String ATTRIBUTE_NAME_APPROVERS = "Approvers";
 	
 	private MessageSecurityProvider secProv;
 	private SystemTime systemTime = new DefaultSystemTime();

@@ -1,10 +1,12 @@
 package org.certificateservices.messages.assertion;
 
-import groovy.xml.XmlUtil;
+import groovy.xml.XmlUtil
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.ByteArrayInputStream;
 import java.security.Key;
-import java.security.KeyStore;
+import java.security.KeyStore
+import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -100,6 +102,7 @@ class AssertionPayloadParserSpec extends Specification {
 	
 
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Init.init()
 	}
 

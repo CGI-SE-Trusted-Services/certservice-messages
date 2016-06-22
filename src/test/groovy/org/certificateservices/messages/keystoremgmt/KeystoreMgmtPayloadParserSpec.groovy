@@ -1,4 +1,6 @@
-package org.certificateservices.messages.keystoremgmt;
+package org.certificateservices.messages.keystoremgmt
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.xml.datatype.DatatypeFactory;
 
@@ -22,7 +24,10 @@ import org.certificateservices.messages.keystoremgmt.jaxb.ObjectFactory;
 import org.certificateservices.messages.keystoremgmt.jaxb.X509CredentialRequestParams;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 
-import spock.lang.Specification;
+import spock.lang.Specification
+
+import java.security.Security;
+
 import static org.certificateservices.messages.TestUtils.*
 import static org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.*
 
@@ -33,6 +38,7 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 	org.certificateservices.messages.csmessages.jaxb.ObjectFactory csMessageOf = new org.certificateservices.messages.csmessages.jaxb.ObjectFactory()
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Init.init();
 	}
 	

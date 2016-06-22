@@ -2,6 +2,7 @@ package org.certificateservices.messages.credmanagement
 
 import org.apache.xml.security.Init
 import org.apache.xml.security.utils.Base64
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.credmanagement.jaxb.FieldValue
 import org.certificateservices.messages.credmanagement.jaxb.HardTokenData
@@ -13,6 +14,7 @@ import org.certificateservices.messages.utils.MessageGenerateUtils
 import spock.lang.Specification
 
 import javax.xml.datatype.DatatypeFactory
+import java.security.Security
 
 import static org.certificateservices.messages.TestUtils.*
 import static org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.*
@@ -26,6 +28,7 @@ class CredManagementPayloadParserSpec extends Specification {
 	
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Init.init();
 	}
 	

@@ -1,6 +1,9 @@
 package org.certificateservices.messages.csmessages.manager
 
-import java.io.IOException;
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+
+import java.io.IOException
+import java.security.Security;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,6 +47,7 @@ class AutoRevokeReqRespManagerSpec extends Specification{
 	final String DESTINATION = "SOME.DESTINATION"
 
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		config = new Properties();
         config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "somesourceId");
 		config.setProperty(DummyMessageHandler.SETTING_WAITTIME, "100")
