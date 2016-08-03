@@ -1,5 +1,6 @@
-package org.certificateservices.messages;
+package org.certificateservices.messages
 
+import org.certificateservices.messages.csmessages.CSMessageParserManager;
 import org.certificateservices.messages.csmessages.CSMessageResponseData;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.utils.SystemTime;
@@ -53,8 +54,7 @@ public class TestUtils {
 		DummyMessageSecurityProvider secprov = new DummyMessageSecurityProvider();
 		Properties config = new Properties();
 		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID");
-		DefaultCSMessageParser mp = new DefaultCSMessageParser();
-		mp.init(secprov, config)
+		CSMessageParserManager.initCSMessageParser(secprov,config)
 	}
 	
 	/**

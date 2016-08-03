@@ -1,6 +1,7 @@
 package org.certificateservices.messages.keystoremgmt
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.csmessages.CSMessageParserManager;
 
 import javax.xml.datatype.DatatypeFactory;
 
@@ -59,17 +60,17 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 
 	def "Verify that generateGetAvailableKeyStoreInfoRequest() generates a valid xml message and generateGetAvailableKeyStoreInfoResponse() generates a valid CSMessageResponseData"(){
 		when:
-		pp.csMessageParser.sourceId = "SOMEREQUESTER"
+		CSMessageParserManager.getCSMessageParser().sourceId = "SOMEREQUESTER"
 		byte[] requestMessage = pp.generateGetAvailableKeyStoreInfoRequest(TEST_ID, "SOMESOURCEID", "someorg", createOriginatorCredential(), null)
         //printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.GetAvailableKeyStoreInfoRequest
 		then:
 		messageContainsPayload requestMessage, "keystoremgmt:GetAvailableKeyStoreInfoRequest"
-		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GetAvailableKeyStoreInfoRequest", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GetAvailableKeyStoreInfoRequest", createOriginatorCredential(), CSMessageParserManager.getCSMessageParser())
 		
 		when:
-		pp.csMessageParser.sourceId = "SOMESOURCEID"
+		CSMessageParserManager.getCSMessageParser().sourceId = "SOMESOURCEID"
 		CSMessage request = pp.parseMessage(requestMessage)
 		
 		CSMessageResponseData rd = pp.generateGetAvailableKeyStoreInfoResponse("SomeRelatedEndEntity", request, genKeystores(), null)
@@ -81,7 +82,7 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 		messageContainsPayload rd.responseData, "keystoremgmt:GetAvailableKeyStoreInfoResponse"
 		
 		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "GetAvailableKeyStoreInfoResponse", "SomeRelatedEndEntity"
-		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","GetAvailableKeyStoreInfoResponse", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","GetAvailableKeyStoreInfoResponse", createOriginatorCredential(), CSMessageParserManager.getCSMessageParser())
 		verifySuccessfulBasePayload(payloadObject, TEST_ID)
 		
 		payloadObject.keyStores.keyStore[0].providerName == "someprovname"
@@ -93,19 +94,19 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 
 	def "Verify that generateGenerateCredentialRequestRequest() generates a valid xml message and generateGenerateCredentialRequestResponse() generates a valid CSMessageResponseData"(){
 		when:
-		pp.csMessageParser.sourceId = "SOMEREQUESTER"
+		CSMessageParserManager.getCSMessageParser().sourceId = "SOMEREQUESTER"
 		byte[] requestMessage = pp.generateGenerateCredentialRequestRequest(TEST_ID, "SOMESOURCEID", "someorg", "someprovname","someapp",createCredentialRequestParams(),createOriginatorCredential(), null)
 		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.GenerateCredentialRequestRequest
 		then:
 		messageContainsPayload requestMessage, "keystoremgmt:GenerateCredentialRequestRequest"
-		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GenerateCredentialRequestRequest", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GenerateCredentialRequestRequest", createOriginatorCredential(), CSMessageParserManager.getCSMessageParser())
 		
 		payloadObject.credentialRequestParams.baseRequestParams.alias == "somealias"
 		
 		when:
-		pp.csMessageParser.sourceId = "SOMESOURCEID"
+		CSMessageParserManager.getCSMessageParser().sourceId = "SOMESOURCEID"
 		CSMessage request = pp.parseMessage(requestMessage)
 		
 		CSMessageResponseData rd = pp.generateGenerateCredentialRequestResponse("SomeRelatedEndEntity", request, genCredentialRequest(), null)
@@ -117,7 +118,7 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 		messageContainsPayload rd.responseData, "keystoremgmt:GenerateCredentialRequestResponse"
 		
 		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "GenerateCredentialRequestResponse", "SomeRelatedEndEntity"
-		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","GenerateCredentialRequestResponse", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","GenerateCredentialRequestResponse", createOriginatorCredential(), CSMessageParserManager.getCSMessageParser())
 		verifySuccessfulBasePayload(payloadObject, TEST_ID)
 		
 		payloadObject.credentialRequest.credentialRequestId == "1"
@@ -126,39 +127,39 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 		pp.parseMessage(rd.responseData)
 		
 		when: "Test with X509CredentialParams"
-		pp.csMessageParser.sourceId = "SOMEREQUESTER"
+		CSMessageParserManager.getCSMessageParser().sourceId = "SOMEREQUESTER"
 		requestMessage = pp.generateGenerateCredentialRequestRequest(TEST_ID, "SOMESOURCEID", "someorg", "someprovname","someapp",createX509CredentialRequestParams(),createOriginatorCredential(), null)
 		//openXML(requestMessage)
 		xml = slurpXml(requestMessage)
 		payloadObject = xml.payload.GenerateCredentialRequestRequest
 		then:
 		messageContainsPayload requestMessage, "keystoremgmt:GenerateCredentialRequestRequest"
-		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GenerateCredentialRequestRequest", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GenerateCredentialRequestRequest", createOriginatorCredential(), CSMessageParserManager.getCSMessageParser())
 		
 		payloadObject.credentialRequestParams.x509CredentialRequestParams.alias == "somealias"
 		
 		cleanup:
-		pp.csMessageParser.sourceId = "SOMESOURCEID"
+		CSMessageParserManager.getCSMessageParser().sourceId = "SOMESOURCEID"
 		
 	}
 	
 	def "Verify that generateRemoveKeyRequest() generates a valid xml message and generateRemoveKeyResponse() generates a valid CSMessageResponseData"(){
 		when:
-		pp.csMessageParser.sourceId = "SOMEREQUESTER"
+		CSMessageParserManager.getCSMessageParser().sourceId = "SOMEREQUESTER"
 		byte[] requestMessage = pp.generateRemoveKeyRequest(TEST_ID, "SOMESOURCEID", "someorg", "someprovname","somealias",createOriginatorCredential(), null)
 		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.RemoveKeyRequest
 		then:
 		messageContainsPayload requestMessage, "keystoremgmt:RemoveKeyRequest"
-		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","RemoveKeyRequest", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","RemoveKeyRequest", createOriginatorCredential(), CSMessageParserManager.getCSMessageParser())
 		
 		payloadObject.keyStoreProviderName == "someprovname"
 		payloadObject.organisationShortName == "someorg"
 		payloadObject.alias == "somealias"
 		
 		when:
-		pp.csMessageParser.sourceId = "SOMESOURCEID"
+		CSMessageParserManager.getCSMessageParser().sourceId = "SOMESOURCEID"
 		CSMessage request = pp.parseMessage(requestMessage)
 		
 		CSMessageResponseData rd = pp.generateRemoveKeyResponse("SomeRelatedEndEntity", request, null)
@@ -170,7 +171,7 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 		messageContainsPayload rd.responseData, "keystoremgmt:RemoveKeyResponse"
 		
 		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "RemoveKeyResponse", "SomeRelatedEndEntity"
-		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","RemoveKeyResponse", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","RemoveKeyResponse", createOriginatorCredential(), CSMessageParserManager.getCSMessageParser())
 		verifySuccessfulBasePayload(payloadObject, TEST_ID)
 		
 			
@@ -181,14 +182,14 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 	
 	def "Verify that generateAttachCredentialsRequest() generates a valid xml message and generateAttachCredentialsResponse() generates a valid CSMessageResponseData"(){
 		when:
-		pp.csMessageParser.sourceId = "SOMEREQUESTER"
+		CSMessageParserManager.getCSMessageParser().sourceId = "SOMEREQUESTER"
 		byte[] requestMessage = pp.generateAttachCredentialsRequest(TEST_ID, "SOMESOURCEID", "someorg", "someprovname","somealias",createCredentials(), createOriginatorCredential(), null)
 		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.AttachCredentialsRequest
 		then:
 		messageContainsPayload requestMessage, "keystoremgmt:AttachCredentialsRequest"
-		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","AttachCredentialsRequest", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","AttachCredentialsRequest", createOriginatorCredential(), CSMessageParserManager.getCSMessageParser())
 		
 		payloadObject.keyStoreProviderName == "someprovname"
 		payloadObject.organisationShortName == "someorg"
@@ -198,7 +199,7 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 		payloadObject.credentials.credential[1].credentialRequestId == 2
 		
 		when:
-		pp.csMessageParser.sourceId = "SOMESOURCEID"
+		CSMessageParserManager.getCSMessageParser().sourceId = "SOMESOURCEID"
 		CSMessage request = pp.parseMessage(requestMessage)
 		
 		CSMessageResponseData rd = pp.generateAttachCredentialsResponse("SomeRelatedEndEntity", request, null)
@@ -210,7 +211,7 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 		messageContainsPayload rd.responseData, "keystoremgmt:AttachCredentialsResponse"
 		
 		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "AttachCredentialsResponse", "SomeRelatedEndEntity"
-		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","AttachCredentialsResponse", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","AttachCredentialsResponse", createOriginatorCredential(), CSMessageParserManager.getCSMessageParser())
 		verifySuccessfulBasePayload(payloadObject, TEST_ID)
 		
 			
@@ -221,14 +222,14 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 	
 	def "Verify that generateUpdateKeyDescriptionRequest() generates a valid xml message and generateUpdateKeyDescriptionResponse() generates a valid CSMessageResponseData"(){
 		when:
-		pp.csMessageParser.sourceId = "SOMEREQUESTER"
+		CSMessageParserManager.getCSMessageParser().sourceId = "SOMEREQUESTER"
 		byte[] requestMessage = pp.generateUpdateKeyDescriptionRequest(TEST_ID, "SOMESOURCEID", "someorg", "someprovname","somealias","somedesc", createOriginatorCredential(), null)
 		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.UpdateKeyDescriptionRequest
 		then:
 		messageContainsPayload requestMessage, "keystoremgmt:UpdateKeyDescriptionRequest"
-		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","UpdateKeyDescriptionRequest", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","UpdateKeyDescriptionRequest", createOriginatorCredential(), CSMessageParserManager.getCSMessageParser())
 		
 		payloadObject.keyStoreProviderName == "someprovname"
 		payloadObject.organisationShortName == "someorg"
@@ -237,7 +238,7 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 
 		
 		when:
-		pp.csMessageParser.sourceId = "SOMESOURCEID"
+		CSMessageParserManager.getCSMessageParser().sourceId = "SOMESOURCEID"
 		CSMessage request = pp.parseMessage(requestMessage)
 		
 		CSMessageResponseData rd = pp.generateUpdateKeyDescriptionResponse("SomeRelatedEndEntity", request, null)
@@ -249,7 +250,7 @@ class KeystoreMgmtPayloadParserSpec extends Specification {
 		messageContainsPayload rd.responseData, "keystoremgmt:UpdateKeyDescriptionResponse"
 		
 		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "UpdateKeyDescriptionResponse", "SomeRelatedEndEntity"
-		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","UpdateKeyDescriptionResponse", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","UpdateKeyDescriptionResponse", createOriginatorCredential(), CSMessageParserManager.getCSMessageParser())
 		verifySuccessfulBasePayload(payloadObject, TEST_ID)
 		
 			

@@ -1,6 +1,7 @@
 package org.certificateservices.messages.authorization
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.csmessages.CSMessageParserManager;
 
 import javax.xml.datatype.DatatypeFactory;
 
@@ -41,10 +42,12 @@ class AuthorizationPayloadParserSpec extends Specification {
 		Security.addProvider(new BouncyCastleProvider())
 		Init.init();
 	}
-	
+
+	DefaultCSMessageParser csMessageParser
+
 	def setup(){
 		setupRegisteredPayloadParser();
-		
+		csMessageParser = CSMessageParserManager.getCSMessageParser()
 		pp = PayloadParserRegistry.getParser(AuthorizationPayloadParser.NAMESPACE);
 	}
 	
@@ -59,17 +62,17 @@ class AuthorizationPayloadParserSpec extends Specification {
 
 	def "Verify that genGetRequesterRolesRequest() generates a valid xml message and genGetRequesterRolesResponse() generates a valid CSMessageResponseData"(){
 		when:
-		pp.csMessageParser.sourceId = "SOMEREQUESTER"
+		csMessageParser.sourceId = "SOMEREQUESTER"
 		byte[] requestMessage = pp.genGetRequesterRolesRequest(TEST_ID, "SOMESOURCEID", "someorg", createOriginatorCredential(), null)
         //printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.GetRequesterRolesRequest
 		then:
 		messageContainsPayload requestMessage, "auth:GetRequesterRolesRequest"
-		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GetRequesterRolesRequest", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GetRequesterRolesRequest", createOriginatorCredential(), csMessageParser)
 		
 		when:
-		pp.csMessageParser.sourceId = "SOMESOURCEID"
+		csMessageParser.sourceId = "SOMESOURCEID"
 		CSMessage request = pp.parseMessage(requestMessage)
 		
 		CSMessageResponseData rd = pp.genGetRequesterRolesResponse("SomeRelatedEndEntity", request, ["role1","role2"], null)
@@ -81,7 +84,7 @@ class AuthorizationPayloadParserSpec extends Specification {
 		messageContainsPayload rd.responseData, "auth:GetRequesterRolesResponse"
 		
 		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "GetRequesterRolesResponse", "SomeRelatedEndEntity"
-		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","GetRequesterRolesResponse", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","GetRequesterRolesResponse", createOriginatorCredential(), csMessageParser)
 		verifySuccessfulBasePayload(payloadObject, TEST_ID)
 		
 		expect:

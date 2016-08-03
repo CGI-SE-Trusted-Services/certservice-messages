@@ -97,11 +97,10 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
 	private Transformer transformer;
 	
 	@Override
-	public void init(Properties config, CSMessageParser parser)
+	public void init(Properties config, MessageSecurityProvider secProv)
 			throws MessageProcessingException {
-		super.init(config, parser);
-		MessageSecurityProvider secProv = parser.getMessageSecurityProvider();
-		
+		super.init(config, secProv);
+
 		try {
 			xmlEncrypter = new XMLEncrypter(secProv, getDocumentBuilder(), getMarshaller(), getUnmarshaller());
 			
@@ -226,7 +225,7 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
 				doc = xmlEncrypter.decryptDoc(doc, xmlConverter);				
 			}
 			
-			return csMessageParser.parseMessage(doc);
+			return getCSMessageParser().parseMessage(doc);
 			
 		} catch (SAXException e) {
 			throw new MessageContentException("Error parsing message: " + e.getMessage(), e);

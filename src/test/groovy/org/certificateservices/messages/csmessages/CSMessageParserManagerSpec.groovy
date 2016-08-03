@@ -12,15 +12,12 @@
  *************************************************************************/
 package org.certificateservices.messages.csmessages;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
 
 import org.certificateservices.messages.DummyMessageSecurityProvider;
-import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.csmessages.jaxb.CSMessage;
-import org.certificateservices.messages.sysconfig.jaxb.GetActiveConfigurationRequest;
-import org.certificateservices.messages.sysconfig.jaxb.Property;
-
+import org.certificateservices.messages.MessageProcessingException
+import org.certificateservices.messages.credmanagement.CredManagementPayloadParser
+import org.certificateservices.messages.csmessages.jaxb.CSMessage
+import org.certificateservices.messages.utils.MessageGenerateUtils;
 import spock.lang.Specification;
 
 public class CSMessageParserManagerSpec extends Specification{
@@ -78,7 +75,7 @@ public class CSMessageParserManagerSpec extends Specification{
 	
 	def "Verify that uninitialized CSMessageParser throws MessageProcessingException when calling getCSMessageParser"(){
 		setup:
-		CSMessageParserManager.parser = null
+		CSMessageParserManager.parsers.clear()
 		when:
 		CSMessageParserManager.getCSMessageParser()
 		then:
@@ -87,7 +84,7 @@ public class CSMessageParserManagerSpec extends Specification{
 	
 	def "Verify that isInitialized() returns false for uninitialized and true for initialized CSMessageParserManger"(){
 		setup:
-		CSMessageParserManager.parser = null
+		CSMessageParserManager.parsers.clear()
 		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID")
 		
 		expect:
@@ -97,6 +94,76 @@ public class CSMessageParserManagerSpec extends Specification{
 		CSMessageParserManager.initCSMessageParser(secprov, config)
 		then:
 		CSMessageParserManager.isInitialized() == true
+	}
+
+	def "Verify that same instance is returned when same thread is calling"(){
+		setup:
+		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID")
+		CSMessageParserManager.initCSMessageParser(secprov, config)
+		when:
+		def p1 = CSMessageParserManager.getCSMessageParser()
+		def p2 = CSMessageParserManager.getCSMessageParser()
+
+		then:
+		p1 == p2
+	}
+
+	def "Verify that another instance is returned when another thread is calling"(){
+		setup:
+		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID")
+		CSMessageParserManager.initCSMessageParser(secprov, config)
+
+		when:
+		def p1 = CSMessageParserManager.getCSMessageParser()
+		def p2 = null
+
+		Thread t = new Thread(new Runnable() {
+			@Override
+			void run() {
+				p2 = CSMessageParserManager.getCSMessageParser()
+			}
+		})
+		t.start()
+
+		t.join()
+
+		then:
+		p2 != null
+		p1 != p2
+	}
+
+	def "Verify that several threads can parse CS Messages without SAX Parse Exception is thrown."(){
+		setup:
+		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID")
+		CSMessageParser parser = CSMessageParserManager.initCSMessageParser(secprov, config)
+		parser.getMessageSecurityProvider().getSigningCertificate() // Initialize dummy keystore to avoid concurrent problem with dummy message security provider.
+
+
+		when:
+		Thread t1 = new Thread(new SaxParseExceptionRunnable())
+		Thread t2 = new Thread(new SaxParseExceptionRunnable())
+		Thread t3 = new Thread(new SaxParseExceptionRunnable())
+
+		t1.start()
+		t2.start()
+		t3.start()
+
+		then:
+		t1.join()
+		t2.join()
+		t3.join()
+	}
+
+	private class SaxParseExceptionRunnable implements Runnable{
+		@Override
+		void run() {
+			for(int i=0;i<100;i++) {
+				CredManagementPayloadParser pp = PayloadParserRegistry.getParser(CredManagementPayloadParser.NAMESPACE)
+				byte[] data = pp.genIsIssuerRequest(MessageGenerateUtils.generateRandomUUID(), "SOMEDEST","SOMEORG","CN=Test", null,null)
+				CSMessage msg = pp.parseMessage(data)
+				assert msg != null
+			}
+		}
 	}
 
 }

@@ -85,7 +85,7 @@ public class SysConfigPayloadParser extends BasePayloadParser {
 	}
 
 	/**
-	 * @see BasePayloadParser#getDefaultVersion()
+	 * @see BasePayloadParser#getDefaultPayloadVersion()
 	 */
 	@Override
 	protected String getDefaultPayloadVersion() {
@@ -113,7 +113,7 @@ public class SysConfigPayloadParser extends BasePayloadParser {
 		payload.setApplication(application);
 		payload.setOrganisationShortName(organisation);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -133,7 +133,7 @@ public class SysConfigPayloadParser extends BasePayloadParser {
     	GetActiveConfigurationResponse response = of.createGetActiveConfigurationResponse();
 		response.setSystemConfiguration(systemConfiguration);
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
 	/**
@@ -155,7 +155,7 @@ public class SysConfigPayloadParser extends BasePayloadParser {
 		PublishConfigurationRequest payload = of.createPublishConfigurationRequest();
 		payload.setSystemConfiguration(systemConfiguration);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -172,7 +172,7 @@ public class SysConfigPayloadParser extends BasePayloadParser {
     public CSMessageResponseData generatePublishConfigurationResponse(String relatedEndEntity, CSMessage request, List<Object> assertions) throws MessageContentException, MessageProcessingException{
     	PublishConfigurationResponse response = of.createPublishConfigurationResponse();
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 
 

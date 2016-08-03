@@ -86,8 +86,8 @@ class DefaultReqRespManagerSpec extends Specification{
 	}
 	
 
-	def "Test to 100 concurrent request and verify all responses are ok"(){
-		final int numberOfConcurrentRequests = 100
+	def "Test to 20 concurrent request and verify all responses are ok"(){
+		final int numberOfConcurrentRequests = 20
 		when:
 		System.out.println("Generating " + numberOfConcurrentRequests + " concurrent request with a responsetime between 100 and 3100 millis");
 		
@@ -105,7 +105,7 @@ class DefaultReqRespManagerSpec extends Specification{
 			Thread.sleep(1000);
 			if(lastEntry == SendRandomRequest.numberOfCompletedRequests){
 				numberOfSame++
-				if(numberOfSame > 6){
+				if(numberOfSame > 20){
 					assert false
 				}
 			}else{		

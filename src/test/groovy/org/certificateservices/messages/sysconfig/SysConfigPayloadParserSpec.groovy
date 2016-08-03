@@ -3,7 +3,8 @@ package org.certificateservices.messages.sysconfig;
 import org.apache.xml.security.Init
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.certificateservices.messages.DummyMessageSecurityProvider;
-import org.certificateservices.messages.TestUtils;
+import org.certificateservices.messages.TestUtils
+import org.certificateservices.messages.csmessages.CSMessageParserManager;
 import org.certificateservices.messages.csmessages.CSMessageResponseData;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.csmessages.PayloadParserRegistry;
@@ -26,6 +27,8 @@ class SysConfigPayloadParserSpec extends Specification {
 	SysConfigPayloadParser pp;
 	ObjectFactory of = new ObjectFactory()
 	org.certificateservices.messages.csmessages.jaxb.ObjectFactory csMessageOf = new org.certificateservices.messages.csmessages.jaxb.ObjectFactory()
+
+	DefaultCSMessageParser csMessageParser
 	
 	def setupSpec(){
 		Security.addProvider(new BouncyCastleProvider())
@@ -34,7 +37,7 @@ class SysConfigPayloadParserSpec extends Specification {
 	
 	def setup(){
 		setupRegisteredPayloadParser();
-		
+		csMessageParser = CSMessageParserManager.getCSMessageParser()
 		pp = PayloadParserRegistry.getParser(SysConfigPayloadParser.NAMESPACE);
 	}
 	
@@ -49,19 +52,19 @@ class SysConfigPayloadParserSpec extends Specification {
 
 	def "Verify that generateGetActiveConfigurationRequest() generates a valid xml message and generateGetActiveConfigurationResponse() generates a valid CSMessageResponseData"(){
 		when:
-		pp.csMessageParser.sourceId = "SOMEREQUESTER"
+		csMessageParser.sourceId = "SOMEREQUESTER"
 		byte[] requestMessage = pp.generateGetActiveConfigurationRequest(TEST_ID, "SOMESOURCEID", "someorg", "someapp", createOriginatorCredential(), null)
 //        printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.GetActiveConfigurationRequest
 		then:
 		messageContainsPayload requestMessage, "sysconfig:GetActiveConfigurationRequest"
-		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GetActiveConfigurationRequest", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GetActiveConfigurationRequest", createOriginatorCredential(), csMessageParser)
 		payloadObject.application == "someapp"
 		payloadObject.organisationShortName == "someorg"
 		
 		when:
-		pp.csMessageParser.sourceId = "SOMESOURCEID"
+		csMessageParser.sourceId = "SOMESOURCEID"
 		CSMessage request = pp.parseMessage(requestMessage)
 		
 		CSMessageResponseData rd = pp.generateGetActiveConfigurationResponse("SomeRelatedEndEntity", request, generateSystemConfiguration(), null)
@@ -73,7 +76,7 @@ class SysConfigPayloadParserSpec extends Specification {
 		messageContainsPayload rd.responseData, "sysconfig:GetActiveConfigurationResponse"
 		
 		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "GetActiveConfigurationResponse", "SomeRelatedEndEntity"
-		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","GetActiveConfigurationResponse", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","GetActiveConfigurationResponse", createOriginatorCredential(), csMessageParser)
 		verifySuccessfulBasePayload(payloadObject, TEST_ID)
 		
 		payloadObject.systemConfiguration.application == "someapp"
@@ -98,14 +101,14 @@ class SysConfigPayloadParserSpec extends Specification {
 	
 	def "Verify that generatePublishConfigurationRequest() generates a valid xml message and generatePublishConfigurationResponse() generates a valid CSMessageResponseData"(){
 		when:
-		pp.csMessageParser.sourceId = "SOMEREQUESTER"
+		csMessageParser.sourceId = "SOMEREQUESTER"
 		byte[] requestMessage = pp.generatePublishConfigurationRequest(TEST_ID, "SOMESOURCEID", "someorg", generateSystemConfiguration(), createOriginatorCredential(), null)
         //printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.PublishConfigurationRequest
 		then:
 		messageContainsPayload requestMessage, "sysconfig:PublishConfigurationRequest"
-		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","PublishConfigurationRequest", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","PublishConfigurationRequest", createOriginatorCredential(), csMessageParser)
 
 
 		payloadObject.systemConfiguration.application == "someapp"
@@ -124,7 +127,7 @@ class SysConfigPayloadParserSpec extends Specification {
 		payloadObject.systemConfiguration.description == "somedescription"
 		
 		when:
-		pp.csMessageParser.sourceId = "SOMESOURCEID"
+		csMessageParser.sourceId = "SOMESOURCEID"
 		CSMessage request = pp.parseMessage(requestMessage)
 		
 		CSMessageResponseData rd = pp.generatePublishConfigurationResponse("SomeRelatedEndEntity", request,  null)
@@ -136,7 +139,7 @@ class SysConfigPayloadParserSpec extends Specification {
 		messageContainsPayload rd.responseData, "sysconfig:PublishConfigurationResponse"
 		
 		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "PublishConfigurationResponse", "SomeRelatedEndEntity"
-		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","PublishConfigurationResponse", createOriginatorCredential(), pp.csMessageParser)
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","PublishConfigurationResponse", createOriginatorCredential(), csMessageParser)
 		verifySuccessfulBasePayload(payloadObject, TEST_ID)
 		
 		expect:

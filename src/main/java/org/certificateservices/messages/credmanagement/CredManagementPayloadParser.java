@@ -90,7 +90,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	}
 
 	/**
-	 * @see BasePayloadParser#getDefaultVersion()
+	 * @see BasePayloadParser#getDefaultPayloadVersion()
 	 */
 	@Override
 	protected String getDefaultPayloadVersion() {
@@ -129,7 +129,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 			payload.setHardTokenData(hardTokenData);
 		}
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -164,7 +164,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 			response.setRevokedCredentials(revokedCredElements);
 		}
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, true);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, true);
 	}
 	
 	/**
@@ -190,7 +190,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		payload.setNewCredentialStatus(newCredentialStatus);
 		payload.setReasonInformation(reasonInformation);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -215,7 +215,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		response.setSerialNumber(serialNumber);
 		response.setReasonInformation(reasonInformation);
 		response.setRevocationDate(MessageGenerateUtils.dateToXMLGregorianCalendar(revocationDate));
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, true);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, true);
 	}
 	
 	/**
@@ -239,7 +239,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		payload.setCredentialSubType(credentialSubType);
 		payload.setSerialNumber(serialNumber);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -257,7 +257,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		GetCredentialResponse response = of.createGetCredentialResponse();
 		response.setCredential(credential);
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
 	/**
@@ -280,7 +280,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		payload.setCredentialStatusListType(credentialStatusListType);
 		payload.setSerialNumber(serialNumber);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -298,7 +298,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		GetCredentialStatusListResponse response = of.createGetCredentialStatusListResponse();
 		response.setCredentialStatusList(credentialStatusList);
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
 	/**
@@ -318,7 +318,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		GetIssuerCredentialsRequest payload = of.createGetIssuerCredentialsRequest();
 		payload.setIssuerId(issuerId);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -336,7 +336,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		GetIssuerCredentialsResponse response = of.createGetIssuerCredentialsResponse();
 		response.setCredential(issuerCredential);
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
 	/**
@@ -356,7 +356,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		IsIssuerRequest payload = of.createIsIssuerRequest();
 		payload.setIssuerId(issuerId);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -374,7 +374,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		IsIssuerResponse response = of.createIsIssuerResponse();
 		response.setIsIssuer(isIssuer);
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
 	/**
@@ -384,7 +384,6 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @param destinationId the destinationId used in the CSMessage.
 	 * @param organisation the related organisation
 	 * @param issuerId The unique id of the issuer, usually the subject DN name of the issuer.
-	 * @param serialNumber The number of the credential status list in the request (Optional)
 	 * @param credentialStatusListType The type of status list to fetch
 	 * @param originator the original requester of a message, null if not applicable.
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
@@ -400,14 +399,13 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		payload.setRequestedValidFromDate(MessageGenerateUtils.dateToXMLGregorianCalendar(requestedValidFromDate));
 		payload.setRequestedNotAfterDate(MessageGenerateUtils.dateToXMLGregorianCalendar(requestedNotAfterDate));
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
 	 * Method to generate a IssueCredentialStatusListResponse
 	 * 
      * @param relatedEndEntity the name of the related end entity (such as username of the related user)
-	 * @param requestId the id of the request
 	 * @param request the request to populate the response with
 	 * @param credentialStatusList the new credential status list
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
@@ -419,7 +417,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		IssueCredentialStatusListResponse response = of.createIssueCredentialStatusListResponse();
 		response.setCredentialStatusList(credentialStatusList);
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, true);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, true);
 	}
 	
 	/**
@@ -448,8 +446,8 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		response.setStatus(RequestStatus.SUCCESS);
 		response.setInResponseTo(responseId);
 
-		CSMessage csMessage = csMessageParser.genCSMessage(csMessageVersion, payLoadVersion,requestName,responseId, destinationId, organisation, originator, response, assertions);		
-		byte[] responseData = csMessageParser.marshallAndSignCSMessage(csMessage);
+		CSMessage csMessage = getCSMessageParser().genCSMessage(csMessageVersion, payLoadVersion,requestName,responseId, destinationId, organisation, originator, response, assertions);
+		byte[] responseData = getCSMessageParser().marshallAndSignCSMessage(csMessage);
 		return new CSMessageResponseData(csMessage.getID(),csMessage.getName(), relatedEndEntity, csMessage.getDestinationId(),responseData, true);
 		
 	}
@@ -473,7 +471,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		payload.setIssuerId(issuerId);
 		payload.setSerialNumber(serialNumber);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -489,7 +487,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	public CSMessageResponseData genRemoveCredentialResponse(String relatedEndEntity, CSMessage request, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		RemoveCredentialResponse response = of.createRemoveCredentialResponse();
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, true);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, true);
 	}
 	
 	/**
@@ -513,7 +511,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		payload.setRelatedCredentialIssuerId(relatedCredentialIssuerId);
 		payload.setAdminCredential(adminCredential);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -533,7 +531,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		response.setTokenSerial(tokenSerial);
 		response.setEncryptedData(encryptedData);
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
 	/**
@@ -557,7 +555,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		payload.setRelatedCredentialIssuerId(relatedCredentialIssuerId);
 		payload.setEncryptedData(encryptedData);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	
@@ -574,7 +572,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	public CSMessageResponseData genStoreHardTokenDataResponse(String relatedEndEntity, CSMessage request, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
 		StoreHardTokenDataResponse response = of.createStoreHardTokenDataResponse();
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
 
@@ -597,7 +595,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		payload.setSerialNumber(serialNumber);
 		payload.setExactMatch(exactMatch);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	
@@ -621,7 +619,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		
 		response.setTokens(tokensElement);
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
 	/**
@@ -643,7 +641,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		payload.setUniqueId(uniqueId);
 		payload.setExactMatch(exactMatch);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	
@@ -667,7 +665,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		
 		response.setUsers(usersElement);
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 
 }
