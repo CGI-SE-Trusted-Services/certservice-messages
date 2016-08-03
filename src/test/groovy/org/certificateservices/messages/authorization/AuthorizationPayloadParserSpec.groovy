@@ -1,29 +1,20 @@
 package org.certificateservices.messages.authorization
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.certificateservices.messages.csmessages.CSMessageParserManager;
-
-import javax.xml.datatype.DatatypeFactory;
+import org.certificateservices.messages.authorization.jaxb.GetRequesterRolesRequest
+import org.certificateservices.messages.authorization.jaxb.TokenTypePermission
+import org.certificateservices.messages.authorization.jaxb.TokenTypePermissionType
+import org.certificateservices.messages.authorization.jaxb.TokenTypeRuleRestriction
+import org.certificateservices.messages.authorization.jaxb.TokenTypeRuleRestrictionType
+import org.certificateservices.messages.csmessages.CSMessageParserManager
+import org.certificateservices.messages.utils.CSMessageUtils;
 
 import org.apache.xml.security.Init;
-import org.certificateservices.messages.DummyMessageSecurityProvider;
-import org.certificateservices.messages.TestUtils;
 import org.certificateservices.messages.csmessages.CSMessageResponseData;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.csmessages.PayloadParserRegistry;
-import org.certificateservices.messages.csmessages.jaxb.Attribute;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
-import org.certificateservices.messages.csmessages.jaxb.Credential;
-import org.certificateservices.messages.csmessages.jaxb.CredentialRequest;
-import org.certificateservices.messages.csmessages.jaxb.Organisation;
-import org.certificateservices.messages.keystoremgmt.jaxb.CredentialRequestParams;
-import org.certificateservices.messages.keystoremgmt.jaxb.KeyInfo;
-import org.certificateservices.messages.keystoremgmt.jaxb.KeyStatus;
-import org.certificateservices.messages.keystoremgmt.jaxb.KeyStore;
-import org.certificateservices.messages.keystoremgmt.jaxb.KeyStoreStatus;
-import org.certificateservices.messages.keystoremgmt.jaxb.ObjectFactory;
-import org.certificateservices.messages.keystoremgmt.jaxb.X509CredentialRequestParams;
-import org.certificateservices.messages.utils.MessageGenerateUtils;
+import org.certificateservices.messages.authorization.jaxb.ObjectFactory;
 
 import spock.lang.Specification
 
@@ -60,7 +51,7 @@ class AuthorizationPayloadParserSpec extends Specification {
 		pp.getSupportedVersions() == ["2.0"] as String[]
 	}
 
-	def "Verify that genGetRequesterRolesRequest() generates a valid xml message and genGetRequesterRolesResponse() generates a valid CSMessageResponseData"(){
+	def "Verify that genGetRequesterRolesRequest() generates a valid xml message and genGetRequesterRolesResponse() generates a valid CSMessageResponseData without any token type query"(){
 		when:
 		csMessageParser.sourceId = "SOMEREQUESTER"
 		byte[] requestMessage = pp.genGetRequesterRolesRequest(TEST_ID, "SOMESOURCEID", "someorg", createOriginatorCredential(), null)
@@ -75,7 +66,7 @@ class AuthorizationPayloadParserSpec extends Specification {
 		csMessageParser.sourceId = "SOMESOURCEID"
 		CSMessage request = pp.parseMessage(requestMessage)
 		
-		CSMessageResponseData rd = pp.genGetRequesterRolesResponse("SomeRelatedEndEntity", request, ["role1","role2"], null)
+		CSMessageResponseData rd = pp.genGetRequesterRolesResponse("SomeRelatedEndEntity", request, ["role1","role2"], null, null)
 		//printXML(rd.responseData)
 		xml = slurpXml(rd.responseData)
 		payloadObject = xml.payload.GetRequesterRolesResponse
@@ -90,6 +81,67 @@ class AuthorizationPayloadParserSpec extends Specification {
 		expect:
 		pp.parseMessage(rd.responseData)
 		
+	}
+
+	def "Verify that genGetRequesterRolesRequest() generates a valid xml message and genGetRequesterRolesResponse() generates a valid CSMessageResponseData with a list of token type queries"(){
+		when:
+		csMessageParser.sourceId = "SOMEREQUESTER"
+		byte[] requestMessage = pp.genGetRequesterRolesRequest(TEST_ID, "SOMESOURCEID", "someorg", ["testTokenType1","testTokenType2"],createOriginatorCredential(), null)
+		//printXML(requestMessage)
+		def xml = slurpXml(requestMessage)
+		def payloadObject = xml.payload.GetRequesterRolesRequest
+		then:
+		payloadObject.tokenTypePermissionQuery.tokenType[0] == "testTokenType1"
+		payloadObject.tokenTypePermissionQuery.tokenType[1] == "testTokenType2"
+		messageContainsPayload requestMessage, "auth:GetRequesterRolesRequest"
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GetRequesterRolesRequest", createOriginatorCredential(), csMessageParser)
+
+		CSMessage request = pp.parseMessage(requestMessage)
+		GetRequesterRolesRequest r = CSMessageUtils.getPayload(request)
+		r.tokenTypePermissionQuery.tokenType[0] == "testTokenType1"
+		r.tokenTypePermissionQuery.tokenType[1] == "testTokenType2"
+
+		when:
+		csMessageParser.sourceId = "SOMESOURCEID"
+
+		List<TokenTypePermission> tokenTypePermissions = []
+		r.tokenTypePermissionQuery.tokenType.each{
+			TokenTypePermission ttp = of.createTokenTypePermission()
+			ttp.tokenType = it
+			ttp.ruleType = TokenTypePermissionType.MODIFYANDISSUE
+			ttp.restrictions = of.createTokenTypePermissionRestrictions()
+			TokenTypeRuleRestriction ttrr = of.createTokenTypeRuleRestriction()
+			ttrr.type = TokenTypeRuleRestrictionType.TOKENCLASS
+			ttrr.value = "temporary"
+			ttp.restrictions.restriction.add(ttrr)
+			tokenTypePermissions << ttp
+		}
+
+		CSMessageResponseData rd = pp.genGetRequesterRolesResponse("SomeRelatedEndEntity", request, ["role1","role2"], tokenTypePermissions, null)
+		//printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.GetRequesterRolesResponse
+
+		then:
+
+		payloadObject.roles.role[0] == "role1"
+		payloadObject.roles.role[1] == "role2"
+
+		payloadObject.tokenTypePermissions.tokenTypePermission[0].tokenType == "testTokenType1"
+		payloadObject.tokenTypePermissions.tokenTypePermission[0].ruleType == "MODIFYANDISSUE"
+		payloadObject.tokenTypePermissions.tokenTypePermission[0].restrictions.restriction.type == "TOKENCLASS"
+		payloadObject.tokenTypePermissions.tokenTypePermission[0].restrictions.restriction.value == "temporary"
+		payloadObject.tokenTypePermissions.tokenTypePermission[1].tokenType == "testTokenType2"
+
+		messageContainsPayload rd.responseData, "auth:GetRequesterRolesResponse"
+
+		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "GetRequesterRolesResponse", "SomeRelatedEndEntity"
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","GetRequesterRolesResponse", createOriginatorCredential(), csMessageParser)
+		verifySuccessfulBasePayload(payloadObject, TEST_ID)
+
+		expect:
+		pp.parseMessage(rd.responseData)
+
 	}
 
 }

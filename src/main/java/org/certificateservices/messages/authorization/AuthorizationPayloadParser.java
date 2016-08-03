@@ -18,10 +18,7 @@ import java.util.List;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.authorization.jaxb.GetRequesterRolesRequest;
-import org.certificateservices.messages.authorization.jaxb.GetRequesterRolesResponse;
-import org.certificateservices.messages.authorization.jaxb.GetRolesType;
-import org.certificateservices.messages.authorization.jaxb.ObjectFactory;
+import org.certificateservices.messages.authorization.jaxb.*;
 import org.certificateservices.messages.csmessages.BasePayloadParser;
 import org.certificateservices.messages.csmessages.CSMessageResponseData;
 import org.certificateservices.messages.csmessages.PayloadParser;
@@ -93,7 +90,7 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 
 
 	/**
-	 * Method to create a GetRequesterRolesRequest message.
+	 * Method to create a GetRequesterRolesRequest message without any token type query.
 	 * 
 	 * @param requestId the id of the request
 	 * @param destinationId the destinationId used in the CSMessage.
@@ -105,8 +102,30 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
 	public byte[] genGetRequesterRolesRequest(String requestId, String destinationId, String organisation, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
+		return genGetRequesterRolesRequest(requestId,destinationId,organisation,null,originator,assertions);
+	}
+
+	/**
+	 *  Method to create a GetRequesterRolesRequest message with a list of token type permission queries..
+	 *
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param tokenTypeQuery a list of token types that should be checked for authorization.
+	 * @param originator the original requester of a message, null if not applicable
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return generated and signed CSMessage in byte[] format.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genGetRequesterRolesRequest(String requestId, String destinationId, String organisation, List<String> tokenTypeQuery, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		GetRequesterRolesRequest payload = of.createGetRequesterRolesRequest();
-	
+
+		if(tokenTypeQuery != null && tokenTypeQuery.size() > 0){
+			payload.setTokenTypePermissionQuery(of.createGetRequesterRolesRequestTokenTypePermissionQuery());
+			payload.getTokenTypePermissionQuery().getTokenType().addAll(tokenTypeQuery);
+		}
+
 		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
@@ -121,12 +140,17 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
-	public CSMessageResponseData genGetRequesterRolesResponse(String relatedEndEntity, CSMessage request, List<String> roles, List<Object> assertions) throws MessageContentException, MessageProcessingException{
+	public CSMessageResponseData genGetRequesterRolesResponse(String relatedEndEntity, CSMessage request, List<String> roles, List<TokenTypePermission> tokenTypePermissions, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		GetRequesterRolesResponse response = of.createGetRequesterRolesResponse();
 		
 		response.setRoles(new GetRolesType.Roles());
 		for(String role : roles){
 			response.getRoles().getRole().add(role);
+		}
+
+		if(tokenTypePermissions != null){
+			response.setTokenTypePermissions(of.createGetRolesTypeTokenTypePermissions());
+			response.getTokenTypePermissions().getTokenTypePermission().addAll(tokenTypePermissions);
 		}
 		
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, false);
