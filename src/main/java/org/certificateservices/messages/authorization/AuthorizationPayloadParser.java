@@ -83,7 +83,7 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 	}
 
 	/**
-	 * @see BasePayloadParser#getDefaultVersion()
+	 * @see BasePayloadParser#getDefaultPayloadVersion()
 	 */
 	@Override
 	protected String getDefaultPayloadVersion() {
@@ -107,7 +107,7 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 	public byte[] genGetRequesterRolesRequest(String requestId, String destinationId, String organisation, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		GetRequesterRolesRequest payload = of.createGetRequesterRolesRequest();
 	
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -129,7 +129,7 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 			response.getRoles().getRole().add(role);
 		}
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, false);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, false);
 	}
 	
 }

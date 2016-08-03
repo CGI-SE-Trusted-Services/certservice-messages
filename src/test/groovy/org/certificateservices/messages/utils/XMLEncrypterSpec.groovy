@@ -1,6 +1,8 @@
 package org.certificateservices.messages.utils
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.MessageSecurityProvider
+import org.certificateservices.messages.csmessages.CSMessageParserManager
 
 import java.security.Security;
 import java.security.cert.CertificateFactory;
@@ -65,21 +67,23 @@ public class XMLEncrypterSpec extends Specification {
 	def setup(){
 		setupRegisteredPayloadParser();
 		assertionPayloadParser = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE);
-		
+
+
+		MessageSecurityProvider messageSecurityProvider = CSMessageParserManager.getCSMessageParser().messageSecurityProvider
 		assertionPayloadParser.systemTime = new DefaultSystemTime()
 		CertificateFactory cf = CertificateFactory.getInstance("X.509")
 		testCert = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(base64Cert)))
 		
-		xmlEncrypter = new XMLEncrypter(assertionPayloadParser.csMessageParser.messageSecurityProvider, assertionPayloadParser.getDocumentBuilder(),
+		xmlEncrypter = new XMLEncrypter(messageSecurityProvider, assertionPayloadParser.getDocumentBuilder(),
 			 assertionPayloadParser.getAssertionMarshaller(),
 			 assertionPayloadParser.getAssertionUnmarshaller())
 		
 		threeReceipients = new ArrayList<X509Certificate>();
-		for(String keyId : assertionPayloadParser.csMessageParser.messageSecurityProvider.decryptionKeyIds){
-			threeReceipients.add(assertionPayloadParser.csMessageParser.messageSecurityProvider.getDecryptionCertificate(keyId))
+		for(String keyId : messageSecurityProvider.decryptionKeyIds){
+			threeReceipients.add(messageSecurityProvider.getDecryptionCertificate(keyId))
 		}
 		
-		X509Certificate validCert = assertionPayloadParser.csMessageParser.messageSecurityProvider.getDecryptionCertificate(assertionPayloadParser.csMessageParser.messageSecurityProvider.decryptionKeyIds.iterator().next())
+		X509Certificate validCert = messageSecurityProvider.getDecryptionCertificate(messageSecurityProvider.decryptionKeyIds.iterator().next())
 		
 		twoReceiptiensValidFirst = new ArrayList<X509Certificate>();
 		twoReceiptiensValidFirst.add(validCert)

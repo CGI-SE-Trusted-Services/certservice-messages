@@ -1,6 +1,7 @@
 package org.certificateservices.messages.assertion
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.csmessages.CSMessageParserManager
 
 import java.security.Provider
 import java.security.Security
@@ -38,7 +39,7 @@ class ApprovalAssertionDataSpec extends Specification {
 		assertionPayloadParser.systemTime = Mock(SystemTime)
 		assertionPayloadParser.systemTime.getSystemTime() >> new Date(1436279213000)
 		
-		cert = assertionPayloadParser.csMessageParser.messageSecurityProvider.getDecryptionCertificate(MessageSecurityProvider.DEFAULT_DECRYPTIONKEY)
+		cert = CSMessageParserManager.getCSMessageParser().messageSecurityProvider.getDecryptionCertificate(MessageSecurityProvider.DEFAULT_DECRYPTIONKEY)
 	}
 	
 	def "Verify that parse sets all fields and getters retieves correct data"(){

@@ -121,7 +121,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	public static final String ATTRIBUTE_NAME_APPROVEDREQUESTS = "ApprovedRequests";
 	public static final String ATTRIBUTE_NAME_APPROVERS = "Approvers";
 	
-	private MessageSecurityProvider secProv;
+
 	private SystemTime systemTime = new DefaultSystemTime();
 	private XMLEncrypter xmlEncrypter;
 	private XMLEncrypter userDataXmlEncrypter;
@@ -134,10 +134,9 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	private AssertionSignatureLocationFinder assertionSignatureLocationFinder = new AssertionSignatureLocationFinder();
 
 	@Override
-	public void init(Properties config, CSMessageParser parser)
+	public void init(Properties config, MessageSecurityProvider secProv)
 			throws MessageProcessingException {
-		super.init(config, parser);
-		secProv = parser.getMessageSecurityProvider();
+		super.init(config, secProv);
 		try {
 			xmlEncrypter = new XMLEncrypter(secProv, getDocumentBuilder(), getAssertionMarshaller(), getAssertionUnmarshaller());
 			userDataXmlEncrypter = new XMLEncrypter(secProv, getDocumentBuilder(), getUserDataMarshaller(), getUserDataUnmarshaller());
@@ -350,8 +349,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	/**
 	 * Method to generate a Approval Ticket with an signed assertion containing the 
 	 * approval id and related Approval Requests
-	 * 
-	 * @param inResponseTo The ID of the attribute query request
+	 *
 	 * @param issuer the issuer of the assertion.
 	 * @param notBefore beginning of the validity of the ticket.
 	 * @param notOnOrAfter end validity of the ticket.

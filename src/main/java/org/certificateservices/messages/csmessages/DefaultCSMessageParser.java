@@ -142,7 +142,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	/**
 	 * @see org.certificateservices.messages.csmessages.CSMessageParser#init(org.certificateservices.messages.MessageSecurityProvider, java.util.Properties)
 	 */
-	public void init(MessageSecurityProvider securityProvider, Properties config)
+	public void init(final MessageSecurityProvider securityProvider, Properties config)
 			throws MessageProcessingException {
 		this.properties = config;
 		this.securityProvider = securityProvider;
@@ -173,7 +173,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			 */
 			public void configurePayloadParser(String namespace,
 					PayloadParser payloadParser) throws MessageProcessingException {
-				payloadParser.init(properties, thisParser);
+				payloadParser.init(properties, securityProvider);
 				
 			}
 		}, true);
@@ -277,7 +277,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	}
 
 	/**
-	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateCSResponseMessage(String, CSMessage, String, CSResponse)
+	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateCSResponseMessage(String, CSMessage, String, Object)
 	 * 
 	 */
 	public CSMessageResponseData generateCSResponseMessage(String relatedEndEntity, CSMessage request, String payLoadVersion, Object payload) throws MessageContentException, MessageProcessingException{
@@ -286,7 +286,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	
 
 	/**
-	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateCSResponseMessage(String, CSMessage, String, CSResponse)
+	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateCSResponseMessage(String, CSMessage, String, Object)
 	 * 
 	 */
 	public CSMessageResponseData generateCSResponseMessage(String relatedEndEntity, CSMessage request, String payLoadVersion, Object payload, boolean isForwardableResponse) throws MessageContentException, MessageProcessingException{
@@ -297,7 +297,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	}
 
 	/**
-	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateGetApprovalRequest(String, String, String, CSRequest, String Credential, List)
+	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateGetApprovalRequest(String, String, String, byte[], Credential, List)
 	 * 
 	 */
 	public byte[] generateGetApprovalRequest(String requestId, String destinationId, String organisation, byte[] request, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
@@ -328,7 +328,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	}
 	
 	/**
-	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateIsApprovedResponse(String, CSMessage, ApprovalStatus, Credential, List) 
+	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateIsApprovedResponse(String, CSMessage, ApprovalStatus, List)
 	 * 
 	 */
 	public CSMessageResponseData generateIsApprovedResponse(String relatedEndEntity, CSMessage request, ApprovalStatus approvalStatus, List<Object> assertions) throws MessageContentException, MessageProcessingException{
@@ -351,7 +351,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	}
 	
 	/**
-	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateGetApprovalResponse(String, CSMessage, String, ApprovalStatus, Credential, List)
+	 * @see org.certificateservices.messages.csmessages.CSMessageParser#generateGetApprovalResponse(String, CSMessage, String, ApprovalStatus, List)
 	 */
 	public CSMessageResponseData generateGetApprovalResponse(String relatedEndEntity, CSMessage request, String approvalId, ApprovalStatus approvalStatus, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		IsApprovedResponseType responseType = objectFactory.createIsApprovedResponseType();
@@ -576,7 +576,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	
     /**
      * Method that tries to parse the xml version from a message
-     * @param messageData the messageData to extract version from.
+     * @param doc the document to extract version from.
      * @return the version in the version and payLoadVersion attributes of the message.
      * @throws MessageContentException didn't contains a valid version attribute.
      * @throws MessageProcessingException if internal problems occurred.
@@ -641,9 +641,10 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	/**
 	 * Method that validates the fields of the message that isn't already validated by the schema
 	 * and the digital signature of the message.
-	 * 
+	 *
+	 * @param version the versions of the CS Message
 	 * @param object the message to validate.
-	 * @param message string representation of the message data.
+	 * @param doc the document of the message data.
 	 * @throws MessageContentException if the message contained bad format.
 	 * @throws MessageProcessingException if internal problems occurred validating the message.
 	 */
@@ -667,7 +668,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * @param doc related message as Document
 	 * @throws MessageContentException if the header contained illegal arguments.
 	 */
-	private void validateCSMessageHeader(CSMessage pkiMessage, Document doc) throws MessageContentException, MessageProcessingException{
+	private void validateCSMessageHeader(CSMessage csMessage, Document doc) throws MessageContentException, MessageProcessingException{
 		validateSignature(doc);
 	}
 

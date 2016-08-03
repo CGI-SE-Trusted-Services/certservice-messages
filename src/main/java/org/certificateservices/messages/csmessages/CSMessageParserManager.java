@@ -12,6 +12,8 @@
 *************************************************************************/
 package org.certificateservices.messages.csmessages;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import org.certificateservices.messages.MessageProcessingException;
@@ -34,7 +36,9 @@ public class CSMessageParserManager {
 	
 	private static final String DEFAULT_IMPLEMENTATION = DefaultCSMessageParser.class.getName();
 	
-	private static CSMessageParser parser = null;
+	private static Map<Thread,CSMessageParser> parsers = new HashMap<Thread,CSMessageParser>();
+	private static MessageSecurityProvider securityProvider;
+	private static Properties config;
 
 	/**
 	 * Method to generate a new CSMessageParser from the configuration, if setting "csmessage.parser.impl"
@@ -43,21 +47,17 @@ public class CSMessageParserManager {
 	 * @param securityProvider the security provider used for the message parser.
 	 * @param config the configuration context.
 	 * @return a newly created CS Message parser
-	 * @throws MessageException if problems occurred creating a message parser.
+	 * @throws MessageProcessingException if problems occurred creating a message parser.
 	 */
 	public static CSMessageParser initCSMessageParser(MessageSecurityProvider securityProvider, Properties config) throws MessageProcessingException{
-		String cp = config.getProperty(SETTING_CSMESSAGEPARSER_IMPL, DEFAULT_IMPLEMENTATION);
-		try{
-			Class<?> c = CSMessageParserManager.class.getClassLoader().loadClass(cp);
-			parser = (CSMessageParser) c.newInstance();
-			parser.init(securityProvider, config);
-			return parser;
-		}catch(Exception e){
-			if(e instanceof MessageProcessingException){
-				throw (MessageProcessingException) e;
-			}			
-			throw new MessageProcessingException("Error creating CS Message Parser: " + e.getMessage(),e);			
-		}
+		parsers.clear();
+		CSMessageParserManager.securityProvider = securityProvider;
+		CSMessageParserManager.config = config;
+
+		CSMessageParser parser = newCSMessageParser();
+		parsers.put(Thread.currentThread(),parser);
+
+		return parser;
 	}
 	
 	/**
@@ -65,7 +65,7 @@ public class CSMessageParserManager {
 	 * @return true if CSMessageParser have been initialized.
 	 */
 	public static boolean isInitialized(){
-		return parser != null;
+		return parsers.size() > 0;
 	}
 	
 	/**
@@ -75,10 +75,32 @@ public class CSMessageParserManager {
 	 * @throws MessageProcessingException if no initialized CSMessageParser exists.
 	 */
 	public static CSMessageParser getCSMessageParser() throws MessageProcessingException{
-		if(parser == null){
+		if(config == null){
 			throw new MessageProcessingException("Error CS Message parser haven't been initialized, make sure initCSMessageParser() is called before getCSMessageParser");
+		}
+
+		CSMessageParser parser = parsers.get(Thread.currentThread());
+		if(parser == null){
+			parser = newCSMessageParser();
+			parsers.put(Thread.currentThread(),parser);
 		}
 		return parser;
 	}
+
+	private static CSMessageParser newCSMessageParser() throws MessageProcessingException{
+		String cp = config.getProperty(SETTING_CSMESSAGEPARSER_IMPL, DEFAULT_IMPLEMENTATION);
+		try{
+			Class<?> c = CSMessageParserManager.class.getClassLoader().loadClass(cp);
+			CSMessageParser parser = (CSMessageParser) c.newInstance();
+			parser.init(securityProvider, config);
+			return parser;
+		}catch(Exception e){
+			if(e instanceof MessageProcessingException){
+				throw (MessageProcessingException) e;
+			}
+			throw new MessageProcessingException("Error creating CS Message Parser: " + e.getMessage(),e);
+		}
+	}
+
 
 }

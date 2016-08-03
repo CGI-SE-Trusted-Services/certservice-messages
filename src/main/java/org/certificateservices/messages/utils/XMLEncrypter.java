@@ -102,7 +102,7 @@ public class XMLEncrypter {
 			this.encKeyXMLCipher = XMLCipher.getInstance(securityProvider.getEncryptionAlgorithmScheme().getKeyEncryptionAlgorithmURI());
 			this.encDataXMLCipher = XMLCipher.getInstance(securityProvider.getEncryptionAlgorithmScheme().getDataEncryptionAlgorithmURI());
 			this.decChiper = XMLCipher.getInstance();
-			
+
 			cf = CertificateFactory.getInstance("X.509");
 			
 			switch(securityProvider.getEncryptionAlgorithmScheme()){
