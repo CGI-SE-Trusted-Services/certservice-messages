@@ -14,6 +14,7 @@ package org.certificateservices.messages.authorization;
 
 
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.List;
 
 import org.certificateservices.messages.MessageContentException;
@@ -140,7 +141,7 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
-	public CSMessageResponseData genGetRequesterRolesResponse(String relatedEndEntity, CSMessage request, List<String> roles, List<TokenTypePermission> tokenTypePermissions, List<Object> assertions) throws MessageContentException, MessageProcessingException{
+	public CSMessageResponseData genGetRequesterRolesResponse(String relatedEndEntity, CSMessage request, List<String> roles, Collection<TokenTypePermission> tokenTypePermissions, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		GetRequesterRolesResponse response = of.createGetRequesterRolesResponse();
 		
 		response.setRoles(new GetRolesType.Roles());
