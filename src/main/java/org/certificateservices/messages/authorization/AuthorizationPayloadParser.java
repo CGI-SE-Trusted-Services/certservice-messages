@@ -149,7 +149,7 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 			response.getRoles().getRole().add(role);
 		}
 
-		if(tokenTypePermissions != null){
+		if(tokenTypePermissions != null && tokenTypePermissions.size() > 0){
 			response.setTokenTypePermissions(of.createGetRolesTypeTokenTypePermissions());
 			response.getTokenTypePermissions().getTokenTypePermission().addAll(tokenTypePermissions);
 		}
