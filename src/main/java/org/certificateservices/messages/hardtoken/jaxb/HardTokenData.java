@@ -73,6 +73,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 @XmlType(name = "", propOrder = {
     "tokenType",
     "tokenClass",
+    "tokenImplementation",
     "serialNumber",
     "copyOfSN",
     "copies",
@@ -89,6 +90,7 @@ public class HardTokenData {
     protected String tokenType;
     @XmlElement(required = true)
     protected String tokenClass;
+    protected String tokenImplementation;
     @XmlElement(required = true)
     protected String serialNumber;
     protected String copyOfSN;
@@ -154,6 +156,30 @@ public class HardTokenData {
      */
     public void setTokenClass(String value) {
         this.tokenClass = value;
+    }
+
+    /**
+     * Gets the value of the tokenImplementation property.
+     *
+     * @return
+     *     possible object is
+     *     {@link String }
+     *
+     */
+    public String getTokenImplementation() {
+        return tokenImplementation;
+    }
+
+    /**
+     * Sets the value of the tokenImplementation property.
+     *
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *
+     */
+    public void setTokenImplementation(String value) {
+        this.tokenImplementation = value;
     }
 
     /**
