@@ -30,6 +30,8 @@
 					type="tns:notemptystring" />
 				<xs:element minOccurs="1" maxOccurs="1" name="tokenClass"
 					type="tns:notemptystring" />
+				<xs:element minOccurs="0" maxOccurs="1" name="tokenImplementation"
+					type="tns:notemptystring" />
 				<xs:element minOccurs="1" maxOccurs="1" name="serialNumber"
 					type="tns:notemptystring" />
 				<xs:element minOccurs="0" maxOccurs="1" name="copyOfSN"

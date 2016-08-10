@@ -76,6 +76,7 @@ class HardTokenDataParserSpec extends Specification {
 		xml.@version == HardTokenDataParser.DEFAULT_VERSION
 		xml.tokenType == "SomeTokenType"
 		xml.tokenClass == "Ordinary"
+		xml.tokenImplementation == "org.test.SomeTokenImplementation"
 		xml.serialNumber == "443322"
 		xml.pinDatas.pin[0].name == "BASIC"
 		xml.pinDatas.pin[0].initialPIN == "foo123"
@@ -172,6 +173,7 @@ class HardTokenDataParserSpec extends Specification {
 		htd.supportsRemoteUnblock = "true"
 		htd.tokenType = "SomeTokenType"
 		htd.tokenClass = "Ordinary"
+		htd.tokenImplementation = "org.test.SomeTokenImplementation"
 		
 		htd.pinDatas = of.createHardTokenDataPinDatas()
 		htd.pinDatas.getPin().add(p1)
