@@ -73,6 +73,7 @@ import javax.xml.bind.annotation.XmlType;
     "userDisplayName",
     "relatedTokenId",
     "serialNumber",
+    "previousSerialNumber",
     "tokenContainer",
     "tokenType",
     "tokenClass",
@@ -89,6 +90,7 @@ public class TokenRequest {
     protected String userDisplayName;
     protected Long relatedTokenId;
     protected String serialNumber;
+    protected String previousSerialNumber;
     @XmlElement(required = true)
     protected String tokenContainer;
     @XmlElement(required = true)
@@ -219,6 +221,30 @@ public class TokenRequest {
      */
     public void setSerialNumber(String value) {
         this.serialNumber = value;
+    }
+
+    /**
+     * Gets the value of the previousSerialNumber property.
+     *
+     * @return
+     *     possible object is
+     *     {@link String }
+     *
+     */
+    public String getPreviousSerialNumber() {
+        return previousSerialNumber;
+    }
+
+    /**
+     * Sets the value of the previousSerialNumber property.
+     *
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *
+     */
+    public void setPreviousSerialNumber(String value) {
+        this.previousSerialNumber = value;
     }
 
     /**
