@@ -347,6 +347,8 @@
 				type="xs:long" />
 			<xs:element minOccurs="0" maxOccurs="1" name="serialNumber"
 				type="xs:string" />
+			<xs:element minOccurs="0" maxOccurs="1" name="previousSerialNumber"
+						type="xs:string" />
 			<xs:element minOccurs="1" maxOccurs="1" name="tokenContainer"
 				type="tns:notemptystring" />
 			<xs:element minOccurs="1" maxOccurs="1" name="tokenType"
