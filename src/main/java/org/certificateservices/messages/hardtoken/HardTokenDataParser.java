@@ -220,7 +220,7 @@ public class HardTokenDataParser {
 			doc = getDocumentBuilder().newDocument();
 			getMarshaller().marshal(hardTokenData, doc);
 			
-			Document encDoc = xmlEncrypter.encryptElement(doc, receipients, false);
+			Document encDoc = xmlEncrypter.encryptElement(doc, receipients, true);
 			StringWriter writer = new StringWriter();
 			getTransformer().transform(new DOMSource(encDoc), new StreamResult(writer));
 			String output = writer.getBuffer().toString();	
