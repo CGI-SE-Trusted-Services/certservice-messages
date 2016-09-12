@@ -22,6 +22,7 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;restriction base="{http://www.w3.org/2001/XMLSchema}string">
  *     &lt;enumeration value="ALL"/>
  *     &lt;enumeration value="VIEW"/>
+ *     &lt;enumeration value="VIEWANDMONITOR"/>
  *     &lt;enumeration value="MODIFYANDISSUE"/>
  *     &lt;enumeration value="CHANGESTATUS"/>
  *     &lt;enumeration value="PUTONHOLD"/>
@@ -37,6 +38,7 @@ public enum TokenTypePermissionType {
 
     ALL,
     VIEW,
+    VIEWANDMONITOR,
     MODIFYANDISSUE,
     CHANGESTATUS,
     PUTONHOLD,
