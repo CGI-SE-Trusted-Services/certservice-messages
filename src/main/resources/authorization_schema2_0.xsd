@@ -45,6 +45,7 @@
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="ALL"/>
 			<xs:enumeration value="VIEW"/>
+			<xs:enumeration value="VIEWANDMONITOR"/>
 			<xs:enumeration value="MODIFYANDISSUE"/>
 			<xs:enumeration value="CHANGESTATUS"/>
 			<xs:enumeration value="PUTONHOLD"/>
