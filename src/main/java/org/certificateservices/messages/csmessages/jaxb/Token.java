@@ -102,7 +102,6 @@ public class Token {
     protected Token.Attributes attributes;
     protected Token.Credentials credentials;
     protected String description;
-    @XmlElement(required = true)
     @XmlSchemaType(name = "dateTime")
     protected XMLGregorianCalendar issueDate;
     @XmlElement(required = true)

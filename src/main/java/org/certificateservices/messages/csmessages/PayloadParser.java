@@ -17,6 +17,7 @@ import java.util.Properties;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.MessageSecurityProvider;
 
 
 /**
@@ -34,10 +35,10 @@ public interface PayloadParser {
 	 * This method might be called more than once if configuration have been updated and the parser needs to be updated.
 	 * 
 	 * @param config the configuration of the parser.
-	 * @param parser link to main CS Message Parser used.
-	 * @throws MessageException if configuration contained bad configuration of security provider.
+	 * @param secProv the related message security provider.
+	 * @throws MessageProcessingException if configuration contained bad configuration of security provider.
 	 */
-	void init(Properties config, CSMessageParser parser) throws MessageProcessingException;
+	void init(Properties config, MessageSecurityProvider secProv) throws MessageProcessingException;
 	
 	/**
 	 * 

@@ -1,5 +1,8 @@
 package org.certificateservices.messages.csmessages.examples
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+
+import java.security.Security
 import java.security.cert.X509Certificate;
 
 import javax.xml.bind.JAXBElement;
@@ -66,6 +69,7 @@ csmessage.sourceid=SomeClientSystem
 	
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Properties config = getConfig(exampleConfig)
 		
 		// Required initialization code, only needed once for an application.

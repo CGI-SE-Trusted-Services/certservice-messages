@@ -20,6 +20,9 @@ import org.apache.log4j.Logger;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.csmessages.jaxb.CSResponse;
+import org.certificateservices.messages.utils.CSMessageUtils;
+
+import javax.xml.bind.JAXBElement;
 
 /**
  * Default request response manager sending a request on one queue and waiting for a response on a response queue.
@@ -183,8 +186,15 @@ public class DefaultReqRespManager implements ReqRespManager,
 	
 	protected CSResponse findResponsePayload(CSMessage responseMessage){
 
-		if(responseMessage.getPayload().getAny() instanceof CSResponse){
-			return (CSResponse) responseMessage.getPayload().getAny();
+		Object payload = responseMessage.getPayload().getAny();
+		if(payload instanceof CSResponse){
+			return (CSResponse) payload;
+		}
+		if(payload instanceof JAXBElement<?>){
+			Object innerPayload = ((JAXBElement<?>) payload).getValue();
+			if(innerPayload instanceof CSResponse) {
+				return (CSResponse) innerPayload;
+			}
 		}
 		
 		return null;

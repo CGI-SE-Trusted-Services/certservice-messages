@@ -1,5 +1,9 @@
-package org.certificateservices.messages.utils;
+package org.certificateservices.messages.utils
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.csmessages.CSMessageParserManager
+
+import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Iterator;
@@ -51,6 +55,7 @@ public class XMLSignerSpec extends Specification {
 	XMLSigner csXMLSigner
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Init.init()
 	}
 
@@ -59,11 +64,11 @@ public class XMLSignerSpec extends Specification {
 		setupRegisteredPayloadParser();
 		assertionPayloadParser = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE);
 		
-		xmlSigner = new XMLSigner(assertionPayloadParser.csMessageParser.messageSecurityProvider, 
+		xmlSigner = new XMLSigner(CSMessageParserManager.getCSMessageParser().messageSecurityProvider,
 			assertionPayloadParser.getDocumentBuilder(), true,
 			 "Assertion",AssertionPayloadParser.NAMESPACE, "ID",
 			 "organisation",DefaultCSMessageParser.CSMESSAGE_NAMESPACE)
-		csXMLSigner = new XMLSigner(assertionPayloadParser.csMessageParser.messageSecurityProvider, 
+		csXMLSigner = new XMLSigner(CSMessageParserManager.getCSMessageParser().messageSecurityProvider,
 			assertionPayloadParser.getDocumentBuilder(), true,
 			 "CSMessage",DefaultCSMessageParser.CSMESSAGE_NAMESPACE, "ID",
 			 "organisation",DefaultCSMessageParser.CSMESSAGE_NAMESPACE)

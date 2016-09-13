@@ -17,6 +17,7 @@ import java.util.Properties;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.csmessages.CSMessageParser;
 import org.certificateservices.messages.csmessages.PayloadParser;
 import org.certificateservices.messages.dummy.jaxb.ObjectFactory;
@@ -33,15 +34,13 @@ public class DummyPayloadParser implements PayloadParser{
 	public static String NAMESPACE = "http://certificateservices.org/xsd/dummy2_0";
 
 	Properties config = null;
-	CSMessageParser parser = null;
 	boolean initCalled = false;
 
 	ObjectFactory of = new ObjectFactory();
 
 	
-	public void init(Properties config, CSMessageParser parser) throws MessageProcessingException {
+	public void init(Properties config, MessageSecurityProvider secProv) throws MessageProcessingException {
 		this.config = config;
-		this.parser = parser;
 		initCalled = true;
 	}
 	

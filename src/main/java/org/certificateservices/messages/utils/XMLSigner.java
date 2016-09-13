@@ -17,6 +17,7 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -109,8 +110,8 @@ public class XMLSigner {
 			cf = CertificateFactory.getInstance("X.509");
 		} catch (CertificateException e) {
 			throw new MessageProcessingException("Error instanciating CertificateFactory for XMLSigner: " + e.getMessage(),e);
-		}
-		
+		} 
+
 		supportedDigestsAlgorithm = new HashSet<String>();
 		supportedSignatureAlgorithm = new HashSet<String>();
 		for(SigningAlgorithmScheme scheme : SigningAlgorithmScheme.values()){

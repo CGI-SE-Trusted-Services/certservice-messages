@@ -1,5 +1,10 @@
-package org.certificateservices.messages.utils;
+package org.certificateservices.messages.utils
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.MessageSecurityProvider
+import org.certificateservices.messages.csmessages.CSMessageParserManager
+
+import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Iterator;
@@ -54,6 +59,7 @@ public class XMLEncrypterSpec extends Specification {
 	List<X509Certificate> noValidReceiptients
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Init.init()
 	}
 
@@ -61,21 +67,23 @@ public class XMLEncrypterSpec extends Specification {
 	def setup(){
 		setupRegisteredPayloadParser();
 		assertionPayloadParser = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE);
-		
+
+
+		MessageSecurityProvider messageSecurityProvider = CSMessageParserManager.getCSMessageParser().messageSecurityProvider
 		assertionPayloadParser.systemTime = new DefaultSystemTime()
 		CertificateFactory cf = CertificateFactory.getInstance("X.509")
 		testCert = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(base64Cert)))
 		
-		xmlEncrypter = new XMLEncrypter(assertionPayloadParser.csMessageParser.messageSecurityProvider, assertionPayloadParser.getDocumentBuilder(),
+		xmlEncrypter = new XMLEncrypter(messageSecurityProvider, assertionPayloadParser.getDocumentBuilder(),
 			 assertionPayloadParser.getAssertionMarshaller(),
 			 assertionPayloadParser.getAssertionUnmarshaller())
 		
 		threeReceipients = new ArrayList<X509Certificate>();
-		for(String keyId : assertionPayloadParser.csMessageParser.messageSecurityProvider.decryptionKeyIds){
-			threeReceipients.add(assertionPayloadParser.csMessageParser.messageSecurityProvider.getDecryptionCertificate(keyId))
+		for(String keyId : messageSecurityProvider.decryptionKeyIds){
+			threeReceipients.add(messageSecurityProvider.getDecryptionCertificate(keyId))
 		}
 		
-		X509Certificate validCert = assertionPayloadParser.csMessageParser.messageSecurityProvider.getDecryptionCertificate(assertionPayloadParser.csMessageParser.messageSecurityProvider.decryptionKeyIds.iterator().next())
+		X509Certificate validCert = messageSecurityProvider.getDecryptionCertificate(messageSecurityProvider.decryptionKeyIds.iterator().next())
 		
 		twoReceiptiensValidFirst = new ArrayList<X509Certificate>();
 		twoReceiptiensValidFirst.add(validCert)
@@ -233,6 +241,23 @@ public class XMLEncrypterSpec extends Specification {
 		attributeStatement.getAttributeOrEncryptedAttribute().size() == 2
 		attr1.getName() == "SomeAttribute1"
 		attr2.getName() == "SomeAttribute2"
+	}
+	
+	def "Verify encryption and decryption of properties"() {
+		setup:
+		Properties properties = new Properties();
+		properties.setProperty("prop1", "somevalue11");
+		properties.setProperty("prop2", "somevalue22");
+		properties.setProperty("prop3", "somevalue33");
+		properties.setProperty("prop4", "somevalue44");
+		when:
+		Document encDocument = xmlEncrypter.encryptProperties(properties, threeReceipients, true)
+		Properties decProperties = xmlEncrypter.decryptProperties(encDocument);
+		then:
+		decProperties.getProperty("prop1") == "somevalue11"
+		decProperties.getProperty("prop2") == "somevalue22"
+		decProperties.getProperty("prop3") == "somevalue33"
+		decProperties.getProperty("prop4") == "somevalue44"
 	}
 	
 	def "Verify that generateKeyId generates a valid id as Base64 encoded SHA-256 hash or throws MessageProcessingException if generation fails"(){

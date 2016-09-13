@@ -1,5 +1,10 @@
 package org.certificateservices.messages.assertion
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.csmessages.CSMessageParserManager
+
+import java.security.Provider
+import java.security.Security
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
@@ -26,6 +31,7 @@ class ApprovalAssertionDataSpec extends Specification {
 	@Shared X509Certificate cert
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Init.init()
 		setupRegisteredPayloadParser();
 		
@@ -33,7 +39,7 @@ class ApprovalAssertionDataSpec extends Specification {
 		assertionPayloadParser.systemTime = Mock(SystemTime)
 		assertionPayloadParser.systemTime.getSystemTime() >> new Date(1436279213000)
 		
-		cert = assertionPayloadParser.csMessageParser.messageSecurityProvider.getDecryptionCertificate(MessageSecurityProvider.DEFAULT_DECRYPTIONKEY)
+		cert = CSMessageParserManager.getCSMessageParser().messageSecurityProvider.getDecryptionCertificate(MessageSecurityProvider.DEFAULT_DECRYPTIONKEY)
 	}
 	
 	def "Verify that parse sets all fields and getters retieves correct data"(){

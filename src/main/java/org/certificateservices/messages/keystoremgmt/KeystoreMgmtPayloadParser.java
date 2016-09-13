@@ -94,7 +94,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 	}
 
 	/**
-	 * @see BasePayloadParser#getDefaultVersion()
+	 * @see BasePayloadParser#getDefaultPayloadVersion()
 	 */
 	@Override
 	protected String getDefaultPayloadVersion() {
@@ -118,7 +118,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 	public byte[] generateGetAvailableKeyStoreInfoRequest(String requestId, String destinationId, String organisation,  Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		GetAvailableKeyStoreInfoRequest payload = of.createGetAvailableKeyStoreInfoRequest();
 	
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	
@@ -141,7 +141,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 			response.getKeyStores().getKeyStore().add(ks);
 		}
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
 	
@@ -174,7 +174,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 		  payload.getCredentialRequestParams().setBaseRequestParams(credentialRequestParams);
 		}
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -194,7 +194,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 	   GenerateCredentialRequestResponse response = of.createGenerateCredentialRequestResponse();
 	   response.setCredentialRequest(credentialRequest);
 	   
-	   return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+	   return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
 
@@ -220,7 +220,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 		payload.setKeyStoreProviderName(keyStoreProviderName);
 		payload.setOrganisationShortName(organisation);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -238,7 +238,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
    public CSMessageResponseData generateRemoveKeyResponse(String relatedEndEntity, CSMessage request, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 	   RemoveKeyResponse response = of.createRemoveKeyResponse();
 	
-	   return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+	   return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
 	/**
@@ -268,7 +268,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 		  payload.getCredentials().getCredential().add(c);
 		}
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -285,7 +285,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 	 */
    public CSMessageResponseData generateAttachCredentialsResponse(String relatedEndEntity, CSMessage request, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 	   AttachCredentialsResponse response = of.createAttachCredentialsResponse();
-	   return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+	   return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
 	/**
@@ -297,7 +297,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 	 * @param organisation the related organisation (short name)
 	 * @param keyStoreProviderName the name of the key store provider managing the key
 	 * @param alias the alias of the key
-	 * @param the description to update
+	 * @param description the description to update
 	 * @param originator the credential of the original requester, null if this is the origin of the request.
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
 	 * @return  a generated and signed (if configured) message.
@@ -312,7 +312,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 		payload.setOrganisationShortName(organisation);
 		payload.setDescription(description);
 		
-		return csMessageParser.generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	
@@ -330,7 +330,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
     public CSMessageResponseData generateUpdateKeyDescriptionResponse(String relatedEndEntity, CSMessage request, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		UpdateKeyDescriptionResponse response = of.createUpdateKeyDescriptionResponse();
 		
-		return csMessageParser.generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 
 

@@ -1,10 +1,13 @@
 package org.certificateservices.messages.assertion;
 
-import groovy.xml.XmlUtil;
+import groovy.xml.XmlUtil
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.csmessages.CSMessageParserManager;
 
 import java.io.ByteArrayInputStream;
 import java.security.Key;
-import java.security.KeyStore;
+import java.security.KeyStore
+import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -100,6 +103,7 @@ class AssertionPayloadParserSpec extends Specification {
 	
 
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Init.init()
 	}
 
@@ -109,11 +113,11 @@ class AssertionPayloadParserSpec extends Specification {
 		pp = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE);
 		pp.systemTime = Mock(SystemTime)
 		pp.systemTime.getSystemTime() >> new Date(1436279213000)
-		csp = pp.csMessageParser
+		csp = CSMessageParserManager.getCSMessageParser()
 		
 		cf = CertificateFactory.getInstance("X.509")
 		X509Certificate invalidCert = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(base64Cert)))
-		X509Certificate validCert = pp.csMessageParser.messageSecurityProvider.getDecryptionCertificate(pp.csMessageParser.messageSecurityProvider.decryptionKeyIds.iterator().next())
+		X509Certificate validCert = csp.messageSecurityProvider.getDecryptionCertificate(csp.messageSecurityProvider.decryptionKeyIds.iterator().next())
 		
 		twoReceiptiensValidFirst = [validCert,invalidCert]
 		

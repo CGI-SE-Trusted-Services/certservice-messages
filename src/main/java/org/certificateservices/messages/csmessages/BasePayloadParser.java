@@ -10,6 +10,7 @@ import javax.xml.bind.JAXBElement;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.csmessages.jaxb.CSResponse;
 import org.certificateservices.messages.csmessages.jaxb.Credential;
@@ -25,22 +26,27 @@ import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
  */
 public abstract class BasePayloadParser implements PayloadParser {
 	
-	protected CSMessageParser csMessageParser;
+
 	protected Properties config;
+	protected MessageSecurityProvider secProv;
 	
 	protected ObjectFactory csMessageObjectFactory = new ObjectFactory();
 	
 	/**
 	 * Default initializer setting the parser and config properties.
 	 * 
-	 * @see org.certificateservices.messages.csmessages.PayloadParser#init(java.util.Properties, org.certificateservices.messages.csmessages.CSMessageParser)
+	 * @see org.certificateservices.messages.csmessages.PayloadParser#init(java.util.Properties, MessageSecurityProvider)
 	 */
-	public void init(Properties config, CSMessageParser parser)
+	public void init(Properties config, MessageSecurityProvider secProv)
 			throws MessageProcessingException {
-		this.csMessageParser = parser;
 		this.config = config;
+		this.secProv = secProv;
 	}
-	
+
+	protected CSMessageParser getCSMessageParser() throws MessageProcessingException {
+		return CSMessageParserManager.getCSMessageParser();
+	}
+
 	/**
 	 * Method to parse a message into a CSMessage and verify that it fulfills the registred schemas.
 	 * <p>
@@ -53,7 +59,7 @@ public abstract class BasePayloadParser implements PayloadParser {
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
     public CSMessage parseMessage(byte[] messageData) throws MessageContentException, MessageProcessingException{
-    	return csMessageParser.parseMessage(messageData);
+    	return getCSMessageParser().parseMessage(messageData);
     }
     
     /**
@@ -104,7 +110,7 @@ public abstract class BasePayloadParser implements PayloadParser {
 	 * @param isApprovedResponse the payload if a IsApprovedResponse or GetApprovedResponse
 	 * @return the list of assertions or null if no assertions could be found.
 	 */
-	List<Object> getAssertions(IsApprovedResponseType isApprovedResponse){
+	public List<Object> getAssertions(IsApprovedResponseType isApprovedResponse){
 		if(isApprovedResponse.getAssertions() != null && isApprovedResponse.getAssertions().size() > 0){
 			return isApprovedResponse.getAssertions().get(0).getAny();
 		}
@@ -118,7 +124,7 @@ public abstract class BasePayloadParser implements PayloadParser {
 	 * @param requestId  id of request to send.
 	 * @param destinationId the destination Id to use.
 	 * @param organisation the related organisation (short name)
-	 * @param request the request message to get approval for.
+	 * @param requestMessage the request message to get approval for.
 	 * @param originator the credential of the original requester, null if this is the origin of the request.
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
 	 * @return  a generated and signed (if configured) message.
@@ -127,7 +133,7 @@ public abstract class BasePayloadParser implements PayloadParser {
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
 	public byte[] generateGetApprovalRequest(String requestId, String destinationId, String organisation, byte[] requestMessage, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
-		return csMessageParser.generateGetApprovalRequest(requestId, destinationId, organisation, requestMessage, originator, assertions);
+		return getCSMessageParser().generateGetApprovalRequest(requestId, destinationId, organisation, requestMessage, originator, assertions);
 	}
 	
 	/**
@@ -145,7 +151,7 @@ public abstract class BasePayloadParser implements PayloadParser {
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
 	public byte[] generateIsApprovedRequest(String requestId, String destinationId, String organisation, String approvalId, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
-		return csMessageParser.generateIsApprovedRequest(requestId, destinationId, organisation, approvalId, originator, assertions);
+		return getCSMessageParser().generateIsApprovedRequest(requestId, destinationId, organisation, approvalId, originator, assertions);
 	}
 	
 	

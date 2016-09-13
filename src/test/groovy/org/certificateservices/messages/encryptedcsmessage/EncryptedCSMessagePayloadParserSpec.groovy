@@ -1,5 +1,9 @@
-package org.certificateservices.messages.encryptedcsmessage;
+package org.certificateservices.messages.encryptedcsmessage
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.csmessages.CSMessageParserManager
+
+import java.security.Security;
 import java.security.cert.X509Certificate;
 
 import javax.xml.datatype.DatatypeFactory;
@@ -36,6 +40,7 @@ class EncryptedCSMessagePayloadParserSpec extends Specification {
 	
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Init.init();
 	}
 	
@@ -44,7 +49,7 @@ class EncryptedCSMessagePayloadParserSpec extends Specification {
 		
 		pp = PayloadParserRegistry.getParser(EncryptedCSMessagePayloadParser.NAMESPACE);
 		
-		recipient = pp.csMessageParser.messageSecurityProvider.getDecryptionCertificate(MessageSecurityProvider.DEFAULT_DECRYPTIONKEY)
+		recipient = CSMessageParserManager.getCSMessageParser().messageSecurityProvider.getDecryptionCertificate(MessageSecurityProvider.DEFAULT_DECRYPTIONKEY)
 		
 		pp.systemTime = Mock(SystemTime)
 		pp.systemTime.getSystemTime() >> new Date(1436279213000L)
@@ -168,6 +173,6 @@ class EncryptedCSMessagePayloadParserSpec extends Specification {
 	
 
 	private byte[] genCSMessage(String requestId){
-		return pp.csMessageParser.generateIsApprovedRequest(requestId, "SomeDestination", "SomeOrg", "12345", null, null)
+		return CSMessageParserManager.getCSMessageParser().generateIsApprovedRequest(requestId, "SomeDestination", "SomeOrg", "12345", null, null)
 	}
 }

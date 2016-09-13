@@ -148,6 +148,17 @@ Main command to build a binary distribution is:
     mvn clean verify site -Pclover.report
     
 
+## How to generate JAXB Class from XSD and Episode files
+
+All XSD and episode files is in src/main/resources, episode files is to link existing classes from imported schemas such as xmldsig without
+having to generate new classes. To generate use the following command (for multiple episode files use multible -b options)
+
+    xjc -d 'outputdir' 'xsd schema file' -p 'package name' -extension -b src/main/resources/'filename' -b src/main/resources/'filename' -disableXmlSecurity
+
+For example:
+
+    xjc -d src/main/java src/main/resources/credmanagement_schema2_0.xsd -p org.certificateservices.messages.credmanagement.jaxb  -extension -b src/main/resources/csmessage-episode-jaxbbindings.xml -b src/main/resources/xmldsig-episode-jaxbbindings.xml -disableXmlSecurity
+
 ##  Eclipse notes
 
 Import the project with a eclipse supporting maven 2 and almost everything should be set-up

@@ -1,5 +1,8 @@
 package org.certificateservices.messages.csmessages.examples
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+
+import java.security.Security
 import java.security.cert.X509Certificate;
 
 import javax.xml.bind.JAXBElement;
@@ -74,6 +77,7 @@ csmessage.sourceid=SomeClientSystem
 	@Shared ObjectFactory of = new ObjectFactory();
 	
 	def setupSpec(){
+		Security.addProvider(new BouncyCastleProvider())
 		Properties config = getConfig(exampleConfig)
 		
 		// Required initialization code, only needed once for an application.
@@ -151,7 +155,7 @@ csmessage.sourceid=SomeClientSystem
 		tr.userData.getAny().add(userDataTicket)
 		
 		
-		byte[] tokenCredentialRequest = cmpp.genIssueTokenCredentialsRequest(MessageGenerateUtils.generateRandomUUID(), "SomeDestionation", "SomeOrg", tr, [f3], null, null)
+		byte[] tokenCredentialRequest = cmpp.genIssueTokenCredentialsRequest(MessageGenerateUtils.generateRandomUUID(), "SomeDestionation", "SomeOrg", tr, [f3], null, null, null)
 		// This request is sent to server
 		
 		// On Server:

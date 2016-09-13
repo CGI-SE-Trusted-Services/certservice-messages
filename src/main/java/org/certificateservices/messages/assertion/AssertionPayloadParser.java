@@ -111,17 +111,17 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	
 	private static final String DEFAULT_ASSERTION_VERSION = "2.0";
 
-    static final String ATTRIBUTE_NAME_TYPE = "Type";
-	static final String ATTRIBUTE_NAME_DISPLAYNAME = "DisplayName";
-	static final String ATTRIBUTE_NAME_ROLES = "Roles";
-	static final String ATTRIBUTE_NAME_USERDATA = "UserData";
-	static final String ATTRIBUTE_NAME_TOKENTYPE = "TokenType";
-	static final String ATTRIBUTE_NAME_DESTINATIONID = "DestinationId";
-	static final String ATTRIBUTE_NAME_APPROVALID = "ApprovalId";
-	static final String ATTRIBUTE_NAME_APPROVEDREQUESTS = "ApprovedRequests";
-	static final String ATTRIBUTE_NAME_APPROVERS = "Approvers";
+    public static final String ATTRIBUTE_NAME_TYPE = "Type";
+	public static final String ATTRIBUTE_NAME_DISPLAYNAME = "DisplayName";
+	public static final String ATTRIBUTE_NAME_ROLES = "Roles";
+	public static final String ATTRIBUTE_NAME_USERDATA = "UserData";
+	public static final String ATTRIBUTE_NAME_TOKENTYPE = "TokenType";
+	public static final String ATTRIBUTE_NAME_DESTINATIONID = "DestinationId";
+	public static final String ATTRIBUTE_NAME_APPROVALID = "ApprovalId";
+	public static final String ATTRIBUTE_NAME_APPROVEDREQUESTS = "ApprovedRequests";
+	public static final String ATTRIBUTE_NAME_APPROVERS = "Approvers";
 	
-	private MessageSecurityProvider secProv;
+
 	private SystemTime systemTime = new DefaultSystemTime();
 	private XMLEncrypter xmlEncrypter;
 	private XMLEncrypter userDataXmlEncrypter;
@@ -134,10 +134,9 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	private AssertionSignatureLocationFinder assertionSignatureLocationFinder = new AssertionSignatureLocationFinder();
 
 	@Override
-	public void init(Properties config, CSMessageParser parser)
+	public void init(Properties config, MessageSecurityProvider secProv)
 			throws MessageProcessingException {
-		super.init(config, parser);
-		secProv = parser.getMessageSecurityProvider();
+		super.init(config, secProv);
 		try {
 			xmlEncrypter = new XMLEncrypter(secProv, getDocumentBuilder(), getAssertionMarshaller(), getAssertionUnmarshaller());
 			userDataXmlEncrypter = new XMLEncrypter(secProv, getDocumentBuilder(), getUserDataMarshaller(), getUserDataUnmarshaller());
@@ -350,8 +349,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	/**
 	 * Method to generate a Approval Ticket with an signed assertion containing the 
 	 * approval id and related Approval Requests
-	 * 
-	 * @param inResponseTo The ID of the attribute query request
+	 *
 	 * @param issuer the issuer of the assertion.
 	 * @param notBefore beginning of the validity of the ticket.
 	 * @param notOnOrAfter end validity of the ticket.
