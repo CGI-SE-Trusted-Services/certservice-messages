@@ -143,7 +143,7 @@ import javax.xml.bind.annotation.XmlType;
  *             &lt;complexContent>
  *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *                 &lt;sequence>
- *                   &lt;element name="keystoreType" type="{http://certificateservices.org/xsd/csexport_data_1_0}TokenContainerInfo" maxOccurs="unbounded" minOccurs="0"/>
+ *                   &lt;element name="keystoreType" type="{http://certificateservices.org/xsd/csexport_data_1_0}TokenContainerInfoEx" maxOccurs="unbounded" minOccurs="0"/>
  *                 &lt;/sequence>
  *               &lt;/restriction>
  *             &lt;/complexContent>
@@ -925,7 +925,7 @@ public class TokenType {
      *   &lt;complexContent>
      *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
      *       &lt;sequence>
-     *         &lt;element name="keystoreType" type="{http://certificateservices.org/xsd/csexport_data_1_0}TokenContainerInfo" maxOccurs="unbounded" minOccurs="0"/>
+     *         &lt;element name="keystoreType" type="{http://certificateservices.org/xsd/csexport_data_1_0}TokenContainerInfoEx" maxOccurs="unbounded" minOccurs="0"/>
      *       &lt;/sequence>
      *     &lt;/restriction>
      *   &lt;/complexContent>
@@ -940,7 +940,7 @@ public class TokenType {
     })
     public static class KeystoreTypes {
 
-        protected List<TokenContainerInfo> keystoreType;
+        protected List<TokenContainerInfoEx> keystoreType;
 
         /**
          * Gets the value of the keystoreType property.
@@ -960,13 +960,13 @@ public class TokenType {
          * 
          * <p>
          * Objects of the following type(s) are allowed in the list
-         * {@link TokenContainerInfo }
+         * {@link TokenContainerInfoEx }
          * 
          * 
          */
-        public List<TokenContainerInfo> getKeystoreType() {
+        public List<TokenContainerInfoEx> getKeystoreType() {
             if (keystoreType == null) {
-                keystoreType = new ArrayList<TokenContainerInfo>();
+                keystoreType = new ArrayList<TokenContainerInfoEx>();
             }
             return this.keystoreType;
         }

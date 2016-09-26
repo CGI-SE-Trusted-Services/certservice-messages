@@ -124,7 +124,7 @@
 		</xs:sequence>
 	</xs:complexType>
 
-	<xs:complexType name="TokenContainerInfo">
+	<xs:complexType name="TokenContainerInfoEx">
 		<xs:sequence>
 			<xs:element name="type" minOccurs="1" maxOccurs="1" type="xs:string"/>
 			<xs:element name="tokenContainer" minOccurs="1" maxOccurs="1" type="xs:string"/>
@@ -267,7 +267,7 @@
 			<xs:element name="keystoreTypes" minOccurs="0" maxOccurs="1">
 				<xs:complexType>
 					<xs:sequence>
-						<xs:element name="keystoreType" minOccurs="0" maxOccurs="unbounded" type="tns:TokenContainerInfo"/>
+						<xs:element name="keystoreType" minOccurs="0" maxOccurs="unbounded" type="tns:TokenContainerInfoEx"/>
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>

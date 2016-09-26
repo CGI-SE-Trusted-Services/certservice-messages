@@ -15,12 +15,12 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for TokenContainerInfo complex type.
+ * <p>Java class for TokenContainerInfoEx complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="TokenContainerInfo">
+ * &lt;complexType name="TokenContainerInfoEx">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
@@ -39,7 +39,7 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "TokenContainerInfo", propOrder = {
+@XmlType(name = "TokenContainerInfoEx", propOrder = {
     "type",
     "tokenContainer",
     "certificateChainOption",
@@ -47,7 +47,7 @@ import javax.xml.bind.annotation.XmlType;
     "contentType",
     "fileNameSuffix"
 })
-public class TokenContainerInfo {
+public class TokenContainerInfoEx {
 
     @XmlElement(required = true)
     protected String type;

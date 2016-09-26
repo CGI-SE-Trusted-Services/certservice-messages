@@ -114,11 +114,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link TokenContainerInfo }
+     * Create an instance of {@link TokenContainerInfoEx }
      * 
      */
-    public TokenContainerInfo createTokenContainerInfo() {
-        return new TokenContainerInfo();
+    public TokenContainerInfoEx createTokenContainerInfoEx() {
+        return new TokenContainerInfoEx();
     }
 
     /**
