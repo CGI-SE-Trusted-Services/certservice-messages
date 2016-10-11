@@ -63,6 +63,13 @@
 		</xs:sequence>
 	</xs:complexType>
 
+	<xs:simpleType name="TokenContainerConstraint" >
+			<xs:restriction base="xs:string">
+				<xs:minLength value="1"/>
+				<xs:maxLength value="255"/>
+			</xs:restriction>
+	</xs:simpleType>
+
 	<xs:complexType name="RelatedTokenAttribute">
 		<xs:sequence>
 			<xs:element name="key" minOccurs="1" maxOccurs="1">
@@ -127,8 +134,6 @@
 	<xs:complexType name="TokenContainerInfoEx">
 		<xs:sequence>
 			<xs:element name="type" minOccurs="1" maxOccurs="1" type="xs:string"/>
-			<xs:element name="tokenContainer" minOccurs="1" maxOccurs="1" type="xs:string"/>
-			<xs:element name="certificateChainOption" minOccurs="1" maxOccurs="1" type="xs:string"/>
 			<xs:element name="resourceKey" minOccurs="0" maxOccurs="1" type="xs:string"/>
 			<xs:element name="contentType" minOccurs="0" maxOccurs="1" type="xs:string"/>
 			<xs:element name="fileNameSuffix" minOccurs="0" maxOccurs="1" type="xs:string"/>
@@ -243,6 +248,7 @@
 			<xs:element name="editableFields" minOccurs="1" maxOccurs="1" type="xs:boolean"/>
 			<xs:element name="isSuspendable" minOccurs="1" maxOccurs="1" type="xs:boolean"/>
 			<xs:element name="applyLifeCycleRulesInManualGeneration" minOccurs="0" maxOccurs="1" type="xs:boolean"/>
+
 			<xs:element name="fieldConstraints" minOccurs="0" maxOccurs="1">
 				<xs:complexType>
 					<xs:sequence>
@@ -264,6 +270,24 @@
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
+
+			<xs:element name="tokenContainerConstraints" minOccurs="0" maxOccurs="1">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="tokenContainerConstraint" minOccurs="0" maxOccurs="unbounded" type="tns:TokenContainerConstraint"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+
+			<xs:element name="certificateChainOption" minOccurs="0" maxOccurs="1">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="1"/>
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+
 			<xs:element name="keystoreTypes" minOccurs="0" maxOccurs="1">
 				<xs:complexType>
 					<xs:sequence>
@@ -271,6 +295,8 @@
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
+
+
 			<xs:element name="tokenTypeLifeCycleRules" minOccurs="0" maxOccurs="1">
 				<xs:complexType>
 					<xs:sequence>

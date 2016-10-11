@@ -158,6 +158,9 @@ having to generate new classes. To generate use the following command (for multi
 For example:
 
     xjc -d src/main/java src/main/resources/credmanagement_schema2_0.xsd -p org.certificateservices.messages.credmanagement.jaxb  -extension -b src/main/resources/csmessage-episode-jaxbbindings.xml -b src/main/resources/xmldsig-episode-jaxbbindings.xml -disableXmlSecurity
+    
+When generating jaxb code is usually not the correct xml prefixes set, this has to be configured manually in package-info.java class. Remember that when
+regenerating the code using xjc is this information overwritten.
 
 ##  Eclipse notes
 
