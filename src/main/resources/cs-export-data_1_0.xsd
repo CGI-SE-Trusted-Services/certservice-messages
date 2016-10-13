@@ -84,6 +84,14 @@
 		</xs:sequence>
 	</xs:complexType>
 
+	<xs:complexType name="DomainNameRestriction">
+		<xs:sequence>
+			<xs:element name="domainNameValue" minOccurs="1" maxOccurs="1" type="xs:string" />
+			<xs:element name="allowSubDomains" minOccurs="1" maxOccurs="1" type="xs:boolean"/>
+			<xs:element name="allowWildCard" minOccurs="1" maxOccurs="1" type="xs:boolean"/>
+		</xs:sequence>
+	</xs:complexType>
+
 	<xs:complexType name="FieldConstraint">
 		<xs:sequence>
 			<xs:element name="key" minOccurs="1" maxOccurs="1">
@@ -105,6 +113,13 @@
 				<xs:complexType>
 					<xs:sequence>
 						<xs:element name="availableValue" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="domainNameRestrictions" minOccurs="0" maxOccurs="1" >
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="domainNameRestriction" minOccurs="0" maxOccurs="unbounded" type="tns:DomainNameRestriction"/>
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
