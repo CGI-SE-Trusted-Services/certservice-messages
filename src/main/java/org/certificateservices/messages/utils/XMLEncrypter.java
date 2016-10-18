@@ -279,12 +279,9 @@ public class XMLEncrypter {
 	public Document encryptProperties(Properties properties, List<X509Certificate> receipients, boolean useKeyId) throws MessageProcessingException {
 		Document encDocument = null, document = null;
 		try {
-			DocumentBuilder documentBuilder;
 			ByteArrayOutputStream os = new ByteArrayOutputStream();		
 			properties.storeToXML(os, null, "UTF-8");			
 			InputStream is = new ByteArrayInputStream(os.toByteArray());
-			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-			documentBuilder = dbf.newDocumentBuilder();
 			document = documentBuilder.parse(is);
 			encDocument = encryptElement(document, receipients, useKeyId);
 		} catch(Exception e){
