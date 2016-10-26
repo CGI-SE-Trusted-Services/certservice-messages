@@ -51,7 +51,9 @@ public abstract class BasePayloadParser implements PayloadParser {
 	 * Method to parse a message into a CSMessage and verify that it fulfills the registred schemas.
 	 * <p>
 	 * This method will parse all registered payloads and not only sys config payload messages.
-	 * 
+	 * <p>
+	 *     This method always validates and authorizes the signing certificate.
+	 * </p>
 	 * @param messageData the data to parse into a CSMessage
 	 * @return a parsed CS Message object.
 	 * 
@@ -61,6 +63,24 @@ public abstract class BasePayloadParser implements PayloadParser {
     public CSMessage parseMessage(byte[] messageData) throws MessageContentException, MessageProcessingException{
     	return getCSMessageParser().parseMessage(messageData);
     }
+
+	/**
+	 * Method to parse a message into a CSMessage and verify that it fulfills the registred schemas.
+	 * <p>
+	 * This method will parse all registered payloads and not only sys config payload messages.
+	 *
+	 * @param messageData the data to parse into a CSMessage
+	 * @param performValidation true if the message security provider should perform
+	 * validate that the signing certificate is valid and authorized for related organisation.
+	 * Otherwise must validation be performed manually after the message is parsed
+	 * @return a parsed CS Message object.
+	 *
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public CSMessage parseMessage(byte[] messageData, boolean performValidation) throws MessageContentException, MessageProcessingException{
+		return getCSMessageParser().parseMessage(messageData, performValidation);
+	}
     
     /**
      * Help method to get the request status from a CS response message.

@@ -211,11 +211,18 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		}
 	}
 
-
 	/**
 	 * @see org.certificateservices.messages.csmessages.CSMessageParser#parseMessage(byte[])
 	 */
 	public synchronized CSMessage parseMessage(byte[] messageData)
+			throws MessageContentException, MessageProcessingException {
+		return parseMessage(messageData,true);
+	}
+
+	/**
+	 * @see org.certificateservices.messages.csmessages.CSMessageParser#parseMessage(byte[], boolean)
+	 */
+	public synchronized CSMessage parseMessage(byte[] messageData, boolean performValidation)
 			throws MessageContentException, MessageProcessingException {
 		try{
 			Document doc = getDocumentBuilder().parse(new ByteArrayInputStream(messageData));
@@ -225,7 +232,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			verifyCSMessageVersion(version.getMessageVersion());
 		
 			Object object = jaxbData.getCSMessageUnmarshaller(version.getMessageVersion()).unmarshal(doc);
-			validateCSMessage(version, object, doc);
+			validateCSMessage(version, object, doc, performValidation);
 			return (CSMessage) object;
 		}catch(JAXBException e){
 			throw new MessageContentException("Error parsing CS Message: " + e.getMessage(),e);
@@ -240,21 +247,28 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	}
 	
 	/**
-	 * @see org.certificateservices.messages.csmessages.CSMessageParser#parseMessage(Document)
+	 * @see org.certificateservices.messages.csmessages.CSMessageParser#parseMessage(Document, boolean)
 	 */
-	public synchronized CSMessage parseMessage(Document doc) throws MessageContentException,
+	public synchronized CSMessage parseMessage(Document doc, boolean performValidation) throws MessageContentException,
 			MessageProcessingException {
 		try{
-			
 			CSMessageVersion version = getVersionFromMessage(doc);
 			verifyCSMessageVersion(version.getMessageVersion());
 		
 			Object object = jaxbData.getCSMessageUnmarshaller(version.getMessageVersion()).unmarshal(doc);
-			validateCSMessage(version, object, doc);
+			validateCSMessage(version, object, doc, performValidation);
 			return (CSMessage) object;
 		}catch(JAXBException e){
 			throw new MessageContentException("Error parsing CS Message: " + e.getMessage(),e);
 		} 
+	}
+
+	/**
+	 * @see org.certificateservices.messages.csmessages.CSMessageParser#parseMessage(Document)
+	 */
+	public synchronized CSMessage parseMessage(Document doc) throws MessageContentException,
+			MessageProcessingException {
+		return parseMessage(doc,true);
 	}
 
 	
@@ -645,16 +659,19 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * @param version the versions of the CS Message
 	 * @param object the message to validate.
 	 * @param doc the document of the message data.
+	 * @param performValidation true if the message security provider should perform
+	 * validate that the signing certificate is valid and authorized for related organisation.
+	 * Otherwise must validation be performed manually after the message is parsed.
 	 * @throws MessageContentException if the message contained bad format.
 	 * @throws MessageProcessingException if internal problems occurred validating the message.
 	 */
-	private void validateCSMessage(CSMessageVersion version, Object object, Document doc) throws MessageContentException, MessageProcessingException {
-		
+	private void validateCSMessage(CSMessageVersion version, Object object, Document doc, boolean performValidation) throws MessageContentException, MessageProcessingException {
 		if(!(object instanceof CSMessage)){
 			throw new MessageContentException("Error: parsed object not a CS Message.");
 		}
+
 		CSMessage csMessage = (CSMessage) object;
-		validateCSMessageHeader(csMessage, doc);
+		validateCSMessageHeader(csMessage, doc, performValidation);
 		if(csMessage.getAssertions() != null){
 		  validateAssertions(csMessage.getAssertions().getAny());
 		}
@@ -666,10 +683,13 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * 
 	 * @param csMessage the cs message to validate, never null
 	 * @param doc related message as Document
+	 * @param performValidation true if the message security provider should perform
+	 * validate that the signing certificate is valid and authorized for related organisation.
+	 * Otherwise must validation be performed manually after the message is parsed.
 	 * @throws MessageContentException if the header contained illegal arguments.
 	 */
-	private void validateCSMessageHeader(CSMessage csMessage, Document doc) throws MessageContentException, MessageProcessingException{
-		validateSignature(doc);
+	private void validateCSMessageHeader(CSMessage csMessage, Document doc, boolean performValidation) throws MessageContentException, MessageProcessingException{
+		validateSignature(doc, performValidation);
 	}
 
 	
@@ -731,10 +751,15 @@ public class DefaultCSMessageParser implements CSMessageParser {
 
 	/**
 	 * Help method to verify a message signature.
+	 *
+	 * @param doc the document to validate signature of.
+	 * @param performValidation true if the message security provider should perform
+	 * validate that the signing certificate is valid and authorized for related organisation.
+	 * Otherwise must validation be performed manually after the message is parsed.
 	 */
-	private void validateSignature(Document doc) throws MessageContentException, MessageProcessingException {
+	private void validateSignature(Document doc, boolean performValidation) throws MessageContentException, MessageProcessingException {
 		if(requireSignature()){
-			xmlSigner.verifyEnvelopedSignature(doc, true);
+			xmlSigner.verifyEnvelopedSignature(doc, performValidation);
 		}				
 	}
 	

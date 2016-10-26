@@ -43,7 +43,9 @@ public interface CSMessageParser {
 	
 	/**
 	 * Method to parse a message into a CSMessage and verify that it fulfills the registred schemas.
-	 * 
+	 * <p>
+	 *     This method always validates and authorizes the signing certificate.
+	 * </p>
 	 * @param messageData the data to parse into a CSMessage
 	 * @return a parsed CS Message object.
 	 * 
@@ -52,18 +54,52 @@ public interface CSMessageParser {
 	 */
 	public CSMessage parseMessage(byte[] messageData)
 			throws MessageContentException, MessageProcessingException;
-	
+
 	/**
 	 * Method to parse a message into a CSMessage and verify that it fulfills the registred schemas.
-	 * 
-	 * @param The Document data to parse into a CSMessage
+	 *
+	 * @param messageData the data to parse into a CSMessage
+	 * @param performValidation true if the message security provider should perform
+	 * validate that the signing certificate is valid and authorized for related organisation.
+	 * Otherwise must validation be performed manually after the message is parsed.
 	 * @return a parsed CS Message object.
-	 * 
+	 *
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public CSMessage parseMessage(byte[] messageData, boolean performValidation)
+			throws MessageContentException, MessageProcessingException;
+
+	/**
+	 * Method to parse a message into a CSMessage and verify that it fulfills the registred schemas.
+	 * <p>
+	 *     This method always validates and authorizes the signing certificate.
+	 * </p>
+	 * @param  doc The Document data to parse into a CSMessage
+	 * @return a parsed CS Message object.
+	 *
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
 	public CSMessage parseMessage(Document doc)
 			throws MessageContentException, MessageProcessingException;
+
+	/**
+	 * Method to parse a message into a CSMessage and verify that it fulfills the registred schemas.
+	 * 
+	 * @param doc The Document data to parse into a CSMessage
+	 * @param performValidation true if the message security provider should perform
+	 * validate that the signing certificate is valid and authorized for related organisation.
+	 * Otherwise must validation be performed manually after the message is parsed.
+	 * @return a parsed CS Message object.
+	 * 
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public CSMessage parseMessage(Document doc, boolean performValidation)
+			throws MessageContentException, MessageProcessingException;
+
+
 	
 	/**
 	 * Method used to generate a CS Request message without any originator, i.e the signer of this message is the originator.
@@ -89,7 +125,7 @@ public interface CSMessageParser {
 	 * @param organisation the related organisation (short name)
 	 * @param payLoadVersion version of the pay load structure.
 	 * @param payload the payload object 
-	 * @param orginator the credential of the original requester.
+	 * @param originator the credential of the original requester.
 	 * @param assertions a list of authorization assertions or null if no assertions should be inserted.
 	 * @return a generated and signed (if configured) message. 
 	 * @throws MessageContentException if input data contained invalid format.
@@ -150,7 +186,7 @@ public interface CSMessageParser {
 	 * @param requestId  id of request to send.
 	 * @param destinationId the destination Id to use.
 	 * @param organisation the related organisation (short name)
-	 * @param request the request message to get approval for.
+	 * @param requestMessage the request message to get approval for.
 	 * @param originator the credential of the original requester, null if this is the origin of the request.
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
 	 * @return  a generated and signed (if configured) message.
@@ -178,10 +214,9 @@ public interface CSMessageParser {
 	
 	/**
 	 * Method generate a Is Approved Response, 
-	 * 
-	 * @param requestId  id of request to send.
-	 * @param destinationId the destination Id to use.
-	 * @param organisation the related organisation (short name)
+	 *
+	 * @param relatedEndEntity the user name of related user in system.
+	 * @param request the request data.
 	 * @param approvalStatus the status of the related approval Id.
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
 	 * @return  a generated and signed (if configured) message.
@@ -193,10 +228,9 @@ public interface CSMessageParser {
 	
 	/**
 	 * Method generate a Get Approved Response, 
-	 * 
-	 * @param requestId  id of request to send.
-	 * @param destinationId the destination Id to use.
-	 * @param organisation the related organisation (short name)
+	 *
+	 * @param relatedEndEntity the user name of related user in system.
+	 * @param request the request data.
 	 * @param approvalId the approval id that was generated for the request
 	 * @param approvalStatus the approval status
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.

@@ -149,6 +149,10 @@ public class TestCSMessageParser implements CSMessageParser {
 		return null;
 	}
 
+	public CSMessage parseMessage(byte[] messageData, boolean performValidation)
+			throws MessageContentException, MessageProcessingException {
+		return null;
+	}
 	
 	public CSMessage genCSMessage(String version, String payLoadVersion,
 			String requestName, String messageId, String destinationID,
@@ -176,6 +180,12 @@ public class TestCSMessageParser implements CSMessageParser {
 
 	
 	public CSMessage parseMessage(Document doc) throws MessageContentException,
+			MessageProcessingException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public CSMessage parseMessage(Document doc, boolean performValidation) throws MessageContentException,
 			MessageProcessingException {
 		// TODO Auto-generated method stub
 		return null;
