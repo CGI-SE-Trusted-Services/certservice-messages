@@ -15,6 +15,7 @@ package org.certificateservices.messages.csmessages;
 import groovy.util.slurpersupport.GPathResult;
 import groovy.xml.XmlUtil
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.MessageSecurityProvider
 
 import java.security.Security;
 import java.security.cert.CertificateFactory;
@@ -91,7 +92,9 @@ public class DefaultCSMessageParserSpec extends Specification{
 	def setup(){
 		Properties requestConfig = new Properties();
 		requestConfig.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMEREQUESTER");
-		requestMessageParser.init(secprov, requestConfig)
+		requestMessageParser =  CSMessageParserManager.initCSMessageParser(secprov,requestConfig)
+
+
 		
 		Properties config = new Properties();
 		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID");
@@ -234,7 +237,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		xml.payload.FailureResponse.failureMessage.size() == 0
 	}
 	
-	def "Verify that getSigningCertificate parser signer certificate"(){
+	def "Verify that getSigningCertificate parses signer certificate"(){
 		expect:
 		mp.requireSignature()
 		mp.getSigningCertificate(simpleCSMessage) instanceof X509Certificate
@@ -332,27 +335,61 @@ public class DefaultCSMessageParserSpec extends Specification{
 		
 		
 	}
+
+
+	def "Verify that parseMessage performsValidation if flag is set to true"(){
+		setup:
+		def orgSecProv = mp.xmlSigner.messageSecurityProvider
+		def csMessage = mp.genCSMessage("2.0", "2.0", null, TEST_ID, "somedest", "someorg", null, createPayLoad(), createAssertions())
+		byte[] msg = mp.marshallAndSignCSMessage(csMessage)
+		mp.xmlSigner.messageSecurityProvider = Mock(MessageSecurityProvider)
+		when:
+		mp.parseMessage(msg, true)
+		then:
+		1 * mp.xmlSigner.messageSecurityProvider.isValidAndAuthorized(_,_) >> true
+
+		cleanup:
+		true
+		mp.xmlSigner.messageSecurityProvider  = orgSecProv
+	}
+
+	def "Verify that parseMessage doesn't performsValidation if flag is set to false"(){
+		setup:
+		def orgSecProv = mp.xmlSigner.messageSecurityProvider
+		def csMessage = mp.genCSMessage("2.0", "2.0", null, TEST_ID, "somedest", "someorg", null, createPayLoad(), createAssertions())
+		byte[] msg = mp.marshallAndSignCSMessage(csMessage)
+		mp.xmlSigner.messageSecurityProvider = Mock(MessageSecurityProvider)
+		when:
+		mp.parseMessage(msg, false)
+		then:
+		0 * mp.xmlSigner.messageSecurityProvider.isValidAndAuthorized(_,_)
+
+		cleanup:
+		true
+		mp.xmlSigner.messageSecurityProvider  = orgSecProv
+	}
+
 	
 	
 	def "Verify validateCSMessage() method"(){
 		when: "Verify that valid message passes validation"
-		mp.validateCSMessage(mp.getVersionFromMessage(simpleCSMessage), mp.parseMessage(simpleCSMessage), getDoc(simpleCSMessage))
+		mp.validateCSMessage(mp.getVersionFromMessage(simpleCSMessage), mp.parseMessage(simpleCSMessage), getDoc(simpleCSMessage),true)
 		then:
 		true
 		
 		when: "Verify that non CSMessage object throws MessageContentException"
-		mp.validateCSMessage(null, new Object(), null)
+		mp.validateCSMessage(null, new Object(), null, true)
 		then:
 		thrown MessageContentException
 		
 		when: "Verify invalid signature throws MessageContentException"
-		mp.validateCSMessage(mp.getVersionFromMessage(cSMessageWithInvalidSignature), mp.parseMessage(cSMessageWithInvalidSignature), getDoc(cSMessageWithInvalidSignature))
+		mp.validateCSMessage(mp.getVersionFromMessage(cSMessageWithInvalidSignature), mp.parseMessage(cSMessageWithInvalidSignature), getDoc(cSMessageWithInvalidSignature), true)
 		then:
 		final MessageContentException e1 = thrown()
 		e1.message =~ "signed message"
 		
 		when: "Verify invalid payload throws MessageContentException"
-		mp.validateCSMessage(mp.getVersionFromMessage(simpleCSMessageWithInvalidPayload), mp.parseMessage(simpleCSMessageWithInvalidPayload), getDoc(simpleCSMessageWithInvalidPayload))
+		mp.validateCSMessage(mp.getVersionFromMessage(simpleCSMessageWithInvalidPayload), mp.parseMessage(simpleCSMessageWithInvalidPayload), getDoc(simpleCSMessageWithInvalidPayload), true)
 		then:
 		final MessageContentException e2 = thrown()
 		e2.message =~ "parsing payload"
@@ -375,21 +412,21 @@ public class DefaultCSMessageParserSpec extends Specification{
 		mp.requireSignature() == true
 		
 		when:
-		mp.validateSignature(getDoc(simpleCSMessage))
+		mp.validateSignature(getDoc(simpleCSMessage), true)
 		// Verify that no exception is thrown
-		mp.validateSignature(getDoc(cSMessageWithInvalidSignature))
+		mp.validateSignature(getDoc(cSMessageWithInvalidSignature), true)
 		then:
 		thrown MessageContentException
 		
 		when:
-		mp.validateSignature(getDoc(simpleCSMessageWithoutSignature))
+		mp.validateSignature(getDoc(simpleCSMessageWithoutSignature), true)
 		then:
 		thrown MessageContentException
 		
 		when:
 		mp.requireSignature = false
-		mp.validateSignature(getDoc(cSMessageWithInvalidSignature))
-		mp.validateSignature(getDoc(simpleCSMessageWithoutSignature))
+		mp.validateSignature(getDoc(cSMessageWithInvalidSignature), true)
+		mp.validateSignature(getDoc(simpleCSMessageWithoutSignature), true)
 		
 		then:
 		true // No exception was thrown for invalid signature
@@ -667,7 +704,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		}
 		
 		assert xmlMessage.Signature != null
-		mp.validateSignature(mp.getDocumentBuilder().parse(new ByteArrayInputStream(message.getBytes())))
+		mp.validateSignature(mp.getDocumentBuilder().parse(new ByteArrayInputStream(message.getBytes())), true)
 	}
 	
 	public static void verifySuccessfulBasePayload(GPathResult payLoadObject, String expectedResponseTo){

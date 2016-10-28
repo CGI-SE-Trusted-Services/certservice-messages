@@ -176,13 +176,14 @@ public class XMLSigner {
 	 * <li>That the signatures algorithms is one of supported signature schemes.
 	 * <li>That the signature method is enveloped.
 	 * 
-	 * @param message the message to verify signature of.
-	 * @param authorizeAgainstOrganisation true if the message security provider should perform
-	 * any authorization to the related organisation, that must exist in the message of true.
+	 * @param doc the message to verify signature of.
+	 * @param performValidation true if the message security provider should perform
+	 * validate that the signing certificate is valid and authorized for related organisation.
+	 * Otherwise must validation be performed manually after the message is parsed.
 	 * @throws MessageContentException if message content was faulty
 	 * @throws MessageProcessingException if internal error occured verifying the signature.
 	 */
-	public void verifyEnvelopedSignature(Document doc, boolean authorizeAgainstOrganisation) throws MessageContentException, MessageProcessingException{
+	public void verifyEnvelopedSignature(Document doc, boolean performValidation) throws MessageContentException, MessageProcessingException{
 		
 		try{
 			NodeList signedObjects = doc.getElementsByTagNameNS(signedElementNS, signedElementLocalName);
@@ -224,7 +225,7 @@ public class XMLSigner {
 				throw new MessageContentException("Error, signed message didn't pass validation.");
 			}
 
-			if(authorizeAgainstOrganisation){
+			if(performValidation){
 				if(!messageSecurityProvider.isValidAndAuthorized(signerCert, findOrganisation(doc))){
 					throw new MessageContentException("A certificate with DN " + signerCert.getSubjectDN().toString() + " signing a message wasn't authorized or valid.");
 				}
@@ -293,7 +294,7 @@ public class XMLSigner {
 	 * Help method to marshall and sign an Assertion, either standalone or inside a SAMLP Response
 	 * 
 	 * Method that generates the signature and marshalls the message to byte array in UTF-8 format.
-	 * @param message a Assertion or Response (SAMLP) structure.
+	 * @param doc a Assertion or Response (SAMLP) structure.
 	 * @return a marshalled and signed message.
 	 * @throws MessageProcessingException if problems occurred when processing the message.
 	 * @throws MessageContentException if unsupported version is detected in message.
