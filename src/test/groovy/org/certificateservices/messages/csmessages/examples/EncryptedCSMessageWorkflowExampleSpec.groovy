@@ -3,44 +3,19 @@ package org.certificateservices.messages.csmessages.examples
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 
 import java.security.Security
-import java.security.cert.X509Certificate;
-
-import javax.xml.bind.JAXBElement;
+import java.security.cert.X509Certificate
 
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.SimpleMessageSecurityProvider;
-import org.certificateservices.messages.TestUtils;
-import org.certificateservices.messages.assertion.AssertionData;
-import org.certificateservices.messages.assertion.AssertionPayloadParser;
-import org.certificateservices.messages.assertion.jaxb.AssertionType;
-import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
-import org.certificateservices.messages.credmanagement.jaxb.ChangeCredentialStatusResponse;
-import org.certificateservices.messages.csmessages.CSMessageParser;
-import org.certificateservices.messages.csmessages.CSMessageParserManager;
-import org.certificateservices.messages.csmessages.CSMessageResponseData;
-import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
-import org.certificateservices.messages.csmessages.PayloadParser;
-import org.certificateservices.messages.csmessages.PayloadParserRegistry;
-import org.certificateservices.messages.csmessages.constants.AvailableCredentialTypes;
-import org.certificateservices.messages.csmessages.jaxb.ApprovalStatus;
-import org.certificateservices.messages.csmessages.jaxb.Approver;
-import org.certificateservices.messages.csmessages.jaxb.ApproverType;
-import org.certificateservices.messages.csmessages.jaxb.CSMessage;
-import org.certificateservices.messages.csmessages.jaxb.CSRequest;
-import org.certificateservices.messages.csmessages.jaxb.CSResponse;
-import org.certificateservices.messages.csmessages.jaxb.Credential;
-import org.certificateservices.messages.csmessages.jaxb.IsApprovedResponseType;
-import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
-import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
-import org.certificateservices.messages.csmessages.jaxb.TokenRequest;
-import org.certificateservices.messages.encryptedcsmessage.EncryptedCSMessagePayloadParser;
-import org.certificateservices.messages.utils.DefaultSystemTime;
+import org.certificateservices.messages.TestUtils
+import org.certificateservices.messages.credmanagement.CredManagementPayloadParser
+import org.certificateservices.messages.csmessages.CSMessageParserManager
+import org.certificateservices.messages.csmessages.PayloadParserRegistry
+import org.certificateservices.messages.csmessages.jaxb.CSMessage
+import org.certificateservices.messages.encryptedcsmessage.EncryptedCSMessagePayloadParser
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 
-import spock.lang.Shared;
-import spock.lang.Specification
-import static org.certificateservices.messages.csmessages.TestMessages.*
-import static org.certificateservices.messages.TestUtils.*
+import spock.lang.Shared
 
 /**
  * Examples on how to use the API when encrypting and decryting encrypted CS Messages.

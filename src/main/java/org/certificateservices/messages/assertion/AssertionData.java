@@ -19,8 +19,8 @@ import javax.xml.bind.JAXBElement;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.assertion.jaxb.AssertionType;
-import org.certificateservices.messages.assertion.jaxb.NameIDType;
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType;
+import org.certificateservices.messages.saml2.assertion.jaxb.NameIDType;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 
 
@@ -57,12 +57,9 @@ public abstract class AssertionData {
 	/**
 	 * Parses the base values.
 	 * 
-	 * @param id unique id of assertion.
-	 * @param notBefore date this assertions becomes valid.
-	 * @param notOnOrAfter the date this assertion expires.
-	 * @param subjectId the unique subject id of the related user.
-	 * @param signCertificate the certificate that signed the assertion
-	 * @throws MessageProcessingException 
+	 * @param assertion the assertion to parse.
+	 * @throws MessageContentException if content of the message was invalid.
+	 * @throws MessageProcessingException in internal problems occurred parsing the data.
 	 */
 	protected void parseCommonData(JAXBElement<AssertionType>  assertion) throws MessageContentException, MessageProcessingException{
 		AssertionType assertionType = assertion.getValue();

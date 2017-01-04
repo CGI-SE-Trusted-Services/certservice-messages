@@ -4,24 +4,20 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.csmessages.CSMessageParserManager
 
 import java.security.Security
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
 import javax.xml.bind.JAXBElement;
 
-import org.apache.xml.security.Init;
-import org.apache.xml.security.utils.Base64;
+import org.apache.xml.security.Init
 import org.certificateservices.messages.MessageSecurityProvider;
-import org.certificateservices.messages.assertion.jaxb.AssertionType;
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType;
 import org.certificateservices.messages.csmessages.PayloadParserRegistry;
 import org.certificateservices.messages.utils.SystemTime;
 
 import spock.lang.Shared;
 import spock.lang.Specification
-import spock.lang.Unroll;
-import static org.certificateservices.messages.assertion.AssertionTypeEnum.*
+
 import static org.certificateservices.messages.TestUtils.*
-import static org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.*
 
 class AuthorizationAssertionDataSpec extends Specification {
 	

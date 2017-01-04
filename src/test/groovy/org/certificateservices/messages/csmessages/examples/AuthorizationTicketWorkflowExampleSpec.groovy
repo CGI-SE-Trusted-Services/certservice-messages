@@ -14,42 +14,26 @@ import org.certificateservices.messages.assertion.AssertionPayloadParser;
 import org.certificateservices.messages.assertion.AttributeQueryData;
 import org.certificateservices.messages.assertion.AttributeQueryTypeEnum;
 import org.certificateservices.messages.assertion.AuthorizationAssertionData;
-import org.certificateservices.messages.assertion.ResponseStatusCodes;
-import org.certificateservices.messages.assertion.UserDataAssertionData;
-import org.certificateservices.messages.assertion.jaxb.AssertionType;
+import org.certificateservices.messages.assertion.ResponseStatusCodes
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType;
 import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
 import org.certificateservices.messages.credmanagement.jaxb.ChangeCredentialStatusRequest;
-import org.certificateservices.messages.credmanagement.jaxb.ChangeCredentialStatusResponse;
-import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
-import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsRequest;
-import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsResponse;
+import org.certificateservices.messages.credmanagement.jaxb.ChangeCredentialStatusResponse
 import org.certificateservices.messages.csmessages.CSMessageParser;
 import org.certificateservices.messages.csmessages.CSMessageParserManager;
-import org.certificateservices.messages.csmessages.CSMessageResponseData;
-import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
+import org.certificateservices.messages.csmessages.CSMessageResponseData
 import org.certificateservices.messages.csmessages.PayloadParserRegistry;
-import org.certificateservices.messages.csmessages.constants.AvailableCredentialTypes;
-import org.certificateservices.messages.csmessages.jaxb.ApprovalStatus;
-import org.certificateservices.messages.csmessages.jaxb.CSMessage;
-import org.certificateservices.messages.csmessages.jaxb.CSRequest;
-import org.certificateservices.messages.csmessages.jaxb.CSResponse;
+import org.certificateservices.messages.csmessages.constants.AvailableCredentialTypes
+import org.certificateservices.messages.csmessages.jaxb.CSMessage
 import org.certificateservices.messages.csmessages.jaxb.Credential;
-import org.certificateservices.messages.csmessages.jaxb.CredentialRequest;
-import org.certificateservices.messages.csmessages.jaxb.IsApprovedResponseType;
-import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
-import org.certificateservices.messages.csmessages.jaxb.Payload;
+import org.certificateservices.messages.csmessages.jaxb.CredentialRequest
+import org.certificateservices.messages.csmessages.jaxb.ObjectFactory
 import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
 import org.certificateservices.messages.csmessages.jaxb.TokenRequest;
-import org.certificateservices.messages.samlp.jaxb.ResponseType;
-import org.certificateservices.messages.samlp.jaxb.StatusCodeType;
-import org.certificateservices.messages.samlp.jaxb.StatusType;
-import org.certificateservices.messages.utils.DefaultSystemTime;
+import org.certificateservices.messages.saml2.protocol.jaxb.ResponseType
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 
-import spock.lang.Shared;
-import spock.lang.Specification
-import static org.certificateservices.messages.csmessages.TestMessages.*
-import static org.certificateservices.messages.TestUtils.*
+import spock.lang.Shared
 
 /**
  * Examples on how to use the API when using a distributed authorization scheme.

@@ -7,9 +7,9 @@ import javax.xml.bind.JAXBElement;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.assertion.jaxb.AttributeType;
-import org.certificateservices.messages.assertion.jaxb.NameIDType;
-import org.certificateservices.messages.samlp.jaxb.AttributeQueryType;
+import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType;
+import org.certificateservices.messages.saml2.assertion.jaxb.NameIDType;
+import org.certificateservices.messages.saml2.protocol.jaxb.AttributeQueryType;
 
 /**
  * Data of a parsed attribute query.

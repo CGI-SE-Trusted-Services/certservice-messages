@@ -26,6 +26,7 @@ import org.certificateservices.messages.utils.MessageGenerateUtils;
 import org.certificateservices.messages.utils.SystemTime;
 import org.certificateservices.messages.utils.XMLSigner;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
@@ -88,7 +89,7 @@ public class CSExportDataParser {
 	public CSExportDataParser(MessageSecurityProvider securityProvider,boolean requireSignature) throws MessageProcessingException{
 		this.requireSignature = requireSignature;
 		try {
-			xmlSigner = new XMLSigner(securityProvider,getDocumentBuilder(), true, "CSExport", NAMESPACE, "ID", null,null);
+			xmlSigner = new XMLSigner(securityProvider,getDocumentBuilder(), true, new CSExportDataSignatureLocationFinder(), null);
 		} catch (Exception e) {
 			throw new MessageProcessingException("Error initializing HardTokenDataParser: " + e.getMessage(),e);
 		}
@@ -202,7 +203,7 @@ public class CSExportDataParser {
 			throw new MessageProcessingException("Error marshalling message " + e.getMessage(), e);
 		}
 
-		return xmlSigner.marshallAndSignAssertion(doc, csExport.getID(), csExportDataSignatureLocationFinder, null, null);
+		return xmlSigner.marshallAndSign(doc, csExport.getID(), csExportDataSignatureLocationFinder, null);
 	}
 	
 
@@ -294,9 +295,20 @@ public class CSExportDataParser {
 
 	public class CSExportDataSignatureLocationFinder implements XMLSigner.SignatureLocationFinder {
 
-		public org.w3c.dom.Element getSignatureLocation(Document doc)
-				throws MessageProcessingException {
-			return doc.getDocumentElement();
+		@Override
+		public Element getSignatureLocation(Document doc) throws MessageProcessingException {
+			try{
+				if(doc.getDocumentElement().getLocalName().equals("CSExport") && doc.getDocumentElement().getNamespaceURI().equals(NAMESPACE)){
+					return doc.getDocumentElement();
+				}
+			}catch(Exception e){
+			}
+			throw new MessageProcessingException("Invalid SAMLP message type sent for signature.");
+		}
+
+		@Override
+		public String getIDAttribute() {
+			return "ID";
 		}
 
 	}

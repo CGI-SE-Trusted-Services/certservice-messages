@@ -63,11 +63,7 @@ import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
 import org.certificateservices.messages.csmessages.jaxb.Originator;
 import org.certificateservices.messages.csmessages.jaxb.Payload;
 import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
-import org.certificateservices.messages.utils.DefaultSystemTime;
-import org.certificateservices.messages.utils.MessageGenerateUtils;
-import org.certificateservices.messages.utils.SettingsUtils;
-import org.certificateservices.messages.utils.SystemTime;
-import org.certificateservices.messages.utils.XMLSigner;
+import org.certificateservices.messages.utils.*;
 import org.certificateservices.messages.utils.XMLSigner.SignatureLocationFinder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -204,8 +200,8 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		try {
 			xmlSigner = new XMLSigner(securityProvider,
 					getDocumentBuilder(),signMessages(),
-					 "CSMessage",CSMESSAGE_NAMESPACE, "ID",
-					 "organisation",CSMESSAGE_NAMESPACE);
+					 cSMessageSignatureLocationFinder,
+					 new CSMessageOrganisationLookup());
 		} catch (ParserConfigurationException e) {
 			throw new MessageProcessingException("Error initizalizing XML Signer " + e.getMessage(),e);
 		}
@@ -551,7 +547,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 
 			jaxbData.getCSMessageMarshaller(version).marshal(csMessage, doc);
 
-			return xmlSigner.marshallAndSignAssertion(doc, csMessage.getID(), cSMessageSignatureLocationFinder, null, null);
+			return xmlSigner.marshallAndSign(doc, csMessage.getID(), cSMessageSignatureLocationFinder, null);
 		} catch (JAXBException e) {
 			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
 		} catch (ParserConfigurationException e) {
@@ -1005,18 +1001,22 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	}
 
 
-	public class CSMessageSignatureLocationFinder implements SignatureLocationFinder{
-
-		public Element getSignatureLocation(Document doc)
-				throws MessageProcessingException {
-			return doc.getDocumentElement();
+	public class CSMessageSignatureLocationFinder implements XMLSigner.SignatureLocationFinder {
+		@Override
+		public Element getSignatureLocation(Document doc) throws MessageProcessingException {
+			try{
+				if(doc.getDocumentElement().getLocalName().equals("CSMessage") && doc.getDocumentElement().getNamespaceURI().equals(DefaultCSMessageParser.CSMESSAGE_NAMESPACE)){
+					return doc.getDocumentElement();
+				}
+			}catch(Exception e){
+			}
+			throw new MessageProcessingException("Invalid SAMLP message type sent for signature.");
 		}
-		
+
+		@Override
+		public String getIDAttribute() {
+			return "ID";
+		}
 	}
-
-
-
-
-
 
 }

@@ -32,10 +32,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.certificateservices.messages.utils.DefaultSystemTime;
-import org.certificateservices.messages.utils.SettingsUtils;
-import org.certificateservices.messages.utils.SystemTime;
-import org.certificateservices.messages.utils.XMLEncrypter;
+import org.certificateservices.messages.utils.*;
 
 /**
  * Simple PKI Message provider that is configured with two soft key stores.
@@ -117,7 +114,7 @@ public class SimpleMessageSecurityProvider implements
 	
 	private SigningAlgorithmScheme signingAlgorithmScheme;
 	private EncryptionAlgorithmScheme encryptionAlgorithmScheme;
-	SystemTime systemTime = new DefaultSystemTime();
+
 
 	
 	/**
@@ -224,18 +221,7 @@ public class SimpleMessageSecurityProvider implements
 			String organisation) throws IllegalArgumentException,
 			MessageProcessingException {
 		
-		boolean[] keyUsage = signCertificate.getKeyUsage();
-		if (keyUsage[0] == false) {
-			return false;
-		}
-		
-		Date currentTime = systemTime.getSystemTime();
-		if(currentTime.after(signCertificate.getNotAfter())){
-			log.error("Error processing Certificate Services message signing certificate expired: " + signCertificate.getNotAfter());
-			return false;
-		}
-		if(currentTime.before(signCertificate.getNotBefore())){
-			log.error("Error processing Certificate Services message signing certificate not yet valid: " + signCertificate.getNotBefore());
+		if(!XMLSigner.checkBasicCertificateValidation(signCertificate)){
 			return false;
 		}
 		
