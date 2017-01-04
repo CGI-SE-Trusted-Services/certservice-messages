@@ -39,7 +39,7 @@ class EncryptedCSMessagePayloadParserSpec extends Specification {
 	X509Certificate recipient
 
 	def TimeZone currentTimeZone;
-	
+
 	def setupSpec(){
 		Security.addProvider(new BouncyCastleProvider())
 		Init.init();

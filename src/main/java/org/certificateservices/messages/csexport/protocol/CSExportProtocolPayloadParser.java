@@ -15,18 +15,18 @@ package org.certificateservices.messages.csexport.protocol;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.authorization.jaxb.GetRequesterRolesResponse;
 import org.certificateservices.messages.csexport.data.jaxb.CSExport;
-import org.certificateservices.messages.csexport.protocol.jaxb.*;
+import org.certificateservices.messages.csexport.protocol.jaxb.GetCSExportRequest;
+import org.certificateservices.messages.csexport.protocol.jaxb.GetCSExportResponse;
+import org.certificateservices.messages.csexport.protocol.jaxb.ObjectFactory;
+import org.certificateservices.messages.csexport.protocol.jaxb.QueryParameter;
 import org.certificateservices.messages.csmessages.BasePayloadParser;
 import org.certificateservices.messages.csmessages.CSMessageResponseData;
 import org.certificateservices.messages.csmessages.PayloadParser;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.csmessages.jaxb.Credential;
-import sun.plugin2.message.Message;
 
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.List;
 
 /**
