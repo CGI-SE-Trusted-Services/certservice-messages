@@ -100,7 +100,7 @@ class CSExportProtocolPayloadParserSpec extends Specification {
 
 		when:
 		byte[] requestMessage = pp.genGetCSExportRequest(TEST_ID, "SOMESOURCEID", "someorg","1.0",[q1,q2],createOriginatorCredential( ), null)
-		printXML(requestMessage)
+		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.GetCSExportRequest
 		then:
