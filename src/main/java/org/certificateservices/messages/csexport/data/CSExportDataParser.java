@@ -10,15 +10,15 @@
 *  See terms of license at gnu.org.                                     *
 *                                                                       *
 *************************************************************************/
-package org.certificateservices.messages.csexport;
+package org.certificateservices.messages.csexport.data;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
-import org.certificateservices.messages.csexport.jaxb.CSExport;
-import org.certificateservices.messages.csexport.jaxb.ObjectFactory;
-import org.certificateservices.messages.csexport.jaxb.Organisation;
-import org.certificateservices.messages.csexport.jaxb.TokenType;
+import org.certificateservices.messages.csexport.data.jaxb.CSExport;
+import org.certificateservices.messages.csexport.data.jaxb.ObjectFactory;
+import org.certificateservices.messages.csexport.data.jaxb.Organisation;
+import org.certificateservices.messages.csexport.data.jaxb.TokenType;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.csmessages.XSDLSInput;
 import org.certificateservices.messages.utils.DefaultSystemTime;
@@ -39,13 +39,11 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -148,11 +146,27 @@ public class CSExportDataParser {
 			xmlSigner.verifyEnvelopedSignature(doc, false);
 		}
 	}
-	
 
-	
+
 	/**
-	 * Method to create a basic Hard Token Data without any key recovery functionality.
+	 * Method to create a signed CSExport data structure returned as CSExport JAXB object.
+	 * <p>
+	 * This method isn't very efficient, and should be used for high performance processing.
+	 * <p>
+	 * All parameters must be set.
+	 *
+	 * @param organisations the list of organisations to include in export
+	 * @param tokenTypes the list of token types to include in export
+	 * @return a newly generated cs export data.
+	 * @throws MessageProcessingException if internal errors occurred processing the message.
+	 * @throws MessageContentException if parameter contained data that didn't fullfill schema.
+	 */
+	public CSExport genCSExport_1_0AsObject(List<Organisation> organisations, List<TokenType> tokenTypes) throws MessageProcessingException, MessageContentException {
+		return parse(genCSExport_1_0(organisations,tokenTypes));
+	}
+
+	/**
+	 * Method to create a signed CSExport data structure returned as byte[].
 	 * <p>
 	 * All parameters must be set. 
 	 *
@@ -181,6 +195,25 @@ public class CSExportDataParser {
 
 		return marshallAndSign(csexp);
 	}
+
+	/**
+	 * Method to marshall an CSExport method to an byte array. This method doesn't do any signing only
+	 * converts from JAXB to byte[]
+	 *
+	 * @param csExport the CSExport object to convert, never null
+	 * @return byte array representation of the object.
+	 * @throws MessageContentException
+     */
+	public byte[] marshallCSExportData(CSExport csExport) throws MessageContentException{
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			getMarshaller().marshal(csExport, baos);
+			return baos.toByteArray();
+		}catch(JAXBException e){
+			throw new MessageContentException("Error marshalling CSExport Data to byte array: " + e.getMessage(),e);
+		}
+	}
+
 
 	/**
 	 * Help method to marshall and sign an CSExport
@@ -242,7 +275,7 @@ public class CSExportDataParser {
      */
     private JAXBContext getJAXBContext() throws JAXBException{
     	if(jaxbContext== null){
-    		String jaxbClassPath = "org.certificateservices.messages.csexport.jaxb:org.certificateservices.messages.xmldsig.jaxb";
+    		String jaxbClassPath = "org.certificateservices.messages.csexport.data.jaxb:org.certificateservices.messages.xmldsig.jaxb";
     			    		
     		jaxbContext = JAXBContext.newInstance(jaxbClassPath);
     		

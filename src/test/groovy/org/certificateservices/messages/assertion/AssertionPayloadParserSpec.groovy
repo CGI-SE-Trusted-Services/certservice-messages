@@ -100,14 +100,18 @@ class AssertionPayloadParserSpec extends Specification {
 	
 	def fv1
 	def fv2
-	
 
+
+	def TimeZone currentTimeZone;
 	def setupSpec(){
 		Security.addProvider(new BouncyCastleProvider())
 		Init.init()
 	}
 
 	def setup(){
+		currentTimeZone = TimeZone.getDefault()
+		TimeZone.setDefault(TimeZone.getTimeZone("Europe/Stockholm"))
+
 		setupRegisteredPayloadParser();
 		
 		pp = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE);
@@ -129,6 +133,10 @@ class AssertionPayloadParserSpec extends Specification {
 		fv2.value = "someValue2"
 		
 		credManagementPayloadParser = PayloadParserRegistry.getParser(CredManagementPayloadParser.NAMESPACE)
+	}
+
+	def cleanup(){
+		TimeZone.setDefault(currentTimeZone)
 	}
 	
 	def "Verify that JAXBPackage(), getNameSpace(), getSchemaAsInputStream(), getSupportedVersions(), getDefaultPayloadVersion() returns the correct values"(){

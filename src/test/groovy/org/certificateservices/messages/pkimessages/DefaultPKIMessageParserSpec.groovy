@@ -68,7 +68,17 @@ class DefaultPKIMessageParserSpec extends Specification {
 		config.setProperty(DefaultPKIMessageParser.SETTING_SOURCEID, "SOMESOURCEID");
 		mp.init(secprov, config)		
 	}
-	
+
+
+	def TimeZone currentTimeZone;
+	def setup() {
+		currentTimeZone = TimeZone.getDefault()
+		TimeZone.setDefault(TimeZone.getTimeZone("Europe/Stockholm"))
+	}
+
+	def cleanup(){
+		TimeZone.setDefault(currentTimeZone)
+	}
 
 	@Test 
 	def "Verify that the init method creates all marshallers and unmarshallers"(){

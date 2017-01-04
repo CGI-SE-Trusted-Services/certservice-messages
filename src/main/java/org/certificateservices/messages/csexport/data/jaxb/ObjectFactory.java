@@ -6,13 +6,9 @@
 //
 
 
-package org.certificateservices.messages.csexport.jaxb;
+package org.certificateservices.messages.csexport.data.jaxb;
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.annotation.XmlElementDecl;
 import javax.xml.bind.annotation.XmlRegistry;
-import javax.xml.namespace.QName;
-import org.certificateservices.messages.xmldsig.jaxb.SignatureType;
 
 
 /**

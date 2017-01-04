@@ -37,7 +37,8 @@ class EncryptedCSMessagePayloadParserSpec extends Specification {
 	ObjectFactory of = new ObjectFactory()
 	org.certificateservices.messages.csmessages.jaxb.ObjectFactory csMessageOf = new org.certificateservices.messages.csmessages.jaxb.ObjectFactory()
 	X509Certificate recipient
-	
+
+	def TimeZone currentTimeZone;
 	
 	def setupSpec(){
 		Security.addProvider(new BouncyCastleProvider())
@@ -45,6 +46,8 @@ class EncryptedCSMessagePayloadParserSpec extends Specification {
 	}
 	
 	def setup(){
+		currentTimeZone = TimeZone.getDefault()
+		TimeZone.setDefault(TimeZone.getTimeZone("Europe/Stockholm"))
 		setupRegisteredPayloadParser();
 		
 		pp = PayloadParserRegistry.getParser(EncryptedCSMessagePayloadParser.NAMESPACE);
@@ -53,6 +56,10 @@ class EncryptedCSMessagePayloadParserSpec extends Specification {
 		
 		pp.systemTime = Mock(SystemTime)
 		pp.systemTime.getSystemTime() >> new Date(1436279213000L)
+	}
+
+	def cleanup(){
+		TimeZone.setDefault(currentTimeZone)
 	}
 
 	
