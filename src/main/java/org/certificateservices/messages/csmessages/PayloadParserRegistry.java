@@ -20,6 +20,7 @@ import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.assertion.AssertionPayloadParser;
 import org.certificateservices.messages.authorization.AuthorizationPayloadParser;
 import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
+import org.certificateservices.messages.csexport.protocol.CSExportProtocolPayloadParser;
 import org.certificateservices.messages.encryptedcsmessage.EncryptedCSMessagePayloadParser;
 import org.certificateservices.messages.keystoremgmt.KeystoreMgmtPayloadParser;
 import org.certificateservices.messages.sysconfig.SysConfigPayloadParser;
@@ -61,6 +62,7 @@ public class PayloadParserRegistry {
 		  payloadParserRegistry.put(AssertionPayloadParser.NAMESPACE, AssertionPayloadParser.class);
 		  payloadParserRegistry.put(EncryptedCSMessagePayloadParser.NAMESPACE, EncryptedCSMessagePayloadParser.class);
 		  payloadParserRegistry.put(AuthorizationPayloadParser.NAMESPACE, AuthorizationPayloadParser.class);
+		  payloadParserRegistry.put(CSExportProtocolPayloadParser.NAMESPACE, CSExportProtocolPayloadParser.class);
 		}
 	}
 	
@@ -69,7 +71,7 @@ public class PayloadParserRegistry {
 	 * 
 	 * @param namespace the name space to fetch PayloadParser for.
 	 * @return related PayloadParser, never null.
-	 * @throws MessageException if parser for given name space couldn't be found or internal problems occurred generating the parser.
+	 * @throws MessageProcessingException if parser for given name space couldn't be found or internal problems occurred generating the parser.
 	 */
 	public static PayloadParser getParser(String namespace) throws MessageProcessingException{
 		PayloadParser retval = payloadParserCache.get(namespace);
@@ -143,15 +145,15 @@ public class PayloadParserRegistry {
 		 * Method to determine if a parser needs to be reinitized with a new configuration.
 		 * 
 		 * 
-		 * @throws MessageException if internal exception occurred checking configuration update.
+		 * @throws MessageProcessingException if internal exception occurred checking configuration update.
 		 */
 		public boolean needReinitialization(String namespace) throws MessageProcessingException;
-		
+
 		/**
 		 * Method called by the registry when a payload parser is initialized and needs current
 		 * active configuration.
-		 * 
-		 * @throws MessageException if internal exception occurred providing configuration data.
+		 *
+		 * @throws MessageProcessingException if internal exception occurred providing configuration data.
 		 */
 		public void configurePayloadParser(String namespace, PayloadParser payloadParser) throws MessageProcessingException;
 		

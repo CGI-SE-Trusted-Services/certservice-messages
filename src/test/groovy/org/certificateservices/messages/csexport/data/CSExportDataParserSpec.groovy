@@ -1,25 +1,25 @@
-package org.certificateservices.messages.csexport
+package org.certificateservices.messages.csexport.data
 
 import org.apache.xml.security.Init
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.DummyMessageSecurityProvider
 import org.certificateservices.messages.MessageContentException
-import org.certificateservices.messages.csexport.jaxb.CSExport
-import org.certificateservices.messages.csexport.jaxb.ObjectFactory
-import org.certificateservices.messages.csexport.jaxb.Organisation
-import org.certificateservices.messages.csexport.jaxb.TokenType
+import org.certificateservices.messages.csexport.data.CSExportDataParser
+import org.certificateservices.messages.csexport.data.jaxb.CSExport
+import org.certificateservices.messages.csexport.data.jaxb.ObjectFactory
+import org.certificateservices.messages.csexport.data.jaxb.Organisation
+import org.certificateservices.messages.csexport.data.jaxb.TokenType
 import org.certificateservices.messages.utils.MessageGenerateUtils
 import spock.lang.Specification
 
 import java.security.Security
 
-import static org.certificateservices.messages.TestUtils.printXML
-import static org.certificateservices.messages.TestUtils.slurpXml
+import static org.certificateservices.messages.TestUtils.*
 
 class CSExportDataParserSpec extends Specification {
 	
 	CSExportDataParser p;
-	ObjectFactory of = new ObjectFactory()
+	static ObjectFactory of = new ObjectFactory()
 
 	
 	def setupSpec(){
@@ -94,6 +94,39 @@ class CSExportDataParserSpec extends Specification {
 		nullListExp.getTokenTypes() == null
 	}
 
+	def "Verify that genCSExport_1_0AsObject generates a valid JAXB element with signature and i marshallable to byte[]"(){
+		setup:
+		def org = genOrganisation()
+		def tt = genTokenType()
+		when:
+		CSExport csExport = p.genCSExport_1_0AsObject([org],[tt])
+		then:
+		csExport.organisations.organisation.size() == 1
+		csExport.tokenTypes.tokenType.size() == 1
+		csExport.signature.keyInfo.content.size() == 1
+
+		when:
+		byte[] data = p.marshallCSExportData(csExport)
+		String message = new String(data,"UTF-8")
+		//printXML(message)
+		def xml = slurpXml(message)
+		then:
+		message =~ 'xmlns:ds="http://www.w3.org/2000/09/xmldsig#"'
+		message =~ 'xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0"'
+
+		xml.@version == CSExportDataParser.VERSION_1_0
+		def o = xml.organisations.organisation[0]
+		o.shortName == "testorg1"
+		o.displayName == "Test Org"
+		o.matchAdminWith == "SomeMatch"
+		o.issuerDistinguishedName == "CN=IssuerDistingueshedName"
+
+		def t = xml.tokenTypes.tokenType[0]
+		t.name == "tokentype1"
+		t.displayName == "Token Type 1"
+
+	}
+
 	def "Verify that parser verifies signatures if required"(){
 		setup:
 		byte[] data = p.genCSExport_1_0([genOrganisation()],[genTokenType()])
@@ -116,7 +149,7 @@ class CSExportDataParserSpec extends Specification {
 
 
 
-	private Organisation genOrganisation(){
+	public static Organisation genOrganisation(){
 		Organisation o = of.createOrganisation()
 		o.setShortName("testorg1")
 		o.setDisplayName("Test Org")
@@ -126,7 +159,7 @@ class CSExportDataParserSpec extends Specification {
 		return o
 	}
 
-	private TokenType genTokenType(){
+	public static TokenType genTokenType(){
 		TokenType tt = of.createTokenType()
 
 		tt.setName("tokentype1")

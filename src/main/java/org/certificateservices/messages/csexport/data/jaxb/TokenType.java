@@ -6,7 +6,7 @@
 //
 
 
-package org.certificateservices.messages.csexport.jaxb;
+package org.certificateservices.messages.csexport.data.jaxb;
 
 import java.util.ArrayList;
 import java.util.List;

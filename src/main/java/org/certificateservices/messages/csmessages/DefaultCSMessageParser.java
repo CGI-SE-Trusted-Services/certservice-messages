@@ -849,7 +849,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	     */
 	    JAXBContext getJAXBContext() throws JAXBException, MessageProcessingException{
 	    	if(jaxbContext== null){
-	    		jaxbClassPath = "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.xmldsig.jaxb:org.certificateservices.messages.xenc.jaxb";
+	    		jaxbClassPath = "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.xmldsig.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.csexport.data.jaxb";
 	    			    		
 	    		for(String namespace : PayloadParserRegistry.getRegistredNamespaces()){
 	    			String jaxbPackage = PayloadParserRegistry.getParser(namespace).getJAXBPackage();

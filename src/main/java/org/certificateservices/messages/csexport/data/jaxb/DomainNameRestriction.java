@@ -6,7 +6,7 @@
 //
 
 
-package org.certificateservices.messages.csexport.jaxb;
+package org.certificateservices.messages.csexport.data.jaxb;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
