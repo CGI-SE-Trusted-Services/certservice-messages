@@ -379,22 +379,15 @@ public abstract class BaseSAMLMessageParser {
 	 * Method that verifies the notBefore and notOnOrAfter conditions, all other conditions set in an assertion
 	 * is ignored.
 	 * @param assertionType the assertion to verify
+	 * @param conditionLookup implementation to check a specific set of conditions.
 	 * @throws MessageContentException if conditions wasn't met.
 	 */
-	public void verifyAssertionConditions(AssertionType assertionType) throws MessageContentException {
+	public void verifyAssertionConditions(AssertionType assertionType, ConditionLookup conditionLookup) throws MessageContentException {
 		try{
-			Date notBefore = MessageGenerateUtils.xMLGregorianCalendarToDate(assertionType.getConditions().getNotBefore());
-			Date notOnOrAfter = MessageGenerateUtils.xMLGregorianCalendarToDate(assertionType.getConditions().getNotOnOrAfter());
-			Date currentTime = systemTime.getSystemTime();
-			
-			if(notBefore.after(currentTime)){
-				throw new MessageContentException("Error Assertion not yet valid, not valid until: " + notBefore);
+			ConditionsType conditionsType = assertionType.getConditions();
+			if(conditionsType != null){
+				verifyConditions(conditionsType, "Assertion", assertionType.getID(),conditionLookup);
 			}
-			if(notOnOrAfter.before(currentTime) || notOnOrAfter.equals(currentTime)){
-				throw new MessageContentException("Error Assertion has expired on: " + notOnOrAfter);
-			}
-
-			// TODO
 
 		}catch(Exception e){
 			if(e instanceof MessageContentException){
@@ -403,6 +396,52 @@ public abstract class BaseSAMLMessageParser {
 			throw new MessageContentException("Error verifying conditions on assertion ticket: " + e.getMessage(),e);
 		}
 		
+	}
+
+	public void verifyConditions(ConditionsType conditions, String type, String messageId, ConditionLookup conditionLookup) throws MessageContentException {
+		try{
+			Date notBefore = MessageGenerateUtils.xMLGregorianCalendarToDate(conditions.getNotBefore());
+			Date notOnOrAfter = MessageGenerateUtils.xMLGregorianCalendarToDate(conditions.getNotOnOrAfter());
+			Date currentTime = systemTime.getSystemTime();
+
+			if(notBefore.after(currentTime)){
+				throw new MessageContentException("Error " + type + " not yet valid, not valid until: " + notBefore);
+			}
+			if(notOnOrAfter.before(currentTime) || notOnOrAfter.equals(currentTime)){
+				throw new MessageContentException("Error " + type + " has expired on: " + notOnOrAfter);
+			}
+
+			for(ConditionAbstractType cat : conditions.getConditionOrAudienceRestrictionOrOneTimeUse()){
+				if(cat instanceof OneTimeUseType){
+					if(conditionLookup.usedBefore(messageId)){
+						throw new MessageContentException("Error " + type + " has been used before and contains OneTime condition");
+					};
+
+				}
+				if(cat instanceof AudienceRestrictionType){
+					AudienceRestrictionType art = (AudienceRestrictionType) cat;
+					String thisAudienceId = conditionLookup.getThisAudienceId();
+					boolean foundMatch = false;
+					for(String audience : art.getAudience()){
+						if(audience.equals(thisAudienceId)){
+							foundMatch = true;
+							break;
+						}
+					}
+					if(!foundMatch){
+						throw new MessageContentException("Error " + type + " not did not fullfill audience restriction condition");
+					}
+				}
+
+			}
+
+
+		}catch(Exception e){
+			if(e instanceof MessageContentException){
+				throw (MessageContentException) e;
+			}
+			throw new MessageContentException("Error verifying conditions on assertion ticket: " + e.getMessage(),e);
+		}
 	}
 
 
@@ -513,45 +552,17 @@ public abstract class BaseSAMLMessageParser {
 			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "AuthnStatement"));
 			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "AuthzDecisionStatement"));
 			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "AttributeStatement"));
-			xmlSigner.sign(doc, getAssertionMessageID(message), assertionSignatureLocationFinder, beforeSiblings);
+			xmlSigner.sign(doc,  assertionSignatureLocationFinder, beforeSiblings);
 		}
 		if(signSAMLP){
 			List<QName> beforeSiblings = new ArrayList<QName>();
 			beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "Extensions"));
 			beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "Status"));
-			xmlSigner.sign(doc, getSAMLPMessageID(message), samlpSignatureLocationFinder, beforeSiblings);
+			xmlSigner.sign(doc, samlpSignatureLocationFinder, beforeSiblings);
 		}
 		return xmlSigner.marshallDoc(doc);
 	}
 
-
-
-	public static String getAssertionMessageID(JAXBElement<?> message)
-			throws MessageProcessingException {
-		try{
-			Object value = message.getValue();
-			if(value instanceof AssertionType){
-				return ((AssertionType) value).getID();
-			}
-			if(value instanceof ResponseType){
-				return ((AssertionType) ((ResponseType) value).getAssertionOrEncryptedAssertion().get(0)).getID();
-			}
-		}catch(Exception e){
-		}
-		throw new MessageProcessingException("Invalid assertion message type sent for signature.");
-	}
-
-	protected static String getSAMLPMessageID(JAXBElement<?> message)
-			throws MessageProcessingException {
-		try{
-			Object value = message.getValue();
-			if(value instanceof ResponseType){
-				return ((ResponseType) value).getID();
-			}
-		}catch(Exception e){
-		}
-		throw new MessageProcessingException("Invalid assertion message type sent for signature.");
-	}
 
 	
 	private DocumentBuilder documentBuilder = null;
@@ -617,23 +628,36 @@ public abstract class BaseSAMLMessageParser {
     public static class AssertionSignatureLocationFinder implements SignatureLocationFinder{
 
 
-		public Element getSignatureLocation(Document doc)
-				throws MessageProcessingException {
+		public Element[] getSignatureLocations(Document doc)
+				throws MessageContentException {
 			try{
 				if(doc.getDocumentElement().getLocalName().equals("Assertion")){
-					return doc.getDocumentElement();
+					return new Element[] {doc.getDocumentElement()};
 				}
 				if(doc.getDocumentElement().getLocalName().equals("Response")){
-					return (Element) doc.getElementsByTagNameNS(ASSERTION_NAMESPACE, "Assertion").item(0);
+					NodeList nl  = doc.getElementsByTagNameNS(ASSERTION_NAMESPACE, "Assertion");
+					if(nl.getLength() == 0){
+						throw new MessageContentException("No assertion was found in response.");
+					}
+					Element[] result = new Element[nl.getLength()];
+					for(int i = 0; i < result.length; i++){
+						result[i] = (Element) nl.item(i);
+					}
+					return result;
 				}
 			}catch(Exception e){
 			}
-			throw new MessageProcessingException("Invalid assertion message type sent for signature.");
+			throw new MessageContentException("Invalid assertion message type sent for signature.");
 		}
 
 		@Override
 		public String getIDAttribute() {
 			return "ID";
+		}
+
+		@Override
+		public String getIDValue(Element signedElement) throws MessageContentException {
+			return signedElement.getAttribute(getIDAttribute());
 		}
 
 	}
@@ -641,20 +665,25 @@ public abstract class BaseSAMLMessageParser {
 	public static class SAMLPSignatureLocationFinder implements SignatureLocationFinder{
 
 
-		public Element getSignatureLocation(Document doc)
-				throws MessageProcessingException {
+		public Element[] getSignatureLocations(Document doc)
+				throws MessageContentException {
 			try{
 				if(doc.getDocumentElement().getNamespaceURI().equals(PROTOCOL_NAMESPACE)){
-					return doc.getDocumentElement();
+					return new Element[] {doc.getDocumentElement()};
 				}
 			}catch(Exception e){
 			}
-			throw new MessageProcessingException("Invalid SAMLP message type sent for signature.");
+			throw new MessageContentException("Invalid SAMLP message type sent for signature.");
 		}
 
 		@Override
 		public String getIDAttribute() {
 			return "ID";
+		}
+
+		@Override
+		public String getIDValue(Element signedElement) throws MessageContentException {
+			return signedElement.getAttribute(getIDAttribute());
 		}
 
 	}
@@ -688,6 +717,49 @@ public abstract class BaseSAMLMessageParser {
 				throw new IllegalStateException("Error couldn't read XSD from class path: " + e.getMessage(), e);
 			}
 			return null;
+		}
+	}
+
+	/**
+	 * Class used to verify certain conditions such as OneTime
+	 */
+	public interface ConditionLookup {
+
+		/**
+		 * Method to check if a given assertionId have been used before, used for verifying the OneTime condition.
+		 * @param messageId the assertion ID to lookup
+         * @return true if this ID has been used before.
+		 * @throws MessageContentException if this system doesn't support the OneTime condition.
+		 * @throws MessageProcessingException if internal problems occurred.
+         */
+		boolean usedBefore(String messageId) throws MessageContentException, MessageProcessingException;
+
+		/**
+		 * Method to get this systems audience id, that should be matched against available
+		 * audience conditions.
+		 * @throws MessageContentException if this system doesn't support the audience restriction condition.
+		 * @return this systems audience id, that should be matched against available
+		 * audience conditions.
+		 * @throws MessageProcessingException
+         */
+		String getThisAudienceId() throws MessageContentException, MessageProcessingException;
+
+	}
+
+	/**
+	 * Simple Condition lookup that doesn't support the OneTime or AudienceRestriction Conditions
+	 * but throws MessageContentException if they exists.
+	 */
+	public static class SimpleConditionLookup implements BaseSAMLMessageParser.ConditionLookup {
+
+		@Override
+		public boolean usedBefore(String messageId) throws MessageContentException, MessageProcessingException {
+			throw new MessageContentException("OneTime Condition is not supported.");
+		}
+
+		@Override
+		public String getThisAudienceId() throws MessageContentException, MessageProcessingException {
+			throw new MessageContentException("AudienceRestriction Condition is not supported.");
 		}
 	}
 

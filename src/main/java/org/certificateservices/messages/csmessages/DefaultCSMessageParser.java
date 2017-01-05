@@ -547,7 +547,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 
 			jaxbData.getCSMessageMarshaller(version).marshal(csMessage, doc);
 
-			return xmlSigner.marshallAndSign(doc, csMessage.getID(), cSMessageSignatureLocationFinder, null);
+			return xmlSigner.marshallAndSign(doc, cSMessageSignatureLocationFinder, null);
 		} catch (JAXBException e) {
 			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
 		} catch (ParserConfigurationException e) {
@@ -845,7 +845,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	     */
 	    JAXBContext getJAXBContext() throws JAXBException, MessageProcessingException{
 	    	if(jaxbContext== null){
-	    		jaxbClassPath = "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.xmldsig.jaxb:org.certificateservices.messages.xenc.jaxb";
+	    		jaxbClassPath = "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.xmldsig.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.csexport.data.jaxb";
 	    			    		
 	    		for(String namespace : PayloadParserRegistry.getRegistredNamespaces()){
 	    			String jaxbPackage = PayloadParserRegistry.getParser(namespace).getJAXBPackage();
@@ -1003,19 +1003,24 @@ public class DefaultCSMessageParser implements CSMessageParser {
 
 	public class CSMessageSignatureLocationFinder implements XMLSigner.SignatureLocationFinder {
 		@Override
-		public Element getSignatureLocation(Document doc) throws MessageProcessingException {
+		public Element[] getSignatureLocations(Document doc) throws MessageContentException {
 			try{
 				if(doc.getDocumentElement().getLocalName().equals("CSMessage") && doc.getDocumentElement().getNamespaceURI().equals(DefaultCSMessageParser.CSMESSAGE_NAMESPACE)){
-					return doc.getDocumentElement();
+					return new Element[]{doc.getDocumentElement()};
 				}
 			}catch(Exception e){
 			}
-			throw new MessageProcessingException("Invalid SAMLP message type sent for signature.");
+			throw new MessageContentException("Invalid CS message type sent for signature.");
 		}
 
 		@Override
 		public String getIDAttribute() {
 			return "ID";
+		}
+
+		@Override
+		public String getIDValue(Element signedElement) throws MessageContentException {
+			return signedElement.getAttribute(getIDAttribute());
 		}
 	}
 

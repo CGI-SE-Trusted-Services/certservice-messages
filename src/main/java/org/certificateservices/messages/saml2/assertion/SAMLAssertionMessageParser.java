@@ -116,5 +116,22 @@ public class SAMLAssertionMessageParser extends BaseSAMLMessageParser{
         xmlSigner.verifyEnvelopedSignature((Document) res.getNode(),getSignatureLocationFinder(),getOrganisationLookup());
     }
 
+    /**
+     * Method to verify a signature of an assertion in a parsed SAML message.
+     * @param assertion the assertion to verify.
+     * @throws MessageContentException
+     * @throws MessageProcessingException
+     */
+    public  void verifyAssertionSignature(AssertionType assertion) throws MessageContentException, MessageProcessingException {
+        DOMResult res = new DOMResult();
+        try {
+            getMarshaller().marshal(of.createAssertion(assertion), res);
+        } catch (JAXBException e) {
+            throw new MessageContentException("Error marshalling assertion: " + e.getMessage(),e);
+        }
+
+        xmlSigner.verifyEnvelopedSignature((Document) res.getNode(),getSignatureLocationFinder(),getOrganisationLookup());
+    }
+
 
 }

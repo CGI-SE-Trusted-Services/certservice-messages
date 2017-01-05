@@ -692,7 +692,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 
 
 	
-	
+	private BaseSAMLMessageParser.SimpleConditionLookup  simpleConditionLookup = new BaseSAMLMessageParser.SimpleConditionLookup();
 	/**
 	 * Method that verifies the notBefore and notOnOrAfter conditions, all other conditions set in an assertion
 	 * is ignored.
@@ -700,7 +700,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if conditions wasn't met.
 	 */
 	private void verifyAssertionConditions(AssertionType assertionType) throws MessageContentException {
-		samlAssertionMessageParser.verifyAssertionConditions(assertionType);
+		samlAssertionMessageParser.verifyAssertionConditions(assertionType, simpleConditionLookup);
 		
 	}
 	
@@ -812,15 +812,10 @@ public class AssertionPayloadParser extends BasePayloadParser {
 		beforeSiblings.add(new QName(NAMESPACE, "AuthzDecisionStatement"));
 		beforeSiblings.add(new QName(NAMESPACE, "AttributeStatement"));
 
-		return xmlSigner.marshallAndSign(doc, getAssertionMessageID(message), assertionSignatureLocationFinder, beforeSiblings);
+		return xmlSigner.marshallAndSign(doc,  assertionSignatureLocationFinder, beforeSiblings);
 	}
 
 	
-
-	private String getAssertionMessageID(JAXBElement<?> message)
-			throws MessageProcessingException {
-		return samlAssertionMessageParser.getAssertionMessageID(message);
-	}
 
 	
 	private DocumentBuilder documentBuilder = null;
@@ -933,6 +928,6 @@ public class AssertionPayloadParser extends BasePayloadParser {
         
         return schema;
     }
-    
+
 
 }

@@ -33,6 +33,7 @@ class ApprovalAssertionDataSpec extends Specification {
 		assertionPayloadParser = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE);
 		assertionPayloadParser.systemTime = Mock(SystemTime)
 		assertionPayloadParser.systemTime.getSystemTime() >> new Date(1436279213000)
+		assertionPayloadParser.samlAssertionMessageParser.systemTime = assertionPayloadParser.systemTime
 		
 		cert = CSMessageParserManager.getCSMessageParser().messageSecurityProvider.getDecryptionCertificate(MessageSecurityProvider.DEFAULT_DECRYPTIONKEY)
 	}

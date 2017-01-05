@@ -10,4 +10,4 @@
                 @javax.xml.bind.annotation.XmlNs(namespaceURI = "http://certificateservices.org/xsd/csexport_data_1_0", prefix = "csexd"),
                 @javax.xml.bind.annotation.XmlNs(namespaceURI = "http://www.w3.org/2000/09/xmldsig#", prefix = "ds")},
         elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED)
-package org.certificateservices.messages.csexport.jaxb;
+package org.certificateservices.messages.csexport.data.jaxb;

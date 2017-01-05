@@ -88,8 +88,9 @@ public class DefaultCSMessageParserSpec extends Specification{
 		assertionPayloadParser = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE)
 		assertionPayloadParser.systemTime = Mock(SystemTime)
 		assertionPayloadParser.systemTime.getSystemTime() >> new Date(1436279213000)
-		
-		
+		assertionPayloadParser.samlAssertionMessageParser.systemTime = assertionPayloadParser.systemTime
+
+
 		credManagementPayloadParser = PayloadParserRegistry.getParser(CredManagementPayloadParser.NAMESPACE)
 		
 		
@@ -347,7 +348,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		when:
 		mp.parseMessage(msg, false)
 		then:
-		0 * mp.xmlSigner.messageSecurityProvider.isValidAndAuthorized(_,_)
+		1 * mp.xmlSigner.messageSecurityProvider.isValidAndAuthorized(_,null) >> {true}
 
 		cleanup:
 		true

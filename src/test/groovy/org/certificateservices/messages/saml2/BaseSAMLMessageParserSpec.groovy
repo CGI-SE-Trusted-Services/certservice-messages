@@ -1,73 +1,25 @@
 package org.certificateservices.messages.saml2
 
-import org.apache.xml.security.Init
-import org.apache.xml.security.utils.Base64
-import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.certificateservices.messages.DummyMessageSecurityProvider
 import org.certificateservices.messages.MessageContentException
-import org.certificateservices.messages.MessageProcessingException
-import org.certificateservices.messages.MessageSecurityProvider
 import org.certificateservices.messages.assertion.AssertionPayloadParser
 import org.certificateservices.messages.assertion.ResponseStatusCodes
 import org.certificateservices.messages.authorization.AuthorizationPayloadParser
-import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsRequest
-import org.certificateservices.messages.csmessages.jaxb.CSMessage
-import org.certificateservices.messages.hardtoken.HardTokenDataParser
-import org.certificateservices.messages.saml2.BaseSAMLMessageParser
-import org.certificateservices.messages.saml2.assertion.SAMLAssertionMessageParser
-import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType
-import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType
-import org.certificateservices.messages.saml2.assertion.jaxb.ConditionsType
-import org.certificateservices.messages.saml2.assertion.jaxb.EncryptedElementType
-import org.certificateservices.messages.saml2.assertion.jaxb.NameIDType
-import org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory
-import org.certificateservices.messages.saml2.assertion.jaxb.SubjectType
 import org.certificateservices.messages.credmanagement.CredManagementPayloadParser
-import org.certificateservices.messages.credmanagement.jaxb.FieldValue
-import org.certificateservices.messages.csmessages.CSMessageParserManager
+import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsRequest
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser
-import org.certificateservices.messages.csmessages.PayloadParserRegistry
-import org.certificateservices.messages.csmessages.constants.AvailableCredentialTypes
-import org.certificateservices.messages.csmessages.jaxb.Approver
-import org.certificateservices.messages.csmessages.jaxb.ApproverType
-import org.certificateservices.messages.csmessages.jaxb.Credential
+import org.certificateservices.messages.csmessages.jaxb.CSMessage
+import org.certificateservices.messages.saml2.assertion.SAMLAssertionMessageParser
+import org.certificateservices.messages.saml2.assertion.jaxb.*
 import org.certificateservices.messages.saml2.protocol.SAMLProtocolMessageParser
-import org.certificateservices.messages.saml2.protocol.jaxb.AuthnContextComparisonType
-import org.certificateservices.messages.saml2.protocol.jaxb.AuthnRequestType
 import org.certificateservices.messages.saml2.protocol.jaxb.ExtensionsType
-import org.certificateservices.messages.saml2.protocol.jaxb.NameIDPolicyType
-import org.certificateservices.messages.saml2.protocol.jaxb.RequestedAuthnContextType
 import org.certificateservices.messages.saml2.protocol.jaxb.ResponseType
-import org.certificateservices.messages.saml2.protocol.jaxb.ScopingType
 import org.certificateservices.messages.utils.MessageGenerateUtils
 import org.certificateservices.messages.utils.SystemTime
-import org.certificateservices.messages.utils.XMLEncrypter
 import org.certificateservices.messages.xenc.jaxb.EncryptedDataType
-import org.w3c.dom.Document
-import org.w3c.dom.Element
-import org.w3c.dom.NodeList
-import org.xml.sax.InputSource
-import spock.lang.Specification
-import sun.plugin2.message.Message
 
 import javax.xml.bind.JAXBElement
-import javax.xml.crypto.dsig.XMLSignature
-import javax.xml.crypto.dsig.XMLSignatureFactory
-import javax.xml.crypto.dsig.dom.DOMValidateContext
-import javax.xml.parsers.DocumentBuilder
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.transform.OutputKeys
-import javax.xml.transform.Transformer
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.stream.StreamResult
-import java.security.Security
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
-import java.text.SimpleDateFormat
 
 import static org.certificateservices.messages.TestUtils.printXML
-import static org.certificateservices.messages.TestUtils.setupRegisteredPayloadParser
 import static org.certificateservices.messages.TestUtils.slurpXml
 
 class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
@@ -75,7 +27,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 	BaseSAMLMessageParser bsmp;
 	SAMLProtocolMessageParser spmp;
 
-
+	BaseSAMLMessageParser.SimpleConditionLookup scl = new BaseSAMLMessageParser.SimpleConditionLookup();
 
 
 	def setup(){
@@ -86,34 +38,6 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		bsmp = spmp;
 
 	}
-
-
-	
-//	def "Verify that JAXBPackage(), getNameSpace(), getSchemaAsInputStream(), getSupportedVersions(), getDefaultPayloadVersion() returns the correct values"(){
-//		expect:
-//		pp.getJAXBPackage() == "org.certificateservices.messages.assertion.jaxb"
-//		pp.getNameSpace() == "urn:oasis:names:tc:SAML:2.0:assertion"
-//		pp.getSchemaAsInputStream("2.0") != null
-//		pp.getDefaultPayloadVersion() == "2.0"
-//		pp.getSupportedVersions() == ["2.0"] as String[]
-//	}
-	
-
-//	def "Verify that schemaValidateAssertion() validates agains schema"(){
-//		setup:
-//		JAXBElement<AssertionType> assertion = app.parseApprovalTicket(app.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"], null, genApprovers(),twoReceiptiensValidFirst))
-//		when:
-//		pp.schemaValidateAssertion(assertion)
-//		then:
-//		true
-//		when:
-//		assertion.getValue().issueInstant = null
-//		pp.schemaValidateAssertion(assertion)
-//		then:
-//		thrown MessageContentException
-//
-//	}
-
 
 
 
@@ -189,33 +113,105 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 	   
 	   createMockedTime(1436279211000)
 	   when: "Verify that MessageContent is thrown if not yet valid"
-	   bsmp.verifyAssertionConditions(ticket)
+	   bsmp.verifyAssertionConditions(ticket, scl)
 	   then:	
 	   thrown MessageContentException
 	   
 	   when: "Same millisecond as not before is valid"
 	   createMockedTime(1436279212000)
-	   bsmp.verifyAssertionConditions(ticket)
+	   bsmp.verifyAssertionConditions(ticket, scl)
 	   then:
 	   true
 	   
 	   when: "inbetween no before and not on of after is valid"
 	   createMockedTime(1436279213000)
-	   bsmp.verifyAssertionConditions(ticket)
+	   bsmp.verifyAssertionConditions(ticket, scl)
 	   then:
 	   true
 	   
 	   when: "Same millisecond as notOnOrAfter is not valid"
 	   createMockedTime(1436279412000)
-	   bsmp.verifyAssertionConditions(ticket)
+	   bsmp.verifyAssertionConditions(ticket, scl)
 	   then:
 	   thrown MessageContentException
 	   
 	   when: "After notOnOrAfter is also not valid"
 	   createMockedTime(1436279413000)
-	   bsmp.verifyAssertionConditions(ticket)
+	   bsmp.verifyAssertionConditions(ticket, scl)
 	   then:
 	   thrown MessageContentException
+	}
+
+	def "Verify that conditions that contains OneTime or AudienceRestriction throws MessageContentException for SimpleConditionsLookup"(){
+		when: "Very basic conditions is ok"
+		ConditionsType conditionsType = genValidConditionsType();
+		bsmp.verifyConditions(conditionsType, "SomeType", "SomeId", scl)
+		then:
+		true
+		when:
+		conditionsType = genValidConditionsType();
+		conditionsType.conditionOrAudienceRestrictionOrOneTimeUse.add(of.createOneTimeUseType());
+		bsmp.verifyConditions(conditionsType, "SomeType", "SomeId", scl)
+		then:
+		thrown MessageContentException
+		when:
+		AudienceRestrictionType art = of.createAudienceRestrictionType();
+		art.audience.add("SomeAudience")
+		conditionsType = genValidConditionsType();
+		conditionsType.conditionOrAudienceRestrictionOrOneTimeUse.add(art);
+		bsmp.verifyConditions(conditionsType, "SomeType", "SomeId",scl)
+		then:
+		thrown MessageContentException
+	}
+
+	def "Verify that verifyConditions verifies OneTime properly"(){
+		setup:
+		def conditionLookup = Mock(BaseSAMLMessageParser.ConditionLookup)
+		2 * conditionLookup.usedBefore(_) >> { args ->
+			return args[0] == "1"}
+		when:
+		ConditionsType conditionsType = genValidConditionsType();
+		conditionsType.conditionOrAudienceRestrictionOrOneTimeUse.add(of.createOneTimeUseType())
+		bsmp.verifyConditions(conditionsType, "SomeTyp2","1", conditionLookup)
+		then:
+		thrown MessageContentException
+		when:
+		bsmp.verifyConditions(conditionsType, "SomeTyp2","2", conditionLookup)
+		then:
+		true
+	}
+
+	def "Verify that verifyConditions verifies AudienceRestriction properly"(){
+		setup:
+		def conditionLookup = Mock(BaseSAMLMessageParser.ConditionLookup)
+		6 * conditionLookup.getThisAudienceId() >> {
+			"ThisAudienceId"}
+		when:
+		AudienceRestrictionType audienceRestriction = of.createAudienceRestrictionType();
+		audienceRestriction.audience.add("AudienceId1")
+		audienceRestriction.audience.add("AudienceId2")
+		ConditionsType conditionsType = genValidConditionsType();
+		conditionsType.conditionOrAudienceRestrictionOrOneTimeUse.add(audienceRestriction)
+		bsmp.verifyConditions(conditionsType, "SomeTyp2","1", conditionLookup)
+		then:
+		thrown MessageContentException
+		when: "Verify that the is an OR operation inside a condition"
+		audienceRestriction.audience.add("ThisAudienceId")
+		bsmp.verifyConditions(conditionsType, "SomeTyp2","2", conditionLookup)
+		then:
+		true
+		when: "Verify that the is an AND operation between conditions"
+		AudienceRestrictionType audienceRestriction2 = of.createAudienceRestrictionType();
+		audienceRestriction2.audience.add("AudienceId1")
+		conditionsType.conditionOrAudienceRestrictionOrOneTimeUse.add(audienceRestriction2)
+		bsmp.verifyConditions(conditionsType, "SomeTyp2","1", conditionLookup)
+		then:
+		thrown MessageContentException
+		when:
+		audienceRestriction2.audience.add("ThisAudienceId")
+		bsmp.verifyConditions(conditionsType, "SomeTyp2","2", conditionLookup)
+		then:
+		true
 	}
 
 	def "Generate full SAMLP FailureMessage and verify that it is populated correctly"(){
@@ -262,7 +258,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 				,ResponseStatusCodes.RESPONDER,null, false);
 
 		xml = slurpXml(failureMessage)
-		printXML(failureMessage)
+		//printXML(failureMessage)
 		then:
 		xml.Status.StatusCode.@Value == "urn:oasis:names:tc:SAML:2.0:status:Responder"
 		xml.Signature.SignedInfo.size() == 0
@@ -327,110 +323,6 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
     // genSuccessfulSAMLPResponse is tested in AssertionPaylodParserSpec
 
-//	def "Generate full AuthNRequest and verify that it is populated correctly"(){
-//		when:
-//		NameIDType issuer = of.createNameIDType();
-//		issuer.setValue("SomeIssuer");
-//
-//		ExtensionsType extensions = samlpOf.createExtensionsType()
-//		extensions.any.add(dsignObj.createKeyName("SomeKeyName"))
-//
-//		SubjectType subject = of.createSubjectType()
-//		NameIDType subjectNameId =of.createNameIDType()
-//		subjectNameId.setValue("SomeSubject");
-//		subject.getContent().add(of.createNameID(subjectNameId));
-//
-//		NameIDPolicyType nameIdPolicy = samlpOf.createNameIDPolicyType()
-//		nameIdPolicy.setFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:encrypted")
-//
-//		ConditionsType conditions = of.createConditionsType()
-//		conditions.setNotBefore(MessageGenerateUtils.dateToXMLGregorianCalendar(simpleDateFormat.parse("2016-02-1")))
-//		conditions.setNotOnOrAfter(MessageGenerateUtils.dateToXMLGregorianCalendar(simpleDateFormat.parse("2016-02-12")))
-//
-//		RequestedAuthnContextType requestedAuthnContext = samlpOf.createRequestedAuthnContextType()
-//		requestedAuthnContext.authnContextClassRef.add("SomeContextClassRef")
-//		requestedAuthnContext.setComparison(AuthnContextComparisonType.EXACT)
-//
-//		ScopingType scoping = samlpOf.createScopingType()
-//		scoping.setProxyCount(new BigInteger("123"))
-//
-//		byte[] authNRequest = pp.genAuthNRequest(true,false,"SomeProtocolBinding", 1,"http://assertionConsumerServiceURL",2,"SomeProviderName","SomeDestination","SomeConsent", issuer, extensions, subject, nameIdPolicy, conditions, requestedAuthnContext, scoping, true)
-//
-//		def xml = slurpXml(authNRequest)
-//		printXML(authNRequest)
-//
-//		then:
-//		xml.@AssertionConsumerServiceIndex == "1"
-//		xml.@AssertionConsumerServiceURL == "http://assertionConsumerServiceURL"
-//		xml.@AttributeConsumingServiceIndex == "2"
-//		xml.@Consent == "SomeConsent"
-//		xml.@Destination == "SomeDestination"
-//		xml.@ID.toString().startsWith("_")
-//		xml.@IsPassive == "false"
-//		xml.@IssueInstant.toString().startsWith("20")
-//		xml.@ProtocolBinding == "SomeProtocolBinding"
-//		xml.@ProviderName == "SomeProviderName"
-//		xml.@Version == "2.0"
-//
-//		xml.Issuer == "SomeIssuer"
-//		xml.Signature.SignedInfo.size() == 1
-//		xml.Extensions.KeyName == "SomeKeyName"
-//		xml.Subject.NameID == "SomeSubject"
-//		xml.NameIDPolicy.@Format == "urn:oasis:names:tc:SAML:2.0:nameid-format:encrypted"
-//		xml.Conditions.@NotBefore == "2016-01-31T22:00:00.000+01:00"
-//		xml.Conditions.@NotOnOrAfter == "2016-02-11T22:00:00.000+01:00"
-//		xml.RequestedAuthnContext.@Comparison == "exact"
-//		xml.RequestedAuthnContext.AuthnContextClassRef == "SomeContextClassRef"
-//		xml.Scoping.@ProxyCount == "123"
-//		when:
-//		AuthnRequestType art = pp.parseSAMLMessage(authNRequest, true)
-//
-//		then:
-//		art.getIssuer().value == "SomeIssuer"
-//
-//		when:
-//		authNRequest = pp.genAuthNRequest(true,false,"SomeProtocolBinding", 1,"http://assertionConsumerServiceURL",2,"SomeProviderName","SomeDestination","SomeConsent", issuer, extensions, subject, nameIdPolicy, conditions, requestedAuthnContext, scoping, false)
-//
-//		xml = slurpXml(authNRequest)
-//		printXML(authNRequest)
-//		then:
-//		xml.Issuer == "SomeIssuer"
-//		xml.Signature.SignedInfo.size() == 0
-//
-//		when:
-//		art = pp.parseSAMLMessage(authNRequest, false)
-//		then:
-//		art.getIssuer().value == "SomeIssuer"
-//
-//		when: "Verify that unsigned message throws exception if signature is required"
-//		pp.parseSAMLMessage(authNRequest, true)
-//		then:
-//		thrown MessageContentException
-//
-//	}
-//
-//	def "Generate minimal AuthNRequest and verify that it is populated correctly"(){
-//		when:
-//		byte[] authNRequest = pp.genAuthNRequest(null,null,null, null,null,null,null,null,null, null, null, null, null, null, null, null, true)
-//
-//		def xml = slurpXml(authNRequest)
-//		printXML(authNRequest)
-//
-//		then:
-//		xml.@ID.toString().startsWith("_")
-//		xml.@IssueInstant.toString().startsWith("20")
-//		xml.@Version == "2.0"
-//
-//		xml.Signature.SignedInfo.size() == 1
-//
-//		when:
-//		AuthnRequestType art = pp.parseSAMLMessage(authNRequest, true)
-//
-//		then:
-//		art.getID().startsWith("_")
-//
-//	}
-
 
 	private def createMockedTime(long currentTime){
 		bsmp.systemTime = Mock(SystemTime)
@@ -440,6 +332,12 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
 
 
+	private ConditionsType genValidConditionsType(){
+		ConditionsType conditionsType = of.createConditionsType()
+		conditionsType.setNotBefore(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1436279212000)))
+		conditionsType.setNotOnOrAfter(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(1436279412000)))
+		return conditionsType;
+	}
   
 	public static byte[] assertionWithNoX509Data = ("""<?xml version="1.0" encoding="UTF-8" standalone="no"?><saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" ID="_AA6A0B1D-6DBD-4256-88FB-AFF2D2A122C1" IssueInstant="2015-07-07T16:26:53.000+02:00" Version="2.0"><saml:Issuer>someIssuer</saml:Issuer><ds:Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI="#_AA6A0B1D-6DBD-4256-88FB-AFF2D2A122C1"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>p2dIvIXjLGuuYaB7Lql7Am4qIzNz62qnQVr7Cc8DpUQ=</DigestValue></Reference></SignedInfo><SignatureValue>MdcKaOnYLG9ILCvAEM1xfc929mR/WYTg4TUBIlLvv8L34SBY1GMwA0T/GKfAziiurmo9OQvRmLPD
 QAHj+RRx1GXRsezrpgYuTm5dq11GkkS15zWJzHvG/NAf4EnpMDn/DqZLQUSxY7HFhAkGFPAW/nSn

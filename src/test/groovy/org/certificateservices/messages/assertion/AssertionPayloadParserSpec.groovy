@@ -67,9 +67,9 @@ class AssertionPayloadParserSpec extends Specification {
 	
 	def fv1
 	def fv2
-	
-    def currentTimeZone;
 
+
+	def TimeZone currentTimeZone;
 	def setupSpec(){
 		Security.addProvider(new BouncyCastleProvider())
 		Init.init()
@@ -77,7 +77,8 @@ class AssertionPayloadParserSpec extends Specification {
 
 	def setup(){
 		currentTimeZone = TimeZone.getDefault()
-		TimeZone.setDefault(TimeZone.getTimeZone("Europe/Stockholm"));
+		TimeZone.setDefault(TimeZone.getTimeZone("Europe/Stockholm"))
+
 		setupRegisteredPayloadParser();
 		
 		pp = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE);
@@ -103,7 +104,7 @@ class AssertionPayloadParserSpec extends Specification {
 	}
 
 	def cleanup(){
-		TimeZone.setDefault(currentTimeZone);
+		TimeZone.setDefault(currentTimeZone)
 	}
 	
 	def "Verify that JAXBPackage(), getNameSpace(), getSchemaAsInputStream(), getSupportedVersions(), getDefaultPayloadVersion() returns the correct values"(){
@@ -128,7 +129,7 @@ class AssertionPayloadParserSpec extends Specification {
 	
 	def "Verify that schemaValidateAssertion() validates agains schema"(){
 		setup:
-		JAXBElement<AssertionType> assertion = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"], null, genApprovers(),twoReceiptiensValidFirst)) 
+		JAXBElement<AssertionType> assertion = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"], null, genApprovers(),twoReceiptiensValidFirst))
 		when:
 		pp.schemaValidateAssertion(assertion)
 		then:
@@ -529,7 +530,7 @@ class AssertionPayloadParserSpec extends Specification {
 			
 
 			DOMValidateContext validationContext = new DOMValidateContext(signerCert.getPublicKey(), signature);
-			validationContext.setIdAttributeNS(pp.assertionSignatureLocationFinder.getSignatureLocation(doc), null, "ID");
+			validationContext.setIdAttributeNS(pp.assertionSignatureLocationFinder.getSignatureLocations(doc)[0], null, "ID");
 			XMLSignatureFactory signatureFactory = XMLSignatureFactory.getInstance("DOM",new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
 			XMLSignature sig =  signatureFactory.unmarshalXMLSignature(validationContext);
 			if(!sig.validate(validationContext)){

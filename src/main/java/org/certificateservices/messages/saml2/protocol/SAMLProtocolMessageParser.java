@@ -2,6 +2,7 @@ package org.certificateservices.messages.saml2.protocol;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.assertion.ResponseStatusCodes;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.saml2.BaseSAMLMessageParser;
 import org.certificateservices.messages.saml2.assertion.jaxb.ConditionsType;
@@ -13,6 +14,7 @@ import org.certificateservices.messages.utils.XMLSigner;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
@@ -143,9 +145,7 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
 
         AuthnRequestType art = samlpOf.createAuthnRequestType();
 
-        art.setID("_" + MessageGenerateUtils.generateRandomUUID());
-        art.setIssueInstant(MessageGenerateUtils.dateToXMLGregorianCalendar(systemTime.getSystemTime()));
-        art.setVersion(DEFAULT_SAML_VERSION);
+        populateRequestAbstractType(art,destination,consent,issuer,extensions);
 
         art.setForceAuthn(forceAuthn);
         art.setIsPassive(isPassive);
@@ -154,11 +154,6 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
         art.setAssertionConsumerServiceURL(assertionConsumerServiceURL);
         art.setAttributeConsumingServiceIndex(attributeConsumingServiceIndex);
         art.setProviderName(providerName);
-        art.setDestination(destination);
-        art.setConsent(consent);
-
-        art.setIssuer(issuer);
-        art.setExtensions(extensions);
 
         art.setSubject(subject);
         art.setNameIDPolicy(nameIdPolicy);
@@ -182,13 +177,153 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
             beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Conditions"));
             beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "RequestedAuthnContext"));
             beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "Scoping"));
-            xmlSigner.sign(doc, art.getID(), samlpSignatureLocationFinder, beforeSiblings);
+            xmlSigner.sign(doc, samlpSignatureLocationFinder, beforeSiblings);
         }
 
         return xmlSigner.marshallDoc(doc);
 
     }
 
+    /**
+     * Method to generate a generic SAMLP  Response message.
+     *
+     * @param inResponseTo the ID of the request, null if message was unreadable
+     * @param issuer Identifies the entity that generated the response message. (Optional, null for no issuer)
+     * @param destination  A URI reference indicating the address to which this response has been sent. This is useful to prevent
+     *                        malicious forwarding of responses to unintended recipients, a protection that is required by some
+     *                        protocol bindings. If it is present, the actual recipient MUST check that the URI reference identifies the
+     *                        location at which the message was received. If it does not, the response MUST be discarded. Some
+     *                        protocol bindings may require the use of this attribute. (Optional, null for no destination)
+     * @param consent Indicates whether or not (and under what conditions) consent has been obtained from a principal in
+     *                   the sending of this response. See Section 8.4 for some URI references that MAY be used as the value
+     *                   of the Consent attribute and their associated descriptions. If no Consent value is provided, the
+     *                   identifier urn:oasis:names:tc:SAML:2.0:consent:unspecified (see Section 8.4.1) is in
+     *                   effect.
+     * @param extensions This extension point contains optional protocol message extension elements that are agreed on
+     *                      between the communicating parties. . No extension schema is required in order to make use of this
+     *                      extension point, and even if one is provided, the lax validation setting does not impose a requirement
+     *                      for the extension to be valid. SAML extension elements MUST be namespace-qualified in a non-SAML-defined namespace. (Optional, null for no extensions)
+     * @param statusCode the failure code to respond to (Required)
+     * @param statusDetail a container for generic status XML.
+     * @param statusMessage a descriptive  message, may be null.
+     * @param assertions a list of Assertions or EncryptedAssertions (Important, the type must be a JAXBElement not only the AssertionType or EncryptedElementType, (Optional)
+     * @param signAssertions sign all included assetions.
+     * @param signSAMLPResponse if the response should be signed.
+     * @return a SAMLP failure message.
+     * @throws MessageContentException if parameters where invalid.
+     * @throws MessageProcessingException if internal problems occurred generated the message.
+     */
+    public byte[] genResponse(String inResponseTo, NameIDType issuer, String destination, String consent,
+                              ExtensionsType extensions, ResponseStatusCodes statusCode, String statusMessage,
+                              StatusDetailType statusDetail, List<JAXBElement<?>> assertions,
+                              boolean signAssertions, boolean signSAMLPResponse) throws MessageContentException, MessageProcessingException{
+        try{
+            ResponseType responseType = samlpOf.createResponseType();
 
-    // TODO Generate Generic SAMLP Response
+            populateStatusResponseType(responseType,inResponseTo,destination,consent,issuer,extensions,statusCode,statusMessage,statusDetail);
+
+            if(assertions != null) {
+                for(JAXBElement a : assertions) {
+                    responseType.getAssertionOrEncryptedAssertion().add(a.getValue());
+                }
+            }
+
+            JAXBElement<ResponseType> response = samlpOf.createResponse(responseType);
+
+            return marshallAndSign(response,signAssertions,signSAMLPResponse);
+
+        }catch(Exception e){
+            if(e instanceof MessageContentException){
+                throw (MessageContentException) e;
+            }
+            if(e instanceof MessageProcessingException){
+                throw (MessageProcessingException) e;
+            }
+            throw new MessageProcessingException("Error generation SAMLP Failure Message: " + e.getMessage(),e);
+        }
+    }
+
+    /**
+     * Help method to populate all base fields of a RequestAbstractType
+     *
+     * @param destination A URI reference indicating the address to which this request has been sent. This is useful to prevent malicious forwarding of
+     *                    requests to unintended recipients, a protection that is required by some protocol bindings. If it is present, the actual recipient
+     *                    MUST check that the URI reference identifies the location at which the message was received. If it does not, the request MUST be
+     *                    discarded. Some protocol bindings may require the use of this attribute (see [SAMLBind]). (Optional, use null of it shouldn't be set)
+     * @param consent Indicates whether or not (and under what conditions) consent has been obtained from a principal in
+     *                the sending of this request. See Section 8.4 for some URI references that MAY be used as the value.
+     *                of the Consent attribute and their associated descriptions. If no Consent value is provided, the
+     *                identifier urn:oasis:names:tc:SAML:2.0:consent:unspecified (see Section 8.4.1) is in effect. (Optional, use null of it shouldn't be set)
+     *
+     * @param issuer Identifies the entity that generated the request message. (For more information on this element, see Section 2.2.5.) (Optional, use null of it shouldn't be set)
+     * @param extensions This extension point contains optional protocol message extension elements that are agreed on
+     *                      between the communicating parties. No extension schema is required in order to make use of this
+     *                      extension point, and even if one is provided, the lax validation setting does not impose a requirement
+     *                      for the extension to be valid. SAML extension elements MUST be namespace-qualified in a non-
+     *                      SAML-defined namespace. (Optional, use null of it shouldn't be set)
+     * @throws MessageProcessingException if internal problem occurred generating the message.
+     * @throws MessageContentException if invalid message format was detected.
+     */
+    protected void populateRequestAbstractType(RequestAbstractType requestAbstractType, String destination, String consent, NameIDType issuer, ExtensionsType extensions) throws MessageProcessingException, MessageContentException{
+        requestAbstractType.setID("_" + MessageGenerateUtils.generateRandomUUID());
+        requestAbstractType.setIssueInstant(MessageGenerateUtils.dateToXMLGregorianCalendar(systemTime.getSystemTime()));
+        requestAbstractType.setVersion(DEFAULT_SAML_VERSION);
+
+        requestAbstractType.setDestination(destination);
+        requestAbstractType.setConsent(consent);
+
+        requestAbstractType.setIssuer(issuer);
+        requestAbstractType.setExtensions(extensions);
+
+    }
+
+    /**
+     * Help method to populate the common fields of a StatusResponseType object.
+     * @param inResponseTo the ID of the request, null if message was unreadable
+     * @param issuer Identifies the entity that generated the response message. (Optional, null for no issuer)
+     * @param destination  A URI reference indicating the address to which this response has been sent. This is useful to prevent
+     *                        malicious forwarding of responses to unintended recipients, a protection that is required by some
+     *                        protocol bindings. If it is present, the actual recipient MUST check that the URI reference identifies the
+     *                        location at which the message was received. If it does not, the response MUST be discarded. Some
+     *                        protocol bindings may require the use of this attribute. (Optional, null for no destination)
+     * @param consent Indicates whether or not (and under what conditions) consent has been obtained from a principal in
+     *                   the sending of this response. See Section 8.4 for some URI references that MAY be used as the value
+     *                   of the Consent attribute and their associated descriptions. If no Consent value is provided, the
+     *                   identifier urn:oasis:names:tc:SAML:2.0:consent:unspecified (see Section 8.4.1) is in
+     *                   effect.
+     * @param extensions This extension point contains optional protocol message extension elements that are agreed on
+     *                      between the communicating parties. . No extension schema is required in order to make use of this
+     *                      extension point, and even if one is provided, the lax validation setting does not impose a requirement
+     *                      for the extension to be valid. SAML extension elements MUST be namespace-qualified in a non-SAML-defined namespace. (Optional, null for no extensions)
+     * @param statusCode the failure code to respond to (Required)
+     * @param statusMessage a descriptive  message, may be null.
+     * @param statusDetail a container for generic status XML. (Optional)
+     * @return a SAMLP failure message.
+     * @throws MessageContentException if parameters where invalid.
+     * @throws MessageProcessingException if internal problems occurred generated the message.
+     */
+    protected void populateStatusResponseType(StatusResponseType statusResponseType, String inResponseTo, String destination, String consent, NameIDType issuer, ExtensionsType extensions, ResponseStatusCodes statusCode, String statusMessage, StatusDetailType statusDetail) throws MessageProcessingException, MessageContentException{
+        StatusCodeType statusCodeType = samlpOf.createStatusCodeType();
+        statusCodeType.setValue(statusCode.getURIValue());
+
+        StatusType statusType = samlpOf.createStatusType();
+        statusType.setStatusCode(statusCodeType);
+
+        statusType.setStatusMessage(statusMessage);
+        statusType.setStatusDetail(statusDetail);
+
+        statusResponseType.setID("_" + MessageGenerateUtils.generateRandomUUID());
+        statusResponseType.setIssueInstant(MessageGenerateUtils.dateToXMLGregorianCalendar(systemTime.getSystemTime()));
+        statusResponseType.setVersion(DEFAULT_SAML_VERSION);
+        statusResponseType.setInResponseTo(inResponseTo);
+        statusResponseType.setStatus(statusType);
+
+        statusResponseType.setIssuer(issuer);
+        statusResponseType.setDestination(destination);
+        statusResponseType.setConsent(consent);
+        statusResponseType.setExtensions(extensions);
+
+    }
+
+
 }

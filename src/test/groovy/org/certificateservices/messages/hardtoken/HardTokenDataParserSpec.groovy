@@ -34,18 +34,24 @@ class HardTokenDataParserSpec extends Specification {
 	
 	X509Certificate recipient
 	
-	
+	def TimeZone currentTimeZone;
 	def setupSpec(){
 		Security.addProvider(new BouncyCastleProvider())
 		Init.init();
 	}
 	
 	def setup(){
+		currentTimeZone = TimeZone.getDefault()
+		TimeZone.setDefault(TimeZone.getTimeZone("Europe/Stockholm"))
 		DummyMessageSecurityProvider secprov = new DummyMessageSecurityProvider();
 		pp = new HardTokenDataParser(secprov)
 		
 		recipient = secprov.getDecryptionCertificate(MessageSecurityProvider.DEFAULT_DECRYPTIONKEY)
 		
+	}
+
+	def cleanup(){
+		TimeZone.setDefault(currentTimeZone)
 	}
 
 

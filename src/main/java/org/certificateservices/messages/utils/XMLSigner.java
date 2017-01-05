@@ -240,45 +240,47 @@ public class XMLSigner {
 
 		try{
 
-			Element signedElement = signatureLocationFinder.getSignatureLocation(doc);
-			Element signature = findSignatureElementInObject(signedElement);
+			Element[] signedElements = signatureLocationFinder.getSignatureLocations(doc);
+			for(Element signedElement: signedElements) {
+				Element signature = findSignatureElementInObject(signedElement);
 
-			checkValidSignatureURI(signature);
-			checkValidDigestURI(signature);
-			checkValidTransform(signature);
-			checkValidReferenceURI(signedElement, signature, signatureLocationFinder.getIDAttribute());
+				checkValidSignatureURI(signature);
+				checkValidDigestURI(signature);
+				checkValidTransform(signature);
+				checkValidReferenceURI(signedElement, signature, signatureLocationFinder.getIDAttribute());
 
 
-			X509Certificate signerCert = null;
-			NodeList certList = signature.getElementsByTagNameNS(XMLDSIG_NAMESPACE, "X509Certificate");
-			if(certList.getLength() > 0){
-				String certData = certList.item(0).getFirstChild().getNodeValue();
-				if(certData != null){
-					signerCert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(Base64.decode(certData)));
+				X509Certificate signerCert = null;
+				NodeList certList = signature.getElementsByTagNameNS(XMLDSIG_NAMESPACE, "X509Certificate");
+				if (certList.getLength() > 0) {
+					String certData = certList.item(0).getFirstChild().getNodeValue();
+					if (certData != null) {
+						signerCert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(Base64.decode(certData)));
+					}
 				}
-			}
 
 
-			if(signerCert == null){
-				throw new MessageContentException("Invalid signature, no related certificate found.");
-			}
+				if (signerCert == null) {
+					throw new MessageContentException("Invalid signature, no related certificate found.");
+				}
 
 
-			DOMValidateContext validationContext = new DOMValidateContext(signerCert.getPublicKey(), signature);
-			validationContext.setIdAttributeNS(signedElement, null, signatureLocationFinder.getIDAttribute());
-			XMLSignatureFactory signatureFactory = XMLSignatureFactory.getInstance("DOM",new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
-			XMLSignature sig =  signatureFactory.unmarshalXMLSignature(validationContext);
-			if(!sig.validate(validationContext)){
-				throw new MessageContentException("Error, signed message didn't pass validation.");
-			}
+				DOMValidateContext validationContext = new DOMValidateContext(signerCert.getPublicKey(), signature);
+				validationContext.setIdAttributeNS(signedElement, null, signatureLocationFinder.getIDAttribute());
+				XMLSignatureFactory signatureFactory = XMLSignatureFactory.getInstance("DOM", new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
+				XMLSignature sig = signatureFactory.unmarshalXMLSignature(validationContext);
+				if (!sig.validate(validationContext)) {
+					throw new MessageContentException("Error, signed message didn't pass validation.");
+				}
 
-			String organisation = null;
-			if(organisationLookup != null){
-				organisation = organisationLookup.findOrganisation(doc);
-			}
+				String organisation = null;
+				if (organisationLookup != null) {
+					organisation = organisationLookup.findOrganisation(doc);
+				}
 
-			if(!messageSecurityProvider.isValidAndAuthorized(signerCert, organisation)){
-				throw new MessageContentException("A certificate with DN " + signerCert.getSubjectDN().toString() + " signing a message wasn't authorized or valid.");
+				if (!messageSecurityProvider.isValidAndAuthorized(signerCert, organisation)) {
+					throw new MessageContentException("A certificate with DN " + signerCert.getSubjectDN().toString() + " signing a message wasn't authorized or valid.");
+				}
 			}
 
 		}catch(Exception e){
@@ -319,7 +321,7 @@ public class XMLSigner {
 		try{
 			Document doc = documentBuilder.parse(new ByteArrayInputStream(message));
 
-			Element signedElement = signatureLocationFinder.getSignatureLocation(doc);
+			Element signedElement = signatureLocationFinder.getSignatureLocations(doc)[0];
 			Element signature = findSignatureElementInObject(signedElement);
 
 			X509Certificate signerCert = null;
@@ -380,7 +382,6 @@ public class XMLSigner {
 	 *
 	 * Method that generates the signature and marshalls the message to byte array in UTF-8 format.
 	 * @param doc a XML document about to be signed.
-	 * @param messageID id of message to set as reference in signature
 	 * @param signatureLocationFinder to find in which element the signature should be placed.
 	 * @param beforeSiblings a list of name of siblings that the signature should be placed before in priority order, if the first element
 	 *                      doesn't exist it tries to place it before next and so on. If null will signature be placed last.
@@ -388,56 +389,57 @@ public class XMLSigner {
 	 * @throws MessageProcessingException if problems occurred when processing the message.
 	 * @throws MessageContentException if unsupported version is detected in message.
 	 */
-	public void sign(Document doc, String messageID, SignatureLocationFinder signatureLocationFinder, List<QName> beforeSiblings) throws MessageProcessingException, MessageContentException{
+	public void sign(Document doc,  SignatureLocationFinder signatureLocationFinder, List<QName> beforeSiblings) throws MessageProcessingException, MessageContentException{
 
 		try {
 
 			if(signMessages){
-				XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM",new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
-				DigestMethod digestMethod = fac.newDigestMethod
-						(messageSecurityProvider.getSigningAlgorithmScheme().getHashAlgorithmURI(), null);
+				Element[] signatureLocations = signatureLocationFinder.getSignatureLocations(doc);
+				for(Element signatureLocation : signatureLocations) {
+					XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM",new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
+					DigestMethod digestMethod = fac.newDigestMethod
+							(messageSecurityProvider.getSigningAlgorithmScheme().getHashAlgorithmURI(), null);
 
-				List<Transform> transFormList = new ArrayList<Transform>();
-				transFormList.add(fac.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));
-				Reference ref = fac.newReference("#" + messageID,digestMethod, transFormList, null, null);
+					String messageID = signatureLocationFinder.getIDValue(signatureLocation);
+					List<Transform> transFormList = new ArrayList<Transform>();
+					transFormList.add(fac.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));
+					Reference ref = fac.newReference("#" + messageID,digestMethod, transFormList, null, null);
 
-				ArrayList<Reference> refList = new ArrayList<Reference>();
-				refList.add(ref);
-				CanonicalizationMethod cm =  fac.newCanonicalizationMethod(CanonicalizationMethod.EXCLUSIVE,(C14NMethodParameterSpec) null);
-				SignatureMethod sm = fac.newSignatureMethod(messageSecurityProvider.getSigningAlgorithmScheme().getSignatureAlgorithmURI(),null);
-				SignedInfo signedInfo =fac.newSignedInfo(cm,sm,refList);
-				DOMSignContext signContext = null;
+					ArrayList<Reference> refList = new ArrayList<Reference>();
+					refList.add(ref);
+					CanonicalizationMethod cm =  fac.newCanonicalizationMethod(CanonicalizationMethod.EXCLUSIVE,(C14NMethodParameterSpec) null);
+					SignatureMethod sm = fac.newSignatureMethod(messageSecurityProvider.getSigningAlgorithmScheme().getSignatureAlgorithmURI(),null);
+					SignedInfo signedInfo =fac.newSignedInfo(cm,sm,refList);
 
-
-				Element signatureLocation = signatureLocationFinder.getSignatureLocation(doc);
-				Node siblingNode = null;
-				if(beforeSiblings != null) {
-					for (QName name : beforeSiblings) {
-						NodeList foundList = doc.getElementsByTagNameNS(name.getNamespaceURI(), name.getLocalPart());
-						if (foundList.getLength() > 0) {
-							siblingNode = foundList.item(0);
-							break;
+					Node siblingNode = null;
+					if (beforeSiblings != null) {
+						for (QName name : beforeSiblings) {
+							NodeList foundList = signatureLocation.getElementsByTagNameNS(name.getNamespaceURI(), name.getLocalPart());
+							if (foundList.getLength() > 0) {
+								siblingNode = foundList.item(0);
+								break;
+							}
 						}
 					}
+					DOMSignContext signContext;
+					if (siblingNode != null) {
+						signContext = new DOMSignContext(messageSecurityProvider.getSigningKey(), signatureLocation, siblingNode);
+					} else {
+						signContext = new DOMSignContext(messageSecurityProvider.getSigningKey(), signatureLocation);
+					}
+					signContext.setIdAttributeNS(signatureLocation, null, signatureLocationFinder.getIDAttribute());
+					signContext.putNamespacePrefix("http://www.w3.org/2000/09/xmldsig#", "ds");
+
+					KeyInfoFactory kif = KeyInfoFactory.getInstance("DOM", new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
+					List<X509Certificate> certs = new ArrayList<X509Certificate>();
+					X509Certificate cert = messageSecurityProvider.getSigningCertificate();
+					certs.add(cert);
+					X509Data x509Data = kif.newX509Data(certs);
+					KeyInfo ki = kif.newKeyInfo(Collections.singletonList(x509Data));
+
+					XMLSignature signature = fac.newXMLSignature(signedInfo, ki);
+					signature.sign(signContext);
 				}
-
-				if(siblingNode != null){
-					signContext = new DOMSignContext(messageSecurityProvider.getSigningKey(),signatureLocation,siblingNode);
-				}else{
-					signContext = new DOMSignContext(messageSecurityProvider.getSigningKey(),signatureLocation);
-				}
-				signContext.setIdAttributeNS(signatureLocation, null, signatureLocationFinder.getIDAttribute());
-				signContext.putNamespacePrefix("http://www.w3.org/2000/09/xmldsig#", "ds");
-
-				KeyInfoFactory kif = KeyInfoFactory.getInstance("DOM",new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
-				List<X509Certificate> certs = new ArrayList<X509Certificate>();
-				X509Certificate cert = messageSecurityProvider.getSigningCertificate();
-				certs.add(cert);
-				X509Data x509Data = kif.newX509Data(certs);
-				KeyInfo ki = kif.newKeyInfo(Collections.singletonList(x509Data));
-
-				XMLSignature signature = fac.newXMLSignature(signedInfo,ki);
-				signature.sign(signContext);
 			}
 
 		} catch (NoSuchAlgorithmException e) {
@@ -476,7 +478,6 @@ public class XMLSigner {
 	 *
 	 * Method that generates the signature and marshalls the message to byte array in UTF-8 format.
 	 * @param doc a XML document about to be signed.
-	 * @param messageID id of message to set as reference in signature
 	 * @param signatureLocationFinder to find in which element the signature should be placed.
 	 * @param beforeSiblings a list of name of siblings that the signature should be placed before in priority order, if the first element
 	 *                      doesn't exist it tries to place it before next and so on. If null will signature be placed last.
@@ -485,9 +486,9 @@ public class XMLSigner {
 	 * @throws MessageProcessingException if problems occurred when processing the message.
 	 * @throws MessageContentException if unsupported version is detected in message.
 	 */
-	public byte[] marshallAndSign(Document doc, String messageID, SignatureLocationFinder signatureLocationFinder, List<QName> beforeSiblings) throws MessageProcessingException, MessageContentException{
+	public byte[] marshallAndSign(Document doc, SignatureLocationFinder signatureLocationFinder, List<QName> beforeSiblings) throws MessageProcessingException, MessageContentException{
 
-		sign(doc,messageID,signatureLocationFinder,beforeSiblings);
+		sign(doc,signatureLocationFinder,beforeSiblings);
 		return marshallDoc(doc);
 	}
 
@@ -496,7 +497,6 @@ public class XMLSigner {
 	 * 
 	 * Method that generates the signature and marshalls the message to byte array in UTF-8 format.
 	 * @param doc a Assertion or Response (SAMLP) structure.
-	 * @param messageID id of message to set as reference in signature
 	 * @param signatureLocationFinder to find in which element the signature should be placed
 	 * @param beforeSiblingLocalName, before which element the signature element should be placed, null for last.
 	 * @param beforeSiblingNS name space of the local name.
@@ -505,14 +505,14 @@ public class XMLSigner {
 	 * @throws MessageContentException if unsupported version is detected in message.
 	 */
 	@Deprecated
-	public byte[] marshallAndSignAssertion(Document doc, String messageID,  SignatureLocationFinder signatureLocationFinder, String beforeSiblingLocalName, String beforeSiblingNS) throws MessageProcessingException, MessageContentException{
+	public byte[] marshallAndSignAssertion(Document doc, SignatureLocationFinder signatureLocationFinder, String beforeSiblingLocalName, String beforeSiblingNS) throws MessageProcessingException, MessageContentException{
 
 		List<QName> beforeSiblings = null;
 		if(beforeSiblingLocalName != null && beforeSiblingNS != null){
 			beforeSiblings = new ArrayList<QName>();
 			beforeSiblings.add(new QName(beforeSiblingNS,beforeSiblingLocalName));
 		}
-		return marshallAndSign(doc,messageID,signatureLocationFinder,beforeSiblings);
+		return marshallAndSign(doc,signatureLocationFinder,beforeSiblings);
 	}
 	
 	/**
@@ -618,13 +618,20 @@ public class XMLSigner {
 		/**
 		 * Return the element inside a document that should be signed.
 		 */
-		Element getSignatureLocation(Document doc) throws MessageProcessingException;
+		Element[] getSignatureLocations(Document doc) throws MessageContentException;
 
 		/**
 		 *
 		 * @return the name of the ID attribute referenced by the envelope signature.
          */
 		String getIDAttribute();
+
+		/**
+		 * @param signedElement the element that should be signed, and ID value for should be fetched.
+		 * @return the signature reference ID value
+		 *
+		 */
+		String getIDValue(Element signedElement) throws MessageContentException;
 		
 	}
 
