@@ -69,7 +69,7 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
     		return getClass().getResourceAsStream(AUTHORIZATION_XSD_SCHEMA_2_0_RESOURCE_LOCATION);
     	}
     	
-    	throw new MessageContentException("Error unsupported Auhtorization Payload version: " + payLoadVersion);
+    	throw new MessageContentException("Error unsupported Authorization Payload version: " + payLoadVersion);
 	}
 	
 	/**
