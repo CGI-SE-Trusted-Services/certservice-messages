@@ -107,7 +107,12 @@ public class TestCSMessageParser implements CSMessageParser {
 		return null;
 	}
 
-	
+	@Override
+	public byte[] populateOriginatorAssertionsAndSignCSMessage(CSMessage message, String destinationId, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException {
+		return null;
+	}
+
+
 	public CSMessageResponseData genCSFailureResponse(String relatedEndEntity,
 			byte[] request, RequestStatus status, String failureMessage,
 			String destinationID, Credential originator)
@@ -153,6 +158,11 @@ public class TestCSMessageParser implements CSMessageParser {
 			throws MessageContentException, MessageProcessingException {
 		return null;
 	}
+
+	public CSMessage parseMessage(byte[] messageData, boolean performValidation, boolean requireSignature)
+			throws MessageContentException, MessageProcessingException {
+		return null;
+	}
 	
 	public CSMessage genCSMessage(String version, String payLoadVersion,
 			String requestName, String messageId, String destinationID,
@@ -181,13 +191,16 @@ public class TestCSMessageParser implements CSMessageParser {
 	
 	public CSMessage parseMessage(Document doc) throws MessageContentException,
 			MessageProcessingException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public CSMessage parseMessage(Document doc, boolean performValidation) throws MessageContentException,
+	@Override
+	public CSMessage parseMessage(Document doc, boolean performValidation) throws MessageContentException, MessageProcessingException {
+		return null;
+	}
+
+	public CSMessage parseMessage(Document doc, boolean performValidation, boolean requireSignature) throws MessageContentException,
 			MessageProcessingException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

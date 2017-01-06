@@ -52,11 +52,14 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public CSMessage parseMessage(byte[] messageData)
+	CSMessage parseMessage(byte[] messageData)
 			throws MessageContentException, MessageProcessingException;
 
 	/**
 	 * Method to parse a message into a CSMessage and verify that it fulfills the registred schemas.
+	 * <p>
+	 *     Signatures are required.
+	 * </p>
 	 *
 	 * @param messageData the data to parse into a CSMessage
 	 * @param performValidation true if the message security provider should perform
@@ -67,7 +70,23 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public CSMessage parseMessage(byte[] messageData, boolean performValidation)
+	CSMessage parseMessage(byte[] messageData, boolean performValidation)
+			throws MessageContentException, MessageProcessingException;
+
+	/**
+	 * Method to parse a message into a CSMessage and verify that it fulfills the registred schemas.
+	 *
+	 * @param messageData the data to parse into a CSMessage
+	 * @param performValidation true if the message security provider should perform
+	 * validate that the signing certificate is valid and authorized for related organisation.
+	 * Otherwise must validation be performed manually after the message is parsed.
+	 * @param requireSignature if signature should be required.
+	 * @return a parsed CS Message object.
+	 *
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	CSMessage parseMessage(byte[] messageData, boolean performValidation, boolean requireSignature)
 			throws MessageContentException, MessageProcessingException;
 
 	/**
@@ -81,12 +100,14 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public CSMessage parseMessage(Document doc)
+	CSMessage parseMessage(Document doc)
 			throws MessageContentException, MessageProcessingException;
 
 	/**
 	 * Method to parse a message into a CSMessage and verify that it fulfills the registred schemas.
-	 * 
+	 * <p>
+	 *     Signatures are required.
+	 * </p>
 	 * @param doc The Document data to parse into a CSMessage
 	 * @param performValidation true if the message security provider should perform
 	 * validate that the signing certificate is valid and authorized for related organisation.
@@ -96,10 +117,26 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public CSMessage parseMessage(Document doc, boolean performValidation)
+	CSMessage parseMessage(Document doc, boolean performValidation)
 			throws MessageContentException, MessageProcessingException;
 
-
+	/**
+	 * Method to parse a message into a CSMessage and verify that it fulfills the registred schemas.
+	 * <p>
+	 *     Signatures are required.
+	 * </p>
+	 * @param doc The Document data to parse into a CSMessage
+	 * @param performValidation true if the message security provider should perform
+	 * validate that the signing certificate is valid and authorized for related organisation.
+	 * Otherwise must validation be performed manually after the message is parsed.
+	 * @param requireSignature if signature should be required.
+	 * @return a parsed CS Message object.
+	 *
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	CSMessage parseMessage(Document doc, boolean performValidation, boolean requireSignature)
+			throws MessageContentException, MessageProcessingException;
 	
 	/**
 	 * Method used to generate a CS Request message without any originator, i.e the signer of this message is the originator.
@@ -114,7 +151,7 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public byte[] generateCSRequestMessage(String requestId, String destinationId, String organisation, String payLoadVersion, Object payload, List<Object> assertions)  throws MessageContentException, MessageProcessingException;
+	byte[] generateCSRequestMessage(String requestId, String destinationId, String organisation, String payLoadVersion, Object payload, List<Object> assertions)  throws MessageContentException, MessageProcessingException;
 	
 	
 	/**
@@ -131,7 +168,7 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public byte[] generateCSRequestMessage(String requestId, String destinationId, String organisation, String payLoadVersion, Object payload, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException;
+	byte[] generateCSRequestMessage(String requestId, String destinationId, String organisation, String payLoadVersion, Object payload, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException;
 	
 	
 	/**
@@ -149,7 +186,7 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public CSMessage genCSMessage(String version, String payLoadVersion, String requestName, String messageId, String destinationID, String organisation, Credential originator, Object payload, List<Object> assertions) throws MessageContentException, MessageProcessingException;
+	CSMessage genCSMessage(String version, String payLoadVersion, String requestName, String messageId, String destinationID, String organisation, Credential originator, Object payload, List<Object> assertions) throws MessageContentException, MessageProcessingException;
 	
 	/**
 	 * Method to generate a CS Respone message from a request. CS Response message will be marked as non forwardable, which means not for use in data syncronization applications.
@@ -163,7 +200,7 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public CSMessageResponseData generateCSResponseMessage(String relatedEndEntity, CSMessage request, String payLoadVersion, Object payload) throws MessageContentException, MessageProcessingException;
+	CSMessageResponseData generateCSResponseMessage(String relatedEndEntity, CSMessage request, String payLoadVersion, Object payload) throws MessageContentException, MessageProcessingException;
 	
 	/**
 	 * Method to generate a CS Respone message from a request.
@@ -177,7 +214,7 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public CSMessageResponseData generateCSResponseMessage(String relatedEndEntity, CSMessage request, String payLoadVersion, Object payload, boolean isForwarable) throws MessageContentException, MessageProcessingException;
+	CSMessageResponseData generateCSResponseMessage(String relatedEndEntity, CSMessage request, String payLoadVersion, Object payload, boolean isForwarable) throws MessageContentException, MessageProcessingException;
 	
 	
 	/**
@@ -194,7 +231,7 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public byte[] generateGetApprovalRequest(String requestId, String destinationId, String organisation, byte[] requestMessage, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException;
+	byte[] generateGetApprovalRequest(String requestId, String destinationId, String organisation, byte[] requestMessage, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException;
 	
 	/**
 	 * Method generate a Is Approved Request, 
@@ -210,7 +247,7 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public byte[] generateIsApprovedRequest(String requestId, String destinationId, String organisation, String approvalId, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException;
+	byte[] generateIsApprovedRequest(String requestId, String destinationId, String organisation, String approvalId, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException;
 	
 	/**
 	 * Method generate a Is Approved Response, 
@@ -224,7 +261,7 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public CSMessageResponseData generateIsApprovedResponse(String relatedEndEntity, CSMessage request, ApprovalStatus approvalStatus, List<Object> assertions) throws MessageContentException, MessageProcessingException;
+	CSMessageResponseData generateIsApprovedResponse(String relatedEndEntity, CSMessage request, ApprovalStatus approvalStatus, List<Object> assertions) throws MessageContentException, MessageProcessingException;
 	
 	/**
 	 * Method generate a Get Approved Response, 
@@ -239,8 +276,21 @@ public interface CSMessageParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public CSMessageResponseData generateGetApprovalResponse(String relatedEndEntity, CSMessage request, String approvalId, ApprovalStatus approvalStatus, List<Object> assertions) throws MessageContentException, MessageProcessingException;
-	
+	CSMessageResponseData generateGetApprovalResponse(String relatedEndEntity, CSMessage request, String approvalId, ApprovalStatus approvalStatus, List<Object> assertions) throws MessageContentException, MessageProcessingException;
+
+	/**
+	 * Method to add an originator and assertions to a CSMessage and add a signature. If signature exists it is removed.
+	 *
+	 * @param message the message to populate.
+	 * @param destinationId the updated destination, null for unchanged.
+	 * @param originator the originator to add, null for no originator
+	 * @param assertions the assertions to add, null for no assertions.
+	 * @return a populated and signed CSMessage.
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+     */
+	byte[] populateOriginatorAssertionsAndSignCSMessage(CSMessage message, String destinationId, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException;
+
 	/**
 	 * Method to generate a failure message response to a given request.
 	 * @param relatedEndEntity the user name of related user in system.
@@ -253,7 +303,7 @@ public interface CSMessageParser {
 	 * @throws MessageContentException, if no signer certificate was found and parser required it.
 	 * @throws MessageProcessingException if internal error occurred parsing the certificate.
 	 */
-	public CSMessageResponseData genCSFailureResponse(String relatedEndEntity,byte[] request, RequestStatus status,
+	CSMessageResponseData genCSFailureResponse(String relatedEndEntity,byte[] request, RequestStatus status,
 			String failureMessage, String destinationID, Credential originator) throws MessageContentException,
 			MessageProcessingException;
 	
@@ -284,7 +334,7 @@ public interface CSMessageParser {
 	 * @throws MessageProcessingException
 	 * @throws MessageContentException if the message contained invalid XML.
 	 */
-    public void validatePayloadObject(CSMessageVersion version, Object payLoadObject) throws MessageContentException;
+    void validatePayloadObject(CSMessageVersion version, Object payLoadObject) throws MessageContentException;
     
     /**
      * Method that tries to parse the xml version from a message
@@ -293,7 +343,7 @@ public interface CSMessageParser {
      * @throws MessageContentException didn't contains a valid version attribute.
      * @throws MessageProcessingException if internal problems occurred.
      */
-    public CSMessageVersion getVersionFromMessage(byte[] messageData) throws MessageContentException, MessageProcessingException;
+    CSMessageVersion getVersionFromMessage(byte[] messageData) throws MessageContentException, MessageProcessingException;
 
     /**
      * Method to extract the originator credential from a message.
@@ -301,14 +351,14 @@ public interface CSMessageParser {
      * @param request the request message to extract the originator from.
      * @return the originator credential from the message or null if no originator was found.
      */
-    public Credential getOriginatorFromRequest(CSMessage request);
+    Credential getOriginatorFromRequest(CSMessage request);
     
     /**
      * Help method to return the related message security provider.
      * 
      * @return the related message security provider, never null.
      */
-    public MessageSecurityProvider getMessageSecurityProvider();
+    MessageSecurityProvider getMessageSecurityProvider();
     
     /**
      * Method that fetches the related marshaller for a given message.
@@ -318,7 +368,7 @@ public interface CSMessageParser {
      * @throws MessageContentException if message content was faulty or no related marshaller could be found.
      * @throws MessageProcessingException if internal error occurred processing the message.
      */
-    public Marshaller getMarshaller(CSMessage message) throws MessageContentException, MessageProcessingException;
+    Marshaller getMarshaller(CSMessage message) throws MessageContentException, MessageProcessingException;
     
     
 
