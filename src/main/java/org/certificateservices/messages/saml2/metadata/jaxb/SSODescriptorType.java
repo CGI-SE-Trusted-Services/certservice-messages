@@ -6,7 +6,7 @@
 //
 
 
-package org.certificateservices.messages.saml2.metadata.jaxp;
+package org.certificateservices.messages.saml2.metadata.jaxb;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,21 +14,23 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
+import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for AuthnAuthorityDescriptorType complex type.
+ * <p>Java class for SSODescriptorType complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="AuthnAuthorityDescriptorType">
+ * &lt;complexType name="SSODescriptorType">
  *   &lt;complexContent>
  *     &lt;extension base="{urn:oasis:names:tc:SAML:2.0:metadata}RoleDescriptorType">
  *       &lt;sequence>
- *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}AuthnQueryService" maxOccurs="unbounded"/>
- *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}AssertionIDRequestService" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}ArtifactResolutionService" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}SingleLogoutService" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}ManageNameIDService" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}NameIDFormat" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *       &lt;anyAttribute processContents='lax' namespace='##other'/>
@@ -40,65 +42,72 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "AuthnAuthorityDescriptorType", propOrder = {
-    "authnQueryService",
-    "assertionIDRequestService",
+@XmlType(name = "SSODescriptorType", propOrder = {
+    "artifactResolutionService",
+    "singleLogoutService",
+    "manageNameIDService",
     "nameIDFormat"
 })
-public class AuthnAuthorityDescriptorType
+@XmlSeeAlso({
+    IDPSSODescriptorType.class,
+    SPSSODescriptorType.class
+})
+public abstract class SSODescriptorType
     extends RoleDescriptorType
 {
 
-    @XmlElement(name = "AuthnQueryService", required = true)
-    protected List<EndpointType> authnQueryService;
-    @XmlElement(name = "AssertionIDRequestService")
-    protected List<EndpointType> assertionIDRequestService;
+    @XmlElement(name = "ArtifactResolutionService")
+    protected List<IndexedEndpointType> artifactResolutionService;
+    @XmlElement(name = "SingleLogoutService")
+    protected List<EndpointType> singleLogoutService;
+    @XmlElement(name = "ManageNameIDService")
+    protected List<EndpointType> manageNameIDService;
     @XmlElement(name = "NameIDFormat")
     @XmlSchemaType(name = "anyURI")
     protected List<String> nameIDFormat;
 
     /**
-     * Gets the value of the authnQueryService property.
+     * Gets the value of the artifactResolutionService property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the authnQueryService property.
+     * This is why there is not a <CODE>set</CODE> method for the artifactResolutionService property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getAuthnQueryService().add(newItem);
+     *    getArtifactResolutionService().add(newItem);
      * </pre>
      * 
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
-     * {@link EndpointType }
+     * {@link IndexedEndpointType }
      * 
      * 
      */
-    public List<EndpointType> getAuthnQueryService() {
-        if (authnQueryService == null) {
-            authnQueryService = new ArrayList<EndpointType>();
+    public List<IndexedEndpointType> getArtifactResolutionService() {
+        if (artifactResolutionService == null) {
+            artifactResolutionService = new ArrayList<IndexedEndpointType>();
         }
-        return this.authnQueryService;
+        return this.artifactResolutionService;
     }
 
     /**
-     * Gets the value of the assertionIDRequestService property.
+     * Gets the value of the singleLogoutService property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the assertionIDRequestService property.
+     * This is why there is not a <CODE>set</CODE> method for the singleLogoutService property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getAssertionIDRequestService().add(newItem);
+     *    getSingleLogoutService().add(newItem);
      * </pre>
      * 
      * 
@@ -108,11 +117,40 @@ public class AuthnAuthorityDescriptorType
      * 
      * 
      */
-    public List<EndpointType> getAssertionIDRequestService() {
-        if (assertionIDRequestService == null) {
-            assertionIDRequestService = new ArrayList<EndpointType>();
+    public List<EndpointType> getSingleLogoutService() {
+        if (singleLogoutService == null) {
+            singleLogoutService = new ArrayList<EndpointType>();
         }
-        return this.assertionIDRequestService;
+        return this.singleLogoutService;
+    }
+
+    /**
+     * Gets the value of the manageNameIDService property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the manageNameIDService property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getManageNameIDService().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link EndpointType }
+     * 
+     * 
+     */
+    public List<EndpointType> getManageNameIDService() {
+        if (manageNameIDService == null) {
+            manageNameIDService = new ArrayList<EndpointType>();
+        }
+        return this.manageNameIDService;
     }
 
     /**

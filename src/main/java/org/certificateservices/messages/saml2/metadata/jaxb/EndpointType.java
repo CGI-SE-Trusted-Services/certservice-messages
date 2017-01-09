@@ -6,7 +6,7 @@
 //
 
 
-package org.certificateservices.messages.saml2.metadata.jaxp;
+package org.certificateservices.messages.saml2.metadata.jaxb;
 
 import java.util.ArrayList;
 import java.util.HashMap;

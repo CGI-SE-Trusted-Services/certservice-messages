@@ -60,6 +60,25 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
         return null;
     }
 
+    @Override
+    protected String lookupSchemaForElement(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
+        if(namespaceURI != null){
+            if(namespaceURI.equals(DefaultCSMessageParser.XMLDSIG_NAMESPACE)){
+                return DefaultCSMessageParser.XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION;
+            }
+            if(namespaceURI.equals(DefaultCSMessageParser.XMLENC_NAMESPACE)){
+                return DefaultCSMessageParser.XMLENC_XSD_SCHEMA_RESOURCE_LOCATION;
+            }
+            if(namespaceURI.equals(ASSERTION_NAMESPACE)){
+                return BaseSAMLMessageParser.ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION;
+            }
+            if(namespaceURI.equals(PROTOCOL_NAMESPACE)){
+                return BaseSAMLMessageParser.SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION;
+            }
+        }
+        return null;
+    }
+
 
     /**
      * Method to generate a complex AuthNRequest Message.
@@ -177,7 +196,7 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
             beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Conditions"));
             beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "RequestedAuthnContext"));
             beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "Scoping"));
-            xmlSigner.sign(doc, samlpSignatureLocationFinder, beforeSiblings);
+            xmlSigner.sign(doc, samlpSignatureLocationFinder);
         }
 
         return xmlSigner.marshallDoc(doc);
@@ -230,7 +249,7 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
 
             JAXBElement<ResponseType> response = samlpOf.createResponse(responseType);
 
-            return marshallAndSign(response,signAssertions,signSAMLPResponse);
+            return marshallAndSignSAMLPOrAssertion(response,signAssertions,signSAMLPResponse);
 
         }catch(Exception e){
             if(e instanceof MessageContentException){

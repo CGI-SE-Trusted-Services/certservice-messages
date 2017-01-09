@@ -383,13 +383,11 @@ public class XMLSigner {
 	 * Method that generates the signature and marshalls the message to byte array in UTF-8 format.
 	 * @param doc a XML document about to be signed.
 	 * @param signatureLocationFinder to find in which element the signature should be placed.
-	 * @param beforeSiblings a list of name of siblings that the signature should be placed before in priority order, if the first element
-	 *                      doesn't exist it tries to place it before next and so on. If null will signature be placed last.
 	 *
 	 * @throws MessageProcessingException if problems occurred when processing the message.
 	 * @throws MessageContentException if unsupported version is detected in message.
 	 */
-	public void sign(Document doc,  SignatureLocationFinder signatureLocationFinder, List<QName> beforeSiblings) throws MessageProcessingException, MessageContentException{
+	public void sign(Document doc,  SignatureLocationFinder signatureLocationFinder) throws MessageProcessingException, MessageContentException{
 
 		try {
 
@@ -411,6 +409,7 @@ public class XMLSigner {
 					SignatureMethod sm = fac.newSignatureMethod(messageSecurityProvider.getSigningAlgorithmScheme().getSignatureAlgorithmURI(),null);
 					SignedInfo signedInfo =fac.newSignedInfo(cm,sm,refList);
 
+					List<QName> beforeSiblings = signatureLocationFinder.getSiblingsBeforeSignature(signatureLocation);
 					Node siblingNode = null;
 					if (beforeSiblings != null) {
 						for (QName name : beforeSiblings) {
@@ -488,7 +487,7 @@ public class XMLSigner {
 	 */
 	public byte[] marshallAndSign(Document doc, SignatureLocationFinder signatureLocationFinder, List<QName> beforeSiblings) throws MessageProcessingException, MessageContentException{
 
-		sign(doc,signatureLocationFinder,beforeSiblings);
+		sign(doc,signatureLocationFinder);
 		return marshallDoc(doc);
 	}
 
@@ -632,6 +631,16 @@ public class XMLSigner {
 		 *
 		 */
 		String getIDValue(Element signedElement) throws MessageContentException;
+
+		/**
+		 * Method that should return the possible siblings that should be placed before the signature element in the
+		 * specified element. If a specified sibling isn't found should the next be used.
+		 * @param element the element about to be signed and those siblings should be found.
+		 * @return a list of siblings that should be before signature, if the first doesn't exist due to optional is the next
+		 * in list use. return null to place signature last in element.
+		 * @throws MessageContentException if problems was found with the supplied element
+         */
+		List<QName> getSiblingsBeforeSignature(Element element) throws MessageContentException;
 		
 	}
 

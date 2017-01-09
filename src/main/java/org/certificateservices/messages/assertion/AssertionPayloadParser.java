@@ -20,6 +20,7 @@ import org.certificateservices.messages.credmanagement.CredManagementPayloadPars
 import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
 import org.certificateservices.messages.csmessages.BasePayloadParser;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
+import org.certificateservices.messages.csmessages.XSDLSInput;
 import org.certificateservices.messages.csmessages.jaxb.Approver;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.saml2.BaseSAMLMessageParser;
@@ -32,6 +33,8 @@ import org.certificateservices.messages.saml2.protocol.jaxb.StatusType;
 import org.certificateservices.messages.utils.*;
 import org.certificateservices.messages.xenc.jaxb.EncryptedDataType;
 import org.w3c.dom.Document;
+import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
@@ -121,7 +124,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 			cf = CertificateFactory.getInstance("X.509");
 			
 			assertionSchemaValidator = generateUserDataSchema().newValidator();
-			samlAssertionMessageParser.init(config, secProv);
+			samlAssertionMessageParser.init(secProv, null);
 		} catch (Exception e) {
 			throw new MessageProcessingException("Error initializing JAXB in AssertionPayloadParser: " + e.getMessage(),e);
 		}
@@ -898,7 +901,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
     private Schema generateAssertionSchema() throws SAXException{
     	SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
     	
-    	schemaFactory.setResourceResolver(new BaseSAMLMessageParser.AssertionLSResourceResolver());
+    	schemaFactory.setResourceResolver(new AssertionLSResourceResolver());
 		
         Source[] sources = new Source[4];
         sources[0] = new StreamSource(getClass().getResourceAsStream(DefaultCSMessageParser.XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
@@ -914,7 +917,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
     private Schema generateUserDataSchema() throws SAXException{
     	SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 		
-    	schemaFactory.setResourceResolver(new BaseSAMLMessageParser.AssertionLSResourceResolver());
+    	schemaFactory.setResourceResolver(new AssertionLSResourceResolver());
     	
         Source[] sources = new Source[6];
         sources[0] = new StreamSource(getClass().getResourceAsStream(DefaultCSMessageParser.XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
@@ -929,5 +932,36 @@ public class AssertionPayloadParser extends BasePayloadParser {
         return schema;
     }
 
+	public static class AssertionLSResourceResolver implements LSResourceResolver {
+
+		public LSInput resolveResource(String type, String namespaceURI,
+									   String publicId, String systemId, String baseURI) {
+			try {
+				if(systemId != null && systemId.equals("http://www.w3.org/2001/XMLSchema.dtd")){
+					return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream("/XMLSchema.dtd"));
+				}
+				if(systemId != null && systemId.equals("datatypes.dtd")){
+					return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream("/datatypes.dtd"));
+				}
+				if(namespaceURI != null){
+					if(namespaceURI.equals(DefaultCSMessageParser.XMLDSIG_NAMESPACE)){
+						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(DefaultCSMessageParser.XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
+					}
+					if(namespaceURI.equals(DefaultCSMessageParser.XMLENC_NAMESPACE)){
+						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(DefaultCSMessageParser.XMLENC_XSD_SCHEMA_RESOURCE_LOCATION));
+					}
+					if(namespaceURI.equals(SAMLP_NAMESPACE)){
+						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION));
+					}
+					if(namespaceURI.equals(NAMESPACE)){
+						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION));
+					}
+				}
+			} catch (MessageProcessingException e) {
+				throw new IllegalStateException("Error couldn't read XSD from class path: " + e.getMessage(), e);
+			}
+			return null;
+		}
+	}
 
 }

@@ -2,6 +2,7 @@ package org.certificateservices.messages.saml2.assertion;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.saml2.BaseSAMLMessageParser;
 import org.certificateservices.messages.saml2.assertion.jaxb.*;
@@ -15,6 +16,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.transform.dom.DOMResult;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * MessageParser for generating generate SAML 2.0 Assertions. This should be used when generating SAML Assertions
@@ -50,6 +52,25 @@ public class SAMLAssertionMessageParser extends BaseSAMLMessageParser{
 
     @Override
     public XMLSigner.OrganisationLookup getOrganisationLookup(){
+        return null;
+    }
+
+    @Override
+    protected String lookupSchemaForElement(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
+        if(namespaceURI != null){
+            if(namespaceURI.equals(DefaultCSMessageParser.XMLDSIG_NAMESPACE)){
+                return DefaultCSMessageParser.XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION;
+            }
+            if(namespaceURI.equals(DefaultCSMessageParser.XMLENC_NAMESPACE)){
+                return DefaultCSMessageParser.XMLENC_XSD_SCHEMA_RESOURCE_LOCATION;
+            }
+            if(namespaceURI.equals(PROTOCOL_NAMESPACE)){
+                return BaseSAMLMessageParser.SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION;
+            }
+            if(namespaceURI.equals(ASSERTION_NAMESPACE)){
+                return BaseSAMLMessageParser.ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION;
+            }
+        }
         return null;
     }
 

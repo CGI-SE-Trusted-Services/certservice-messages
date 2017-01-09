@@ -25,11 +25,11 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 
 	def setup(){
 		spmp = new SAMLProtocolMessageParser();
-		spmp.init(new Properties(),secProv);
+		spmp.init(secProv);
 		spmp.systemTime = mockedSystemTime
 
 		samp = new SAMLAssertionMessageParser()
-		samp.init(new Properties(), secProv)
+		samp.init(secProv)
 		samp.systemTime = mockedSystemTime;
 	}
 

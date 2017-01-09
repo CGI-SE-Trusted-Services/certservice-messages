@@ -6,13 +6,12 @@
 //
 
 
-package org.certificateservices.messages.saml2.metadata.jaxp;
+package org.certificateservices.messages.saml2.metadata.jaxb;
 
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
@@ -20,22 +19,21 @@ import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType;
 
 
 /**
- * <p>Java class for IDPSSODescriptorType complex type.
+ * <p>Java class for AttributeAuthorityDescriptorType complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="IDPSSODescriptorType">
+ * &lt;complexType name="AttributeAuthorityDescriptorType">
  *   &lt;complexContent>
- *     &lt;extension base="{urn:oasis:names:tc:SAML:2.0:metadata}SSODescriptorType">
+ *     &lt;extension base="{urn:oasis:names:tc:SAML:2.0:metadata}RoleDescriptorType">
  *       &lt;sequence>
- *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}SingleSignOnService" maxOccurs="unbounded"/>
- *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}NameIDMappingService" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}AttributeService" maxOccurs="unbounded"/>
  *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}AssertionIDRequestService" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}NameIDFormat" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}AttributeProfile" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:assertion}Attribute" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
- *       &lt;attribute name="WantAuthnRequestsSigned" type="{http://www.w3.org/2001/XMLSchema}boolean" />
  *       &lt;anyAttribute processContents='lax' namespace='##other'/>
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -45,44 +43,43 @@ import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "IDPSSODescriptorType", propOrder = {
-    "singleSignOnService",
-    "nameIDMappingService",
+@XmlType(name = "AttributeAuthorityDescriptorType", propOrder = {
+    "attributeService",
     "assertionIDRequestService",
+    "nameIDFormat",
     "attributeProfile",
     "attribute"
 })
-public class IDPSSODescriptorType
-    extends SSODescriptorType
+public class AttributeAuthorityDescriptorType
+    extends RoleDescriptorType
 {
 
-    @XmlElement(name = "SingleSignOnService", required = true)
-    protected List<EndpointType> singleSignOnService;
-    @XmlElement(name = "NameIDMappingService")
-    protected List<EndpointType> nameIDMappingService;
+    @XmlElement(name = "AttributeService", required = true)
+    protected List<EndpointType> attributeService;
     @XmlElement(name = "AssertionIDRequestService")
     protected List<EndpointType> assertionIDRequestService;
+    @XmlElement(name = "NameIDFormat")
+    @XmlSchemaType(name = "anyURI")
+    protected List<String> nameIDFormat;
     @XmlElement(name = "AttributeProfile")
     @XmlSchemaType(name = "anyURI")
     protected List<String> attributeProfile;
     @XmlElement(name = "Attribute", namespace = "urn:oasis:names:tc:SAML:2.0:assertion")
     protected List<AttributeType> attribute;
-    @XmlAttribute(name = "WantAuthnRequestsSigned")
-    protected Boolean wantAuthnRequestsSigned;
 
     /**
-     * Gets the value of the singleSignOnService property.
+     * Gets the value of the attributeService property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the singleSignOnService property.
+     * This is why there is not a <CODE>set</CODE> method for the attributeService property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getSingleSignOnService().add(newItem);
+     *    getAttributeService().add(newItem);
      * </pre>
      * 
      * 
@@ -92,40 +89,11 @@ public class IDPSSODescriptorType
      * 
      * 
      */
-    public List<EndpointType> getSingleSignOnService() {
-        if (singleSignOnService == null) {
-            singleSignOnService = new ArrayList<EndpointType>();
+    public List<EndpointType> getAttributeService() {
+        if (attributeService == null) {
+            attributeService = new ArrayList<EndpointType>();
         }
-        return this.singleSignOnService;
-    }
-
-    /**
-     * Gets the value of the nameIDMappingService property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the nameIDMappingService property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getNameIDMappingService().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link EndpointType }
-     * 
-     * 
-     */
-    public List<EndpointType> getNameIDMappingService() {
-        if (nameIDMappingService == null) {
-            nameIDMappingService = new ArrayList<EndpointType>();
-        }
-        return this.nameIDMappingService;
+        return this.attributeService;
     }
 
     /**
@@ -155,6 +123,35 @@ public class IDPSSODescriptorType
             assertionIDRequestService = new ArrayList<EndpointType>();
         }
         return this.assertionIDRequestService;
+    }
+
+    /**
+     * Gets the value of the nameIDFormat property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the nameIDFormat property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getNameIDFormat().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link String }
+     * 
+     * 
+     */
+    public List<String> getNameIDFormat() {
+        if (nameIDFormat == null) {
+            nameIDFormat = new ArrayList<String>();
+        }
+        return this.nameIDFormat;
     }
 
     /**
@@ -213,30 +210,6 @@ public class IDPSSODescriptorType
             attribute = new ArrayList<AttributeType>();
         }
         return this.attribute;
-    }
-
-    /**
-     * Gets the value of the wantAuthnRequestsSigned property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Boolean }
-     *     
-     */
-    public Boolean isWantAuthnRequestsSigned() {
-        return wantAuthnRequestsSigned;
-    }
-
-    /**
-     * Sets the value of the wantAuthnRequestsSigned property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Boolean }
-     *     
-     */
-    public void setWantAuthnRequestsSigned(Boolean value) {
-        this.wantAuthnRequestsSigned = value;
     }
 
 }

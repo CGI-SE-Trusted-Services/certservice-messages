@@ -6,7 +6,7 @@
 //
 
 
-package org.certificateservices.messages.saml2.metadata.jaxp;
+package org.certificateservices.messages.saml2.metadata.jaxb;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -17,15 +17,15 @@ import javax.xml.bind.annotation.XmlValue;
 
 
 /**
- * <p>Java class for localizedURIType complex type.
+ * <p>Java class for AdditionalMetadataLocationType complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="localizedURIType">
+ * &lt;complexType name="AdditionalMetadataLocationType">
  *   &lt;simpleContent>
  *     &lt;extension base="&lt;http://www.w3.org/2001/XMLSchema>anyURI">
- *       &lt;attribute ref="{http://www.w3.org/XML/1998/namespace}lang use="required""/>
+ *       &lt;attribute name="namespace" use="required" type="{http://www.w3.org/2001/XMLSchema}anyURI" />
  *     &lt;/extension>
  *   &lt;/simpleContent>
  * &lt;/complexType>
@@ -34,16 +34,17 @@ import javax.xml.bind.annotation.XmlValue;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "localizedURIType", propOrder = {
+@XmlType(name = "AdditionalMetadataLocationType", propOrder = {
     "value"
 })
-public class LocalizedURIType {
+public class AdditionalMetadataLocationType {
 
     @XmlValue
     @XmlSchemaType(name = "anyURI")
     protected String value;
-    @XmlAttribute(name = "lang", namespace = "http://www.w3.org/XML/1998/namespace", required = true)
-    protected String lang;
+    @XmlAttribute(name = "namespace", required = true)
+    @XmlSchemaType(name = "anyURI")
+    protected String namespace;
 
     /**
      * Gets the value of the value property.
@@ -70,27 +71,27 @@ public class LocalizedURIType {
     }
 
     /**
-     * Gets the value of the lang property.
+     * Gets the value of the namespace property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getLang() {
-        return lang;
+    public String getNamespace() {
+        return namespace;
     }
 
     /**
-     * Sets the value of the lang property.
+     * Sets the value of the namespace property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setLang(String value) {
-        this.lang = value;
+    public void setNamespace(String value) {
+        this.namespace = value;
     }
 
 }

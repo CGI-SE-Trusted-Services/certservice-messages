@@ -1053,6 +1053,11 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		public String getIDValue(Element signedElement) throws MessageContentException {
 			return signedElement.getAttribute(getIDAttribute());
 		}
+
+		@Override
+		public List<QName> getSiblingsBeforeSignature(Element element) throws MessageContentException {
+			return null;
+		}
 	}
 
 }

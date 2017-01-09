@@ -1,5 +1,6 @@
 package org.certificateservices.messages.saml2
 
+import org.bouncycastle.util.encoders.Base64
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.assertion.AssertionPayloadParser
 import org.certificateservices.messages.assertion.ResponseStatusCodes
@@ -32,10 +33,12 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
 	def setup(){
 		spmp = new SAMLProtocolMessageParser();
-		spmp.init(new Properties(),secProv);
+		spmp.init(secProv, null);
 		spmp.systemTime = mockedSystemTime
 
 		bsmp = spmp;
+
+
 
 	}
 
@@ -47,8 +50,11 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		c.setProperty(BaseSAMLMessageParser.SETTING_CUSTOM_JAXBCLASSPATH, "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.credmanagement.jaxb:org.certificateservices.messages.authorization.jaxb")
 		c.setProperty(BaseSAMLMessageParser.SETTING_CUSTOM_SCHEMALOCATIONS, DefaultCSMessageParser.CSMESSAGE_XSD_SCHEMA_2_0_RESOURCE_LOCATION + ":" + CredManagementPayloadParser.CREDMANAGEMENT_XSD_SCHEMA_2_0_RESOURCE_LOCATION + ":" + AuthorizationPayloadParser.AUTHORIZATION_XSD_SCHEMA_2_0_RESOURCE_LOCATION)
 		SAMLAssertionMessageParser p = new SAMLAssertionMessageParser()
+		def customMock = Mock(SAMLParserCustomisations)
+		customMock.getCustomJAXBClasspath() >> "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.credmanagement.jaxb:org.certificateservices.messages.authorization.jaxb"
+		customMock.getCustomSchemaLocations() >> [DefaultCSMessageParser.CSMESSAGE_XSD_SCHEMA_2_0_RESOURCE_LOCATION , CredManagementPayloadParser.CREDMANAGEMENT_XSD_SCHEMA_2_0_RESOURCE_LOCATION , AuthorizationPayloadParser.AUTHORIZATION_XSD_SCHEMA_2_0_RESOURCE_LOCATION]
 		when:
-		p.init(c, secProv);
+		p.init(secProv, customMock);
 		then:
 		p.customJAXBClasspath == "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.credmanagement.jaxb:org.certificateservices.messages.authorization.jaxb"
 		p.customSchemaLocations.length == 3
@@ -368,4 +374,5 @@ HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
 WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
 ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
 ZLCP64EJEfE1mGxCJg==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></cs:CSMessage>""").getBytes("UTF-8")
+
 }

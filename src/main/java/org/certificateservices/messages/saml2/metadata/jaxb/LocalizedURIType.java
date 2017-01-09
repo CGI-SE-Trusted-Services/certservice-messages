@@ -6,24 +6,25 @@
 //
 
 
-package org.certificateservices.messages.saml2.metadata.jaxp;
+package org.certificateservices.messages.saml2.metadata.jaxb;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
 
 
 /**
- * <p>Java class for localizedNameType complex type.
+ * <p>Java class for localizedURIType complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="localizedNameType">
+ * &lt;complexType name="localizedURIType">
  *   &lt;simpleContent>
- *     &lt;extension base="&lt;http://www.w3.org/2001/XMLSchema>string">
+ *     &lt;extension base="&lt;http://www.w3.org/2001/XMLSchema>anyURI">
  *       &lt;attribute ref="{http://www.w3.org/XML/1998/namespace}lang use="required""/>
  *     &lt;/extension>
  *   &lt;/simpleContent>
@@ -33,12 +34,13 @@ import javax.xml.bind.annotation.XmlValue;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "localizedNameType", propOrder = {
+@XmlType(name = "localizedURIType", propOrder = {
     "value"
 })
-public class LocalizedNameType {
+public class LocalizedURIType {
 
     @XmlValue
+    @XmlSchemaType(name = "anyURI")
     protected String value;
     @XmlAttribute(name = "lang", namespace = "http://www.w3.org/XML/1998/namespace", required = true)
     protected String lang;

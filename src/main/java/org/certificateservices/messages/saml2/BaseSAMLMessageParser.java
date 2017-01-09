@@ -16,7 +16,6 @@ import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.NoDecryptionKeyFoundException;
-import org.certificateservices.messages.assertion.AttributeQueryData;
 import org.certificateservices.messages.assertion.ResponseStatusCodes;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.csmessages.XSDLSInput;
@@ -42,7 +41,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
-import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -95,13 +93,13 @@ public abstract class BaseSAMLMessageParser {
 	protected String[] customSchemaLocations = new String[0];
 	protected ObjectFactory of = new ObjectFactory();
 	protected org.certificateservices.messages.saml2.protocol.jaxb.ObjectFactory samlpOf = new org.certificateservices.messages.saml2.protocol.jaxb.ObjectFactory();
-
+	protected org.certificateservices.messages.xmldsig.jaxb.ObjectFactory dsigOf = new org.certificateservices.messages.xmldsig.jaxb.ObjectFactory();
 	protected SystemTime systemTime = new DefaultSystemTime();
 	protected XMLEncrypter xmlEncrypter;
 	EncryptedAssertionXMLConverter encryptedAssertionXMLConverter = new EncryptedAssertionXMLConverter();
 	protected XMLSigner xmlSigner;
 	protected CertificateFactory cf;
-	protected Properties config;
+	protected SAMLParserCustomisations customisations;
 	protected MessageSecurityProvider messageSecurityProvider;
 
 	protected Validator schemaValidator;
@@ -109,25 +107,41 @@ public abstract class BaseSAMLMessageParser {
 	protected AssertionSignatureLocationFinder assertionSignatureLocationFinder = new AssertionSignatureLocationFinder();
 	protected SAMLPSignatureLocationFinder samlpSignatureLocationFinder = new SAMLPSignatureLocationFinder();
 
-	public void init(Properties config, MessageSecurityProvider secProv)
+
+	/**
+	 * Method to initialise the SAML parser using standard XSDs.
+	 * @param secProv Message Security Provider to use.
+	 * @throws MessageProcessingException if internal problems occurred setting up the SAMLMessageParser.
+     */
+	public void init(MessageSecurityProvider secProv) throws MessageProcessingException {
+		init(secProv,null);
+	}
+
+	/**
+	 * Method to initialise the SAML parser using standard XSDs and extra XSD used for extentions.
+	 *
+	 * @param secProv Message Security Provider to use.
+	 * @param customisations implementation to specify non-SAML core JAXB extensions.
+	 *
+	 * @throws MessageProcessingException if internal problems occurred setting up the SAMLMessageParser.
+	 */
+	public void init(MessageSecurityProvider secProv, SAMLParserCustomisations customisations)
 			throws MessageProcessingException {
 		try {
-			this.config = config;
+			this.customisations = customisations;
 
-			customJAXBClasspath = config.getProperty(SETTING_CUSTOM_JAXBCLASSPATH);
-			String customSchemaLocationsValue = config.getProperty(SETTING_CUSTOM_SCHEMALOCATIONS);
-			if(customSchemaLocationsValue != null){
-				customSchemaLocations = customSchemaLocationsValue.split(":");
+			if(customisations != null) {
+				customJAXBClasspath = customisations.getCustomJAXBClasspath();
+				customSchemaLocations = customisations.getCustomSchemaLocations();
 			}
-
 			messageSecurityProvider = secProv;
 			xmlEncrypter = new XMLEncrypter(secProv, getDocumentBuilder(), getMarshaller(), getUnmarshaller());
-			xmlSigner = new XMLSigner(secProv,getDocumentBuilder(), true, new AssertionSignatureLocationFinder(), new CSMessageOrganisationLookup());
+			xmlSigner = new XMLSigner(secProv,getDocumentBuilder(), true, getSignatureLocationFinder(), getOrganisationLookup());
 			cf = CertificateFactory.getInstance("X.509");
 
 			schemaValidator = generateSchema().newValidator();
 		} catch (Exception e) {
-			throw new MessageProcessingException("Error initializing JAXB in AssertionPayloadParser: " + e.getMessage(),e);
+			throw new MessageProcessingException("Error initializing JAXB in SAMLMessageParser: " + e.getMessage(),e);
 		}
 	}
 
@@ -139,41 +153,64 @@ public abstract class BaseSAMLMessageParser {
 	/**
 	 * @return  all related JAXBPackages.
 	 */
-	public abstract String getJAXBPackages();
+	protected abstract String getJAXBPackages();
 
 	/**
 	 * @return an array of schema locations used by the parser. The string value should
 	 * point to resources available using getResourceAsStream()
 	 */
-	public abstract String[] getDefaultSchemaLocations() throws SAXException;
+	protected abstract String[] getDefaultSchemaLocations() throws SAXException;
 
 
 	/**
 	 *
 	 * @return returns the implementation locating the signature element of a specific message.
      */
-	public abstract XMLSigner.SignatureLocationFinder getSignatureLocationFinder();
+	protected abstract XMLSigner.SignatureLocationFinder getSignatureLocationFinder();
 
 	/**
 	 *
 	 * @return the implementation to lookup related organisation in a specific message.
      */
-	public abstract XMLSigner.OrganisationLookup getOrganisationLookup();
+	protected abstract XMLSigner.OrganisationLookup getOrganisationLookup();
 
+
+	/**
+	 * Method to find Schema for a specific  element related to the custom schema locations. The implementation
+	 * only need to find it's related XSD, the basic datatypes and XML itself are not needed.
+	 *
+	 * @param type The type of the resource being resolved. For XML [XML 1.0] resources (i.e. entities),
+	 *             applications must use the value "http://www.w3.org/TR/REC-xml". For XML Schema [XML Schema Part 1],
+	 *             applications must use the value "http://www.w3.org/2001/XMLSchema". Other types of resources are
+	 *             outside the scope of this specification and therefore should recommend an absolute URI in order
+	 *             to use this method.
+	 * @param namespaceURI The namespace of the resource being resolved, e.g. the target namespace of the XML Schema
+	 *                     [XML Schema Part 1] when resolving XML Schema resources.
+	 * @param publicId The public identifier of the external entity being referenced, or null if no public identifier
+	 *                 was supplied or if the resource is not an entity.
+	 * @param systemId The system identifier, a URI reference [IETF RFC 2396], of the external resource being
+	 *                 referenced, or null if no system identifier was supplied.
+	 * @param baseURI The absolute base URI of the resource being parsed, or null if there is no base URI.
+	 * @return the resource as stream path to related schema XSD, or null if no matching found.
+	 */
+	protected abstract String lookupSchemaForElement(String type, String namespaceURI,
+												  String publicId, String systemId, String baseURI);
 
 	public Schema generateSchema() throws SAXException {
 		SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 
-		schemaFactory.setResourceResolver(new BaseSAMLMessageParser.AssertionLSResourceResolver());
+		schemaFactory.setResourceResolver(new BaseLSResourceResolver(customisations));
 
 		String[] defaultSchemaLocations = getDefaultSchemaLocations();
 		int index = 0;
-		Source[] sources = new Source[defaultSchemaLocations.length + customSchemaLocations.length];
+		Source[] sources = new Source[defaultSchemaLocations.length + (customSchemaLocations != null ?customSchemaLocations.length:0)];
 		for(String schemaLocation: defaultSchemaLocations){
 			sources[index++] = new StreamSource(getClass().getResourceAsStream(schemaLocation));
 		}
-		for(String schemaLocation: customSchemaLocations){
-			sources[index++] = new StreamSource(getClass().getResourceAsStream(schemaLocation));
+		if(customSchemaLocations != null) {
+			for (String schemaLocation : customSchemaLocations) {
+				sources[index++] = new StreamSource(getClass().getResourceAsStream(schemaLocation));
+			}
 		}
 
 		return schemaFactory.newSchema(sources);
@@ -283,7 +320,7 @@ public abstract class BaseSAMLMessageParser {
 			JAXBElement<ResponseType> response = samlpOf.createResponse(responseType);
 
 			if(signSAMLPResponse){
-				return marshallAndSign(response,false,true);
+				return marshallAndSignSAMLPOrAssertion(response,false,true);
 			}
 
 			return marshall(response);
@@ -496,7 +533,7 @@ public abstract class BaseSAMLMessageParser {
 	 * @return the marshalled byte array 
 	 * @throws MessageProcessingException if problem occurred marshalling the message.
 	 */
-	protected byte[] marshall(JAXBElement<?> message) throws MessageProcessingException{
+	public byte[] marshall(JAXBElement<?> message) throws MessageProcessingException{
 		try{
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		getMarshaller().marshal(message, baos);
@@ -521,6 +558,30 @@ public abstract class BaseSAMLMessageParser {
 
 	}
 
+	/**
+	 * Help method to marshall and sign an JAXBElement that is supported by the parser implementation.
+	 *
+	 * Method that generates the signature and marshalls the message to byte array in UTF-8 format.
+	 * @param message to sign and marshall.
+	 * @return a marshalled and signed message.
+	 * @throws MessageProcessingException if problems occurred when processing the message.
+	 * @throws MessageContentException if unsupported version is detected in message.
+	 */
+	public byte[] marshallAndSign(JAXBElement<?> message) throws MessageProcessingException, MessageContentException{
+		if(message == null){
+			throw new MessageProcessingException("Error marshalling assertion, message cannot be null.");
+		}
+		Document doc = documentBuilder.newDocument();
+		try {
+			getMarshaller().marshal(message, doc);
+		} catch (JAXBException e) {
+			throw new MessageProcessingException("Error marshalling message " + e.getMessage(), e);
+		}
+
+        xmlSigner.sign(doc, getSignatureLocationFinder());
+
+		return xmlSigner.marshallDoc(doc);
+	}
 	
 	/**
 	 * Help method to marshall and sign an Assertion, either standalone or inside a SAMLP Response
@@ -531,7 +592,7 @@ public abstract class BaseSAMLMessageParser {
 	 * @throws MessageProcessingException if problems occurred when processing the message.
 	 * @throws MessageContentException if unsupported version is detected in message.
 	 */
-	protected byte[] marshallAndSign(JAXBElement<?> message, boolean signAssertion, boolean signSAMLP) throws MessageProcessingException, MessageContentException{
+	protected byte[] marshallAndSignSAMLPOrAssertion(JAXBElement<?> message, boolean signAssertion, boolean signSAMLP) throws MessageProcessingException, MessageContentException{
 		if(message == null){
 			throw new MessageProcessingException("Error marshalling assertion, message cannot be null.");
 		}
@@ -544,21 +605,12 @@ public abstract class BaseSAMLMessageParser {
 
 
 		if(signAssertion) {
-			List<QName> beforeSiblings = new ArrayList<QName>();
-			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Subject"));
-			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Conditions"));
-			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Advice"));
-			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Statement"));
-			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "AuthnStatement"));
-			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "AuthzDecisionStatement"));
-			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "AttributeStatement"));
-			xmlSigner.sign(doc,  assertionSignatureLocationFinder, beforeSiblings);
+
+			xmlSigner.sign(doc,  assertionSignatureLocationFinder);
 		}
 		if(signSAMLP){
-			List<QName> beforeSiblings = new ArrayList<QName>();
-			beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "Extensions"));
-			beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "Status"));
-			xmlSigner.sign(doc, samlpSignatureLocationFinder, beforeSiblings);
+
+			xmlSigner.sign(doc, samlpSignatureLocationFinder);
 		}
 		return xmlSigner.marshallDoc(doc);
 	}
@@ -660,6 +712,19 @@ public abstract class BaseSAMLMessageParser {
 			return signedElement.getAttribute(getIDAttribute());
 		}
 
+		@Override
+		public List<QName> getSiblingsBeforeSignature(Element element) throws MessageContentException {
+			List<QName> beforeSiblings = new ArrayList<QName>();
+			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Subject"));
+			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Conditions"));
+			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Advice"));
+			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Statement"));
+			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "AuthnStatement"));
+			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "AuthzDecisionStatement"));
+			beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "AttributeStatement"));
+			return beforeSiblings;
+		}
+
 	}
 
 	public static class SAMLPSignatureLocationFinder implements SignatureLocationFinder{
@@ -686,10 +751,24 @@ public abstract class BaseSAMLMessageParser {
 			return signedElement.getAttribute(getIDAttribute());
 		}
 
+		@Override
+		public List<QName> getSiblingsBeforeSignature(Element element) throws MessageContentException {
+			List<QName> beforeSiblings = new ArrayList<QName>();
+			beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "Extensions"));
+			beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "Status"));
+			return beforeSiblings;
+		}
+
 	}
     
-    public static class AssertionLSResourceResolver implements  LSResourceResolver {
-		
+    protected class BaseLSResourceResolver implements  LSResourceResolver {
+
+		private SAMLParserCustomisations customizations;
+
+		public BaseLSResourceResolver(SAMLParserCustomisations customizations){
+			this.customizations = customizations;
+		}
+
 		public LSInput resolveResource(String type, String namespaceURI,
 				String publicId, String systemId, String baseURI) {
 			try {
@@ -699,26 +778,26 @@ public abstract class BaseSAMLMessageParser {
 				if(systemId != null && systemId.equals("datatypes.dtd")){
 					return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream("/datatypes.dtd"));
 				}
-				if(namespaceURI != null){
-					if(namespaceURI.equals(DefaultCSMessageParser.XMLDSIG_NAMESPACE)){
-						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(DefaultCSMessageParser.XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
-					}
-					if(namespaceURI.equals(DefaultCSMessageParser.XMLENC_NAMESPACE)){
-						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(DefaultCSMessageParser.XMLENC_XSD_SCHEMA_RESOURCE_LOCATION));
-					}
-					if(namespaceURI.equals(PROTOCOL_NAMESPACE)){
-						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(BaseSAMLMessageParser.SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION));
-					}
-					if(namespaceURI.equals(ASSERTION_NAMESPACE)){
-						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(BaseSAMLMessageParser.ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION));
-					}
+
+				String retval = null;
+				if(customizations != null) {
+					retval = customizations.lookupSchemaForElement(type, namespaceURI, publicId, systemId, baseURI);
 				}
+				if(retval == null){
+					retval = lookupSchemaForElement(type, namespaceURI, publicId, systemId, baseURI);
+				}
+				if(retval != null) {
+					return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(retval));
+				}
+
 			} catch (MessageProcessingException e) {
 				throw new IllegalStateException("Error couldn't read XSD from class path: " + e.getMessage(), e);
 			}
 			return null;
 		}
 	}
+
+
 
 	/**
 	 * Class used to verify certain conditions such as OneTime
@@ -762,5 +841,7 @@ public abstract class BaseSAMLMessageParser {
 			throw new MessageContentException("AudienceRestriction Condition is not supported.");
 		}
 	}
+
+
 
 }

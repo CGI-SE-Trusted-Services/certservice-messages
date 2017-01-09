@@ -6,7 +6,7 @@
 //
 
 
-package org.certificateservices.messages.saml2.metadata.jaxp;
+package org.certificateservices.messages.saml2.metadata.jaxb;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +19,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlID;
 import javax.xml.bind.annotation.XmlSchemaType;
+import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
@@ -29,24 +30,26 @@ import org.certificateservices.messages.xmldsig.jaxb.SignatureType;
 
 
 /**
- * <p>Java class for AffiliationDescriptorType complex type.
+ * <p>Java class for RoleDescriptorType complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="AffiliationDescriptorType">
+ * &lt;complexType name="RoleDescriptorType">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element ref="{http://www.w3.org/2000/09/xmldsig#}Signature" minOccurs="0"/>
  *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}Extensions" minOccurs="0"/>
- *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}AffiliateMember" maxOccurs="unbounded"/>
  *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}KeyDescriptor" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}Organization" minOccurs="0"/>
+ *         &lt;element ref="{urn:oasis:names:tc:SAML:2.0:metadata}ContactPerson" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
- *       &lt;attribute name="affiliationOwnerID" use="required" type="{urn:oasis:names:tc:SAML:2.0:metadata}entityIDType" />
+ *       &lt;attribute name="ID" type="{http://www.w3.org/2001/XMLSchema}ID" />
  *       &lt;attribute name="validUntil" type="{http://www.w3.org/2001/XMLSchema}dateTime" />
  *       &lt;attribute name="cacheDuration" type="{http://www.w3.org/2001/XMLSchema}duration" />
- *       &lt;attribute name="ID" type="{http://www.w3.org/2001/XMLSchema}ID" />
+ *       &lt;attribute name="protocolSupportEnumeration" use="required" type="{urn:oasis:names:tc:SAML:2.0:metadata}anyURIListType" />
+ *       &lt;attribute name="errorURL" type="{http://www.w3.org/2001/XMLSchema}anyURI" />
  *       &lt;anyAttribute processContents='lax' namespace='##other'/>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -56,35 +59,46 @@ import org.certificateservices.messages.xmldsig.jaxb.SignatureType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "AffiliationDescriptorType", propOrder = {
+@XmlType(name = "RoleDescriptorType", propOrder = {
     "signature",
     "extensions",
-    "affiliateMember",
-    "keyDescriptor"
+    "keyDescriptor",
+    "organization",
+    "contactPerson"
 })
-public class AffiliationDescriptorType {
+@XmlSeeAlso({
+    AttributeAuthorityDescriptorType.class,
+    PDPDescriptorType.class,
+    AuthnAuthorityDescriptorType.class,
+    SSODescriptorType.class
+})
+public abstract class RoleDescriptorType {
 
     @XmlElement(name = "Signature", namespace = "http://www.w3.org/2000/09/xmldsig#")
     protected SignatureType signature;
     @XmlElement(name = "Extensions")
     protected ExtensionsType extensions;
-    @XmlElement(name = "AffiliateMember", required = true)
-    @XmlSchemaType(name = "anyURI")
-    protected List<String> affiliateMember;
     @XmlElement(name = "KeyDescriptor")
     protected List<KeyDescriptorType> keyDescriptor;
-    @XmlAttribute(name = "affiliationOwnerID", required = true)
-    protected String affiliationOwnerID;
-    @XmlAttribute(name = "validUntil")
-    @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar validUntil;
-    @XmlAttribute(name = "cacheDuration")
-    protected Duration cacheDuration;
+    @XmlElement(name = "Organization")
+    protected OrganizationType organization;
+    @XmlElement(name = "ContactPerson")
+    protected List<ContactType> contactPerson;
     @XmlAttribute(name = "ID")
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     @XmlID
     @XmlSchemaType(name = "ID")
     protected String id;
+    @XmlAttribute(name = "validUntil")
+    @XmlSchemaType(name = "dateTime")
+    protected XMLGregorianCalendar validUntil;
+    @XmlAttribute(name = "cacheDuration")
+    protected Duration cacheDuration;
+    @XmlAttribute(name = "protocolSupportEnumeration", required = true)
+    protected List<String> protocolSupportEnumeration;
+    @XmlAttribute(name = "errorURL")
+    @XmlSchemaType(name = "anyURI")
+    protected String errorURL;
     @XmlAnyAttribute
     private Map<QName, String> otherAttributes = new HashMap<QName, String>();
 
@@ -137,35 +151,6 @@ public class AffiliationDescriptorType {
     }
 
     /**
-     * Gets the value of the affiliateMember property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the affiliateMember property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getAffiliateMember().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link String }
-     * 
-     * 
-     */
-    public List<String> getAffiliateMember() {
-        if (affiliateMember == null) {
-            affiliateMember = new ArrayList<String>();
-        }
-        return this.affiliateMember;
-    }
-
-    /**
      * Gets the value of the keyDescriptor property.
      * 
      * <p>
@@ -195,27 +180,80 @@ public class AffiliationDescriptorType {
     }
 
     /**
-     * Gets the value of the affiliationOwnerID property.
+     * Gets the value of the organization property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link OrganizationType }
+     *     
+     */
+    public OrganizationType getOrganization() {
+        return organization;
+    }
+
+    /**
+     * Sets the value of the organization property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link OrganizationType }
+     *     
+     */
+    public void setOrganization(OrganizationType value) {
+        this.organization = value;
+    }
+
+    /**
+     * Gets the value of the contactPerson property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the contactPerson property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getContactPerson().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link ContactType }
+     * 
+     * 
+     */
+    public List<ContactType> getContactPerson() {
+        if (contactPerson == null) {
+            contactPerson = new ArrayList<ContactType>();
+        }
+        return this.contactPerson;
+    }
+
+    /**
+     * Gets the value of the id property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getAffiliationOwnerID() {
-        return affiliationOwnerID;
+    public String getID() {
+        return id;
     }
 
     /**
-     * Sets the value of the affiliationOwnerID property.
+     * Sets the value of the id property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setAffiliationOwnerID(String value) {
-        this.affiliationOwnerID = value;
+    public void setID(String value) {
+        this.id = value;
     }
 
     /**
@@ -267,27 +305,56 @@ public class AffiliationDescriptorType {
     }
 
     /**
-     * Gets the value of the id property.
+     * Gets the value of the protocolSupportEnumeration property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the protocolSupportEnumeration property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getProtocolSupportEnumeration().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link String }
+     * 
+     * 
+     */
+    public List<String> getProtocolSupportEnumeration() {
+        if (protocolSupportEnumeration == null) {
+            protocolSupportEnumeration = new ArrayList<String>();
+        }
+        return this.protocolSupportEnumeration;
+    }
+
+    /**
+     * Gets the value of the errorURL property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getID() {
-        return id;
+    public String getErrorURL() {
+        return errorURL;
     }
 
     /**
-     * Sets the value of the id property.
+     * Sets the value of the errorURL property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setID(String value) {
-        this.id = value;
+    public void setErrorURL(String value) {
+        this.errorURL = value;
     }
 
     /**

@@ -30,13 +30,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
-import sun.plugin2.message.Message;
 
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -348,6 +348,11 @@ public class CSExportDataParser {
 		@Override
 		public String getIDValue(Element signedElement) throws MessageContentException {
 			return signedElement.getAttribute(getIDAttribute());
+		}
+
+		@Override
+		public List<QName> getSiblingsBeforeSignature(Element element) throws MessageContentException {
+			return null;
 		}
 
 	}

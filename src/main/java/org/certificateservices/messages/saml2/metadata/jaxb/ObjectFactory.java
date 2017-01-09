@@ -6,22 +6,19 @@
 //
 
 
-package org.certificateservices.messages.saml2.metadata.jaxp;
+package org.certificateservices.messages.saml2.metadata.jaxb;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlElementDecl;
 import javax.xml.bind.annotation.XmlRegistry;
 import javax.xml.namespace.QName;
-import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType;
 import org.certificateservices.messages.xenc.jaxb.EncryptionMethodType;
-import org.certificateservices.messages.xmldsig.jaxb.KeyInfoType;
-import org.certificateservices.messages.xmldsig.jaxb.SignatureType;
 
 
 /**
  * This object contains factory methods for each 
  * Java content interface and Java element interface 
- * generated in the org.certificateservices.messages.saml2.metadata.jaxp package.
+ * generated in the org.certificateservices.messages.saml2.metadata.jaxb package.
  * <p>An ObjectFactory allows you to programatically 
  * construct new instances of the Java representation 
  * for XML content. The Java representation of XML 
@@ -40,7 +37,6 @@ public class ObjectFactory {
     private final static QName _NameIDMappingService_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "NameIDMappingService");
     private final static QName _NameIDFormat_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "NameIDFormat");
     private final static QName _EntityDescriptor_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "EntityDescriptor");
-    private final static QName _KeyInfo_QNAME = new QName("http://www.w3.org/2000/09/xmldsig#", "KeyInfo");
     private final static QName _OrganizationURL_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "OrganizationURL");
     private final static QName _AuthnAuthorityDescriptor_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "AuthnAuthorityDescriptor");
     private final static QName _PDPDescriptor_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "PDPDescriptor");
@@ -48,14 +44,12 @@ public class ObjectFactory {
     private final static QName _ServiceDescription_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "ServiceDescription");
     private final static QName _SingleLogoutService_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "SingleLogoutService");
     private final static QName _AuthnQueryService_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "AuthnQueryService");
-    private final static QName _Attribute_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:assertion", "Attribute");
     private final static QName _AuthzService_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "AuthzService");
     private final static QName _EmailAddress_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "EmailAddress");
     private final static QName _SurName_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "SurName");
     private final static QName _EncryptionMethod_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "EncryptionMethod");
     private final static QName _AttributeProfile_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "AttributeProfile");
     private final static QName _AffiliateMember_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "AffiliateMember");
-    private final static QName _Signature_QNAME = new QName("http://www.w3.org/2000/09/xmldsig#", "Signature");
     private final static QName _SPSSODescriptor_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "SPSSODescriptor");
     private final static QName _AssertionIDRequestService_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "AssertionIDRequestService");
     private final static QName _EntitiesDescriptor_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "EntitiesDescriptor");
@@ -80,7 +74,7 @@ public class ObjectFactory {
     private final static QName _SingleSignOnService_QNAME = new QName("urn:oasis:names:tc:SAML:2.0:metadata", "SingleSignOnService");
 
     /**
-     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.certificateservices.messages.saml2.metadata.jaxp
+     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.certificateservices.messages.saml2.metadata.jaxb
      * 
      */
     public ObjectFactory() {
@@ -283,14 +277,7 @@ public class ObjectFactory {
         return new JAXBElement<EntityDescriptorType>(_EntityDescriptor_QNAME, EntityDescriptorType.class, null, value);
     }
 
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link KeyInfoType }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://www.w3.org/2000/09/xmldsig#", name = "KeyInfo")
-    public JAXBElement<KeyInfoType> createKeyInfo(KeyInfoType value) {
-        return new JAXBElement<KeyInfoType>(_KeyInfo_QNAME, KeyInfoType.class, null, value);
-    }
+
 
     /**
      * Create an instance of {@link JAXBElement }{@code <}{@link LocalizedURIType }{@code >}}
@@ -355,14 +342,7 @@ public class ObjectFactory {
         return new JAXBElement<EndpointType>(_AuthnQueryService_QNAME, EndpointType.class, null, value);
     }
 
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link AttributeType }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "urn:oasis:names:tc:SAML:2.0:assertion", name = "Attribute")
-    public JAXBElement<AttributeType> createAttribute(AttributeType value) {
-        return new JAXBElement<AttributeType>(_Attribute_QNAME, AttributeType.class, null, value);
-    }
+
 
     /**
      * Create an instance of {@link JAXBElement }{@code <}{@link EndpointType }{@code >}}
@@ -418,14 +398,7 @@ public class ObjectFactory {
         return new JAXBElement<String>(_AffiliateMember_QNAME, String.class, null, value);
     }
 
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link SignatureType }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://www.w3.org/2000/09/xmldsig#", name = "Signature")
-    public JAXBElement<SignatureType> createSignature(SignatureType value) {
-        return new JAXBElement<SignatureType>(_Signature_QNAME, SignatureType.class, null, value);
-    }
+
 
     /**
      * Create an instance of {@link JAXBElement }{@code <}{@link SPSSODescriptorType }{@code >}}
