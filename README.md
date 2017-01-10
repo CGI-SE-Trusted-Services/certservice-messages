@@ -162,6 +162,8 @@ For example:
 When generating jaxb code is usually not the correct xml prefixes set, this has to be configured manually in package-info.java class. Remember that when
 regenerating the code using xjc is this information overwritten.
 
+To save the result in a separate episode file for generation of dependencies add the parameter -episode 'filename'.
+
 ##  Eclipse notes
 
 Import the project with a eclipse supporting maven 2 and almost everything should be set-up

@@ -266,7 +266,10 @@ public class XMLSigner {
 
 
 				DOMValidateContext validationContext = new DOMValidateContext(signerCert.getPublicKey(), signature);
-				validationContext.setIdAttributeNS(signedElement, null, signatureLocationFinder.getIDAttribute());
+				String idAttribute = signatureLocationFinder.getIDAttribute();
+				if(idAttribute != null) {
+					validationContext.setIdAttributeNS(signedElement, null, signatureLocationFinder.getIDAttribute());
+				}
 				XMLSignatureFactory signatureFactory = XMLSignatureFactory.getInstance("DOM", new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
 				XMLSignature sig = signatureFactory.unmarshalXMLSignature(validationContext);
 				if (!sig.validate(validationContext)) {
@@ -401,7 +404,8 @@ public class XMLSigner {
 					String messageID = signatureLocationFinder.getIDValue(signatureLocation);
 					List<Transform> transFormList = new ArrayList<Transform>();
 					transFormList.add(fac.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));
-					Reference ref = fac.newReference("#" + messageID,digestMethod, transFormList, null, null);
+
+					Reference ref = fac.newReference((messageID == null ? "" : "#" + messageID),digestMethod, transFormList, null, null);
 
 					ArrayList<Reference> refList = new ArrayList<Reference>();
 					refList.add(ref);
@@ -426,7 +430,10 @@ public class XMLSigner {
 					} else {
 						signContext = new DOMSignContext(messageSecurityProvider.getSigningKey(), signatureLocation);
 					}
-					signContext.setIdAttributeNS(signatureLocation, null, signatureLocationFinder.getIDAttribute());
+					String idAttribute = signatureLocationFinder.getIDAttribute();
+					if(idAttribute != null) {
+						signContext.setIdAttributeNS(signatureLocation, null, idAttribute);
+					}
 					signContext.putNamespacePrefix("http://www.w3.org/2000/09/xmldsig#", "ds");
 
 					KeyInfoFactory kif = KeyInfoFactory.getInstance("DOM", new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
@@ -535,11 +542,13 @@ public class XMLSigner {
 	 */
 	private void checkValidReferenceURI(Element signedElement, Element signature, String signedElementIDAttr) throws MessageContentException{
 		try{
-			String objectID = signedElement.getAttribute(signedElementIDAttr);
-			Element transform = (Element) signature.getElementsByTagNameNS(XMLDSIG_NAMESPACE, "Reference").item(0);
-			String referenceID = transform.getAttribute("URI");
-			if(!referenceID.equals("#" + objectID)){
-				throw new MessageContentException("Error checking reference URI of digital signature it doesn't match the id of the signed element.");
+			if(signedElementIDAttr != null) {
+				String objectID = signedElement.getAttribute(signedElementIDAttr);
+				Element transform = (Element) signature.getElementsByTagNameNS(XMLDSIG_NAMESPACE, "Reference").item(0);
+				String referenceID = transform.getAttribute("URI");
+				if (!referenceID.equals("#" + objectID)) {
+					throw new MessageContentException("Error checking reference URI of digital signature it doesn't match the id of the signed element.");
+				}
 			}
 		}catch(Exception e){
 			if(e instanceof MessageContentException){

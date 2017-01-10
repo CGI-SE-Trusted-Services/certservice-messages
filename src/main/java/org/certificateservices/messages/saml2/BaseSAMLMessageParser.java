@@ -533,7 +533,7 @@ public abstract class BaseSAMLMessageParser {
 	 * @return the marshalled byte array 
 	 * @throws MessageProcessingException if problem occurred marshalling the message.
 	 */
-	public byte[] marshall(JAXBElement<?> message) throws MessageProcessingException{
+	public byte[] marshall(Object message) throws MessageProcessingException{
 		try{
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		getMarshaller().marshal(message, baos);
@@ -559,7 +559,7 @@ public abstract class BaseSAMLMessageParser {
 	}
 
 	/**
-	 * Help method to marshall and sign an JAXBElement that is supported by the parser implementation.
+	 * Help method to marshall and sign an JAXB data that is supported by the parser implementation.
 	 *
 	 * Method that generates the signature and marshalls the message to byte array in UTF-8 format.
 	 * @param message to sign and marshall.
@@ -567,7 +567,7 @@ public abstract class BaseSAMLMessageParser {
 	 * @throws MessageProcessingException if problems occurred when processing the message.
 	 * @throws MessageContentException if unsupported version is detected in message.
 	 */
-	public byte[] marshallAndSign(JAXBElement<?> message) throws MessageProcessingException, MessageContentException{
+	public byte[] marshallAndSign(Object message) throws MessageProcessingException, MessageContentException{
 		if(message == null){
 			throw new MessageProcessingException("Error marshalling assertion, message cannot be null.");
 		}

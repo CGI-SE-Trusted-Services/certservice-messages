@@ -6,9 +6,9 @@
 	version="2.0">
 
     <xs:import namespace="http://www.w3.org/2000/09/xmldsig#"
-       schemaLocation="http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" />
+       schemaLocation="xmldsig-core-schema.xsd" />
     <xs:import namespace="http://www.w3.org/2001/04/xmlenc#"
-        schemaLocation="http://www.w3.org/TR/2002/REC-xmlenc-core-20021210/xenc-schema.xsd"/>
+        schemaLocation="xenc-schema.xsd"/>
 
 	<xs:simpleType name="uuid">
 		<xs:restriction base="xs:string">
