@@ -40,6 +40,7 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLOutputFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -510,16 +511,12 @@ public abstract class BaseSAMLMessageParser {
 	}
 
 
-
-
 	private JAXBContext jaxbContext = null;
 	/**
 	 * Help method maintaining the JAXB Context.
 	 */
 	protected JAXBContext getJAXBContext() throws JAXBException{
 		if(jaxbContext== null){
-
-
 			jaxbContext = JAXBContext.newInstance(getJAXBPackages() + (customJAXBClasspath == null ? "" : ":" + customJAXBClasspath));
 
 		}
@@ -551,9 +548,9 @@ public abstract class BaseSAMLMessageParser {
 			}
 			return object;
 		}catch(SAXException e){
-			throw new MessageProcessingException("Error occurred create SAML unmarshaller: " + e.getMessage(),e);
+			throw new MessageProcessingException("Error occurred during SAML unmarshaller: " + e.getMessage(),e);
 		}catch(JAXBException e){
-			throw new MessageProcessingException("Error occurred create SAML unmarshaller: " + e.getMessage(),e);
+			throw new MessageProcessingException("Error occurred during SAML unmarshaller: " + e.getMessage(),e);
 		}
 
 	}
@@ -633,22 +630,22 @@ public abstract class BaseSAMLMessageParser {
 		}
 	}
 	
-	private Marshaller assertionMarshaller = null;
+	private Marshaller marshaller = null;
 	protected Marshaller getMarshaller() throws JAXBException{
-		if(assertionMarshaller == null){
-			assertionMarshaller = getJAXBContext().createMarshaller();
-			assertionMarshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
+		if(marshaller == null){
+			marshaller = getJAXBContext().createMarshaller();
+			marshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
 		}
-		return assertionMarshaller;
+		return marshaller;
 	}
 	
-	private Unmarshaller assertionUnmarshaller = null;
+	private Unmarshaller unmarshaller = null;
 	protected Unmarshaller getUnmarshaller() throws JAXBException, SAXException{
-		if(assertionUnmarshaller == null){
-			assertionUnmarshaller = getJAXBContext().createUnmarshaller();
-			assertionUnmarshaller.setSchema(generateSchema());
+		if(unmarshaller == null){
+			unmarshaller = getJAXBContext().createUnmarshaller();
+			unmarshaller.setSchema(generateSchema());
 		}
-		return assertionUnmarshaller;
+		return unmarshaller;
 	}
 
 

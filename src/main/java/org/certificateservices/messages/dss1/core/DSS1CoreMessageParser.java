@@ -31,10 +31,10 @@ public class DSS1CoreMessageParser extends BaseSAMLMessageParser{
     public static final String NAMESPACE = "urn:oasis:names:tc:dss:1.0:core:schema";
     public static final String SAML_1_1_NAMESPACE = "urn:oasis:names:tc:SAML:1.0:assertion";
 
-    private static final String BASE_JAXB_CONTEXT = "org.certificateservices.messages.saml1_1.assertions.jaxp:org.certificateservices.messages.dss1.core.jaxp:org.certificateservices.messages.xmldsig.jaxb";
+    protected static final String BASE_JAXB_CONTEXT = "org.certificateservices.messages.saml1_1.assertions.jaxp:org.certificateservices.messages.dss1.core.jaxp:org.certificateservices.messages.xmldsig.jaxb";
 
-    private static final String ASSERTION_XSD_SCHEMA_1_1_RESOURCE_LOCATION = "/cs-message-oasis-sstc-saml-schema-protocol-1.1.xsd";
-    private static final String DSS_XSD_SCHEMA_1_0_RESOURCE_LOCATION = "/cs-message-oasis-dss-core-schema-v1.0-os.xsd";
+    protected static final String ASSERTION_XSD_SCHEMA_1_1_RESOURCE_LOCATION = "/cs-message-oasis-sstc-saml-schema-protocol-1.1.xsd";
+    protected static final String DSS_XSD_SCHEMA_1_0_RESOURCE_LOCATION = "/cs-message-oasis-dss-core-schema-v1.0-os.xsd";
 
 
     protected org.certificateservices.messages.dss1.core.jaxp.ObjectFactory dssOf = new org.certificateservices.messages.dss1.core.jaxp.ObjectFactory();

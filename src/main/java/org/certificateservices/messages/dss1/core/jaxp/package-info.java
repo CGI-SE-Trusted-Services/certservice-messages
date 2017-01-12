@@ -7,7 +7,6 @@
 
 @javax.xml.bind.annotation.XmlSchema(namespace = "urn:oasis:names:tc:dss:1.0:core:schema",
         xmlns = {
-                @javax.xml.bind.annotation.XmlNs(namespaceURI = "urn:oasis:names:tc:SAML:1.0:assertion", prefix = "saml"),
                 @javax.xml.bind.annotation.XmlNs(namespaceURI = "http://www.w3.org/2000/09/xmldsig#", prefix = "ds"),
                 @javax.xml.bind.annotation.XmlNs(namespaceURI = "urn:oasis:names:tc:dss:1.0:core:schema", prefix = "dss")},
         elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED)
