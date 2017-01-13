@@ -181,7 +181,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		then:
 		sr.requestID == "SomeRequestId"
 	}
-	
+
 	def "Verify that genSignRequestExtension populates data structure correctly"() {
 		when:  "Generate full data structure"
 		JAXBElement<SignRequestExtensionType> t = emp.genSignRequestExtension("1.5", currentDate, createConditions(), createAttributeStatement(),
@@ -189,7 +189,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 				"SomeRequestedSignatureAlgorithm", createSignMessage(), createCertRequestProperties(),
 				createOtherRequestInfo())
 		byte[] d = emp.marshall(t)
-		printXML(d);
+		//printXML(d);
 		def xml = slurpXml(d)
 		then:
 		xml.@Version == "1.5"
