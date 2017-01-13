@@ -12,54 +12,39 @@
  *************************************************************************/
 package org.certificateservices.messages.csmessages;
 
-import groovy.util.slurpersupport.GPathResult;
-import groovy.xml.XmlUtil
+import groovy.util.slurpersupport.GPathResult
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.MessageSecurityProvider
 
-import java.security.Security;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.Properties;
-
-import javax.xml.bind.JAXBContext;
+import java.security.Security
+import java.security.cert.X509Certificate
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.Marshaller;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.parsers.DocumentBuilder;
 
-import org.apache.xml.security.Init;
-import org.apache.xml.security.utils.Base64;
+import org.apache.xml.security.Init
 import org.certificateservices.messages.DummyMessageSecurityProvider;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.assertion.AssertionPayloadParser;
-import org.certificateservices.messages.assertion.AssertionPayloadParserSpec;
-import org.certificateservices.messages.assertion.jaxb.AssertionType;
+import org.certificateservices.messages.assertion.AssertionPayloadParser
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType;
 import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
-import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
-import org.certificateservices.messages.csmessages.PayloadParserRegistry.ConfigurationCallback;
+import org.certificateservices.messages.credmanagement.jaxb.FieldValue
 import org.certificateservices.messages.csmessages.jaxb.ApprovalStatus;
 import org.certificateservices.messages.csmessages.jaxb.Attribute;
-import org.certificateservices.messages.csmessages.jaxb.CSMessage;
-import org.certificateservices.messages.csmessages.jaxb.CSRequest;
+import org.certificateservices.messages.csmessages.jaxb.CSMessage
 import org.certificateservices.messages.csmessages.jaxb.CSResponse;
 import org.certificateservices.messages.csmessages.jaxb.Credential;
 import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
 import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
 import org.certificateservices.messages.dummy.DummyPayloadParser;
 import org.certificateservices.messages.dummy.jaxb.SomePayload;
-import org.certificateservices.messages.samlp.jaxb.ResponseType;
+import org.certificateservices.messages.saml2.protocol.jaxb.ResponseType;
 import org.certificateservices.messages.sysconfig.SysConfigPayloadParser;
-import org.certificateservices.messages.sysconfig.jaxb.GetActiveConfigurationRequest;
-import org.certificateservices.messages.sysconfig.jaxb.Property;
-import org.certificateservices.messages.utils.SystemTime;
-import org.junit.After;
-import org.w3c.dom.Document;
-
-import spock.lang.Ignore;
-import spock.lang.IgnoreRest;
+import org.certificateservices.messages.sysconfig.jaxb.GetActiveConfigurationRequest
+import org.certificateservices.messages.utils.SystemTime
+import org.w3c.dom.Document
 import spock.lang.Specification;
 import spock.lang.Unroll;
 import static org.certificateservices.messages.csmessages.DefaultCSMessageParser.*
@@ -103,8 +88,9 @@ public class DefaultCSMessageParserSpec extends Specification{
 		assertionPayloadParser = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE)
 		assertionPayloadParser.systemTime = Mock(SystemTime)
 		assertionPayloadParser.systemTime.getSystemTime() >> new Date(1436279213000)
-		
-		
+		assertionPayloadParser.samlAssertionMessageParser.systemTime = assertionPayloadParser.systemTime
+
+
 		credManagementPayloadParser = PayloadParserRegistry.getParser(CredManagementPayloadParser.NAMESPACE)
 		
 		
@@ -363,7 +349,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		when:
 		mp.parseMessage(msg, false)
 		then:
-		0 * mp.xmlSigner.messageSecurityProvider.isValidAndAuthorized(_,_)
+		1 * mp.xmlSigner.messageSecurityProvider.isValidAndAuthorized(_,null) >> {true}
 
 		cleanup:
 		true

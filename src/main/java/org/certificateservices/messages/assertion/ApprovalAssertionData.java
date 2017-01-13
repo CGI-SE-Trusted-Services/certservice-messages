@@ -10,9 +10,9 @@ import javax.xml.bind.JAXBElement;
 
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.assertion.jaxb.AssertionType;
-import org.certificateservices.messages.assertion.jaxb.AttributeStatementType;
-import org.certificateservices.messages.assertion.jaxb.AttributeType;
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType;
+import org.certificateservices.messages.saml2.assertion.jaxb.AttributeStatementType;
+import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType;
 import org.certificateservices.messages.csmessages.jaxb.Approver;
 
 /**

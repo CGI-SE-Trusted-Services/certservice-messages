@@ -1,51 +1,23 @@
 package org.certificateservices.messages.utils
 
+import org.apache.xml.security.Init
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.MessageContentException
+import org.certificateservices.messages.SigningAlgorithmScheme
+import org.certificateservices.messages.TestUtils
+import org.certificateservices.messages.assertion.AssertionPayloadParser
+import org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory
 import org.certificateservices.messages.csmessages.CSMessageParserManager
+import org.certificateservices.messages.csmessages.PayloadParserRegistry
+import org.w3c.dom.Document
+import org.w3c.dom.Element
+import spock.lang.Specification
+import spock.lang.Unroll
 
-import java.security.Security;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.Iterator;
+import java.security.Security
+import java.security.cert.X509Certificate
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
-import org.apache.xml.security.Init;
-import org.apache.xml.security.encryption.XMLCipher;
-import org.apache.xml.security.utils.Base64;
-import org.apache.xml.security.utils.EncryptionConstants;
-import org.certificateservices.messages.EncryptionAlgorithmScheme;
-import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.SigningAlgorithmScheme;
-import org.certificateservices.messages.assertion.AssertionPayloadParser;
-import org.certificateservices.messages.assertion.AssertionPayloadParser.EncryptedAssertionXMLConverter;
-import org.certificateservices.messages.assertion.jaxb.AssertionType;
-import org.certificateservices.messages.assertion.jaxb.AttributeStatementType;
-import org.certificateservices.messages.assertion.jaxb.AttributeType;
-import org.certificateservices.messages.assertion.jaxb.EncryptedElementType;
-import org.certificateservices.messages.assertion.jaxb.NameIDType;
-import org.certificateservices.messages.assertion.jaxb.ObjectFactory;
-import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
-import org.certificateservices.messages.csmessages.PayloadParserRegistry;
-import org.certificateservices.messages.utils.MessageGenerateUtils;
-import org.certificateservices.messages.utils.XMLEncrypter;
-import org.certificateservices.messages.utils.XMLEncrypter.DecryptedXMLConverter;
-import org.certificateservices.messages.xenc.jaxb.EncryptedDataType;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-
-import spock.lang.IgnoreRest;
-import spock.lang.Specification;
-import spock.lang.Unroll;
-import static org.certificateservices.messages.TestUtils.*
-import static org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.*
+import static org.certificateservices.messages.TestUtils.setupRegisteredPayloadParser
 
 public class XMLSignerSpec extends Specification {
 	
@@ -64,14 +36,11 @@ public class XMLSignerSpec extends Specification {
 		setupRegisteredPayloadParser();
 		assertionPayloadParser = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE);
 		
-		xmlSigner = new XMLSigner(CSMessageParserManager.getCSMessageParser().messageSecurityProvider,
-			assertionPayloadParser.getDocumentBuilder(), true,
-			 "Assertion",AssertionPayloadParser.NAMESPACE, "ID",
-			 "organisation",DefaultCSMessageParser.CSMESSAGE_NAMESPACE)
+		xmlSigner = assertionPayloadParser.xmlSigner
 		csXMLSigner = new XMLSigner(CSMessageParserManager.getCSMessageParser().messageSecurityProvider,
 			assertionPayloadParser.getDocumentBuilder(), true,
-			 "CSMessage",DefaultCSMessageParser.CSMESSAGE_NAMESPACE, "ID",
-			 "organisation",DefaultCSMessageParser.CSMESSAGE_NAMESPACE)
+				CSMessageParserManager.getCSMessageParser().cSMessageSignatureLocationFinder,
+			new CSMessageOrganisationLookup())
 		
 	}
 
@@ -93,13 +62,7 @@ public class XMLSignerSpec extends Specification {
 		thrown MessageContentException
 	}
 	
-	def "Verify that verifyEnvelopedSignature verifies that more that one signature in signed element throws MessageContentException"(){
-		when:
-		xmlSigner.verifyEnvelopedSignature(dualSignatureSAMLP)
-		then:
-		thrown MessageContentException
-	}
-	
+
 	def "Verify that verifyEnvelopedSignature checks certificate auth authorization if flag set to true"(){
 		when:
 		csXMLSigner.verifyEnvelopedSignature(validCSMessage, true)
@@ -180,31 +143,58 @@ public class XMLSignerSpec extends Specification {
 		Element assertion = doc.getElementsByTagNameNS(AssertionPayloadParser.NAMESPACE, "Assertion").item(0)
 		Element signature = doc.getElementsByTagNameNS(XMLSigner.XMLDSIG_NAMESPACE, "Signature").item(0)
 		when:
-		xmlSigner.checkValidReferenceURI(assertion, signature)
+		xmlSigner.checkValidReferenceURI(assertion, signature, "ID")
 		then:
 		true
 		when:
 		assertion.setAttribute("ID","invalid")
-		xmlSigner.checkValidReferenceURI(assertion, signature)
+		xmlSigner.checkValidReferenceURI(assertion, signature, "ID")
 		then:
 		thrown MessageContentException
 	}
 	
 	
-	def "Verify findOrganisation() finds organisation value in a CSMessage"(){
+	def "Verify CSMessageOrgansiationLookup.findOrganisation() finds organisation value in a CSMessage"(){
 		setup:
 		Document doc = xmlSigner.documentBuilder.parse(new ByteArrayInputStream(validCSMessage))
 		expect:
-		xmlSigner.findOrganisation(doc) == "someorg"	
+		xmlSigner.defaultOrganisationLookup.findOrganisation(doc) == "someorg"
 	}
 	
-	def "Verify findOrganisation() throws MessageContentException for messages that doesnt contain organisation element."(){
+	def "Verify CSMessageOrgansiationLookup.findOrganisation() throws MessageContentException for messages that doesnt contain organisation element."(){
 		setup:
 		Document doc = xmlSigner.documentBuilder.parse(new ByteArrayInputStream(validSignatureSAMLP))
 		when:
-		xmlSigner.findOrganisation(doc)
+		xmlSigner.defaultOrganisationLookup.findOrganisation(doc)
 		then:
 		thrown MessageContentException	
+	}
+
+	def "Verify marshallDoc() converts a Doc to a string"(){
+		setup:
+		Document doc = xmlSigner.documentBuilder.parse(new ByteArrayInputStream(validSignatureSAMLP))
+		when:
+		def result = xmlSigner.marshallDoc(doc)
+		then:
+		result == validSignatureSAMLP;
+	}
+
+	def "Verify that checkBasicCertificateValidation checks time validity of a certficate."(){
+		setup:
+		X509Certificate cert = xmlSigner.messageSecurityProvider.getSigningCertificate();
+		when: "Verify that true is returned for valid certificate"
+		XMLSigner.systemTime = TestUtils.mockSystemTime("2013-10-01")
+		then:
+		XMLSigner.checkBasicCertificateValidation(cert) == true
+		when: "Verify that false is returned for expired certificate"
+		XMLSigner.systemTime = TestUtils.mockSystemTime("2017-10-01")
+		then:
+		XMLSigner.checkBasicCertificateValidation(cert) == false
+		when: "Verify that false is returned for yet valid certificate"
+		XMLSigner.systemTime = TestUtils.mockSystemTime("2001-10-01")
+		then:
+		XMLSigner.checkBasicCertificateValidation(cert) == false
+
 	}
 	
 	private Element findSignature(byte[] message){

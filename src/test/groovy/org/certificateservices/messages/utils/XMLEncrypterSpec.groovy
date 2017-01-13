@@ -6,9 +6,7 @@ import org.certificateservices.messages.csmessages.CSMessageParserManager
 
 import java.security.Security;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.Iterator;
-
+import java.security.cert.X509Certificate
 import javax.xml.bind.JAXBElement;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -25,27 +23,20 @@ import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.NoDecryptionKeyFoundException;
 import org.certificateservices.messages.assertion.AssertionPayloadParser;
-import org.certificateservices.messages.assertion.AssertionPayloadParser.EncryptedAssertionXMLConverter;
-import org.certificateservices.messages.assertion.jaxb.AssertionType;
-import org.certificateservices.messages.assertion.jaxb.AttributeStatementType;
-import org.certificateservices.messages.assertion.jaxb.AttributeType;
-import org.certificateservices.messages.assertion.jaxb.EncryptedElementType;
-import org.certificateservices.messages.assertion.jaxb.NameIDType;
-import org.certificateservices.messages.assertion.jaxb.ObjectFactory;
-import org.certificateservices.messages.csmessages.PayloadParserRegistry;
-import org.certificateservices.messages.utils.MessageGenerateUtils;
-import org.certificateservices.messages.utils.XMLEncrypter;
-import org.certificateservices.messages.utils.XMLEncrypter.DecryptedXMLConverter;
+import org.certificateservices.messages.saml2.BaseSAMLMessageParser.EncryptedAssertionXMLConverter;
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType;
+import org.certificateservices.messages.saml2.assertion.jaxb.AttributeStatementType;
+import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType;
+import org.certificateservices.messages.saml2.assertion.jaxb.EncryptedElementType;
+import org.certificateservices.messages.saml2.assertion.jaxb.NameIDType;
+import org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory;
+import org.certificateservices.messages.csmessages.PayloadParserRegistry
 import org.certificateservices.messages.xenc.jaxb.EncryptedDataType;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-
-import spock.lang.IgnoreRest;
+import org.w3c.dom.Element
 import spock.lang.Specification;
 import spock.lang.Unroll;
 import static org.certificateservices.messages.TestUtils.*
-import static org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.*
 
 public class XMLEncrypterSpec extends Specification {
 	

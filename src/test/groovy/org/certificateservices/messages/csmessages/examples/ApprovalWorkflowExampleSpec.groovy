@@ -1,6 +1,7 @@
 package org.certificateservices.messages.csmessages.examples
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.utils.XMLSigner
 
 import java.security.Security
 import java.security.cert.X509Certificate;
@@ -12,34 +13,25 @@ import org.certificateservices.messages.SimpleMessageSecurityProvider;
 import org.certificateservices.messages.TestUtils;
 import org.certificateservices.messages.assertion.AssertionData;
 import org.certificateservices.messages.assertion.AssertionPayloadParser;
-import org.certificateservices.messages.assertion.jaxb.AssertionType;
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType;
 import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
 import org.certificateservices.messages.credmanagement.jaxb.ChangeCredentialStatusResponse;
 import org.certificateservices.messages.csmessages.CSMessageParser;
 import org.certificateservices.messages.csmessages.CSMessageParserManager;
-import org.certificateservices.messages.csmessages.CSMessageResponseData;
-import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
-import org.certificateservices.messages.csmessages.PayloadParser;
+import org.certificateservices.messages.csmessages.CSMessageResponseData
 import org.certificateservices.messages.csmessages.PayloadParserRegistry;
 import org.certificateservices.messages.csmessages.constants.AvailableCredentialTypes;
 import org.certificateservices.messages.csmessages.jaxb.ApprovalStatus;
 import org.certificateservices.messages.csmessages.jaxb.Approver;
 import org.certificateservices.messages.csmessages.jaxb.ApproverType;
-import org.certificateservices.messages.csmessages.jaxb.CSMessage;
-import org.certificateservices.messages.csmessages.jaxb.CSRequest;
-import org.certificateservices.messages.csmessages.jaxb.CSResponse;
+import org.certificateservices.messages.csmessages.jaxb.CSMessage
 import org.certificateservices.messages.csmessages.jaxb.Credential;
 import org.certificateservices.messages.csmessages.jaxb.IsApprovedResponseType;
 import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
-import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
-import org.certificateservices.messages.csmessages.jaxb.TokenRequest;
-import org.certificateservices.messages.utils.DefaultSystemTime;
+import org.certificateservices.messages.csmessages.jaxb.RequestStatus
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 
-import spock.lang.Shared;
-import spock.lang.Specification
-import static org.certificateservices.messages.csmessages.TestMessages.*
-import static org.certificateservices.messages.TestUtils.*
+import spock.lang.Shared
 
 /**
  * Examples on how to use the API with an Approval Workflow, when a unathorized requester
@@ -79,7 +71,7 @@ csmessage.sourceid=SomeClientSystem
 		// using Java key stores to store it's signing and encryption keys.
 		MessageSecurityProvider secProv = new SimpleMessageSecurityProvider(config);
 		// This mocking is for testing only (to avoid failure due to expired certificates)
-		secProv.systemTime = TestUtils.mockSystemTime("2013-10-01")
+		XMLSigner.systemTime = TestUtils.mockSystemTime("2013-10-01")
 		
 		// Create and initialize the Default Message Provider with the security provider.
 		// For client should the usually not need a reference to the CSMessageParser, use the PayloadParser
