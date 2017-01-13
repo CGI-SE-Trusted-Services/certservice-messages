@@ -5,12 +5,11 @@ import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.NoDecryptionKeyFoundException;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.dss1.core.DSS1CoreMessageParser;
-import org.certificateservices.messages.dss1.core.jaxp.*;
+import org.certificateservices.messages.dss1.core.jaxb.*;
 import org.certificateservices.messages.saml2.BaseSAMLMessageParser;
 import org.certificateservices.messages.saml2.assertion.jaxb.*;
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxp.*;
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxp.AnyType;
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxp.ObjectFactory;
+import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.*;
+import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.AnyType;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 import org.certificateservices.messages.utils.XMLEncrypter;
 import org.certificateservices.messages.xenc.jaxb.EncryptedDataType;
@@ -41,12 +40,12 @@ public class SweEID2DSSExtensionsMessageParser extends DSS1CoreMessageParser{
 
     public static final String NAMESPACE = "http://id.elegnamnden.se/csig/1.1/dss-ext/ns";
 
-    private static final String BASE_JAXB_CONTEXT = "org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxp:org.certificateservices.messages.saml2.assertion.jaxb:org.certificateservices.messages.xenc.jaxb";
+    private static final String BASE_JAXB_CONTEXT = "org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb:org.certificateservices.messages.saml2.assertion.jaxb:org.certificateservices.messages.xenc.jaxb";
 
     private static final String SWEEID_DSS_EXTENSTIONS_XSD_SCHEMA_1_1_RESOURCE_LOCATION = "/eid-dss-extensions-1.1.xsd";
 
 
-    protected org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxp.ObjectFactory eid2Of = new org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxp.ObjectFactory();
+    protected org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory eid2Of = new org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory();
 
     protected SignMessageXMLConverter signMessageXMLConverter =new SignMessageXMLConverter();
 
@@ -121,7 +120,7 @@ public class SweEID2DSSExtensionsMessageParser extends DSS1CoreMessageParser{
 
         Document optionalInputContent = marshallToSweEID2ExtensionDoc(signRequestExtension);
         Document inputDocumentContent = marshallToSweEID2ExtensionDoc(signTasks);
-        org.certificateservices.messages.dss1.core.jaxp.AnyType at = dssOf.createAnyType();
+        org.certificateservices.messages.dss1.core.jaxb.AnyType at = dssOf.createAnyType();
         InputDocuments inputDocuments = dssOf.createInputDocuments();
         inputDocuments.getDocumentOrTransformedDataOrDocumentHash().add(at);
         SignRequest signRequest = genSignRequest(requestID,profile,new ArrayList<Object>(),inputDocuments);
@@ -775,7 +774,7 @@ public class SweEID2DSSExtensionsMessageParser extends DSS1CoreMessageParser{
             t.setBase64Signature(bt);
         }
         if(otherSignTaskData != null){
-            org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxp.AnyType at = eid2Of.createAnyType();
+            org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.AnyType at = eid2Of.createAnyType();
             at.getAny().addAll(otherSignTaskData);
             t.setOtherSignTaskData(at);
         }

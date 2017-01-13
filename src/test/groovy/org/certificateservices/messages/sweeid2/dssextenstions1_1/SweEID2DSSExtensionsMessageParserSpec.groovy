@@ -4,15 +4,15 @@ import org.bouncycastle.util.encoders.Base64
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser
 import org.certificateservices.messages.dss1.core.DSS1CoreMessageParser
 import org.certificateservices.messages.dss1.core.ResultMajorValues
-import org.certificateservices.messages.dss1.core.jaxp.SignRequest
-import org.certificateservices.messages.dss1.core.jaxp.SignResponse
+import org.certificateservices.messages.dss1.core.jaxb.SignRequest
+import org.certificateservices.messages.dss1.core.jaxb.SignResponse
 import org.certificateservices.messages.saml2.BaseSAMLMessageParser
 import org.certificateservices.messages.saml2.CommonSAMLMessageParserSpecification
 import org.certificateservices.messages.saml2.assertion.jaxb.AttributeStatementType
 import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType
 import org.certificateservices.messages.saml2.assertion.jaxb.ConditionsType
 import org.certificateservices.messages.saml2.assertion.jaxb.NameIDType
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxp.*
+import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.*
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 
@@ -26,8 +26,8 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 
 	SweEID2DSSExtensionsMessageParser emp = new SweEID2DSSExtensionsMessageParser()
 
-	def dssOf = new org.certificateservices.messages.dss1.core.jaxp.ObjectFactory();
-	def eidOf = new org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxp.ObjectFactory();
+	def dssOf = new org.certificateservices.messages.dss1.core.jaxb.ObjectFactory();
+	def eidOf = new org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory();
 
 	def currentDate
 

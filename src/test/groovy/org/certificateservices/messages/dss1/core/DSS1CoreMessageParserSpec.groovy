@@ -2,19 +2,18 @@ package org.certificateservices.messages.dss1.core
 
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser
-import org.certificateservices.messages.dss1.core.jaxp.*
+import org.certificateservices.messages.dss1.core.jaxb.*
 import org.certificateservices.messages.saml2.CommonSAMLMessageParserSpecification
 
 import javax.xml.bind.JAXBElement
 
-import static org.certificateservices.messages.TestUtils.printXML
 import static org.certificateservices.messages.TestUtils.slurpXml
 
 class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
 	DSS1CoreMessageParser dmp = new DSS1CoreMessageParser()
 
-	protected org.certificateservices.messages.dss1.core.jaxp.ObjectFactory dssOf = new org.certificateservices.messages.dss1.core.jaxp.ObjectFactory();
+	protected org.certificateservices.messages.dss1.core.jaxb.ObjectFactory dssOf = new org.certificateservices.messages.dss1.core.jaxb.ObjectFactory();
 
 	def setup() {
 		dmp.init(secProv);

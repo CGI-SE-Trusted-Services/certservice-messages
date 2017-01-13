@@ -585,7 +585,7 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 				null, createSingleSignOnServices(),null,null,null,null	)
 		jdt = mdOf.createIDPSSODescriptor(dt)
 		dtd = smdmp.marshallAndSign(jdt)
-		printXML(dtd)
+		//printXML(dtd)
 		xml = slurpXml(dtd)
 		then:
 		xml.Signature.size() == 1

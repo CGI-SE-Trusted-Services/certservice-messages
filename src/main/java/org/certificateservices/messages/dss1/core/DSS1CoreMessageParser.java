@@ -3,10 +3,8 @@ package org.certificateservices.messages.dss1.core;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
-import org.certificateservices.messages.dss1.core.jaxp.*;
+import org.certificateservices.messages.dss1.core.jaxb.*;
 import org.certificateservices.messages.saml2.BaseSAMLMessageParser;
-import org.certificateservices.messages.saml2.assertion.jaxb.*;
-import org.certificateservices.messages.utils.MessageGenerateUtils;
 import org.certificateservices.messages.utils.XMLSigner;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -14,11 +12,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
 import javax.xml.namespace.QName;
-import javax.xml.transform.dom.DOMResult;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -31,13 +25,13 @@ public class DSS1CoreMessageParser extends BaseSAMLMessageParser{
     public static final String NAMESPACE = "urn:oasis:names:tc:dss:1.0:core:schema";
     public static final String SAML_1_1_NAMESPACE = "urn:oasis:names:tc:SAML:1.0:assertion";
 
-    protected static final String BASE_JAXB_CONTEXT = "org.certificateservices.messages.saml1_1.assertions.jaxp:org.certificateservices.messages.dss1.core.jaxp:org.certificateservices.messages.xmldsig.jaxb";
+    protected static final String BASE_JAXB_CONTEXT = "org.certificateservices.messages.saml1_1.assertions.jaxb:org.certificateservices.messages.dss1.core.jaxb:org.certificateservices.messages.xmldsig.jaxb";
 
     protected static final String ASSERTION_XSD_SCHEMA_1_1_RESOURCE_LOCATION = "/cs-message-oasis-sstc-saml-schema-protocol-1.1.xsd";
     protected static final String DSS_XSD_SCHEMA_1_0_RESOURCE_LOCATION = "/cs-message-oasis-dss-core-schema-v1.0-os.xsd";
 
 
-    protected org.certificateservices.messages.dss1.core.jaxp.ObjectFactory dssOf = new org.certificateservices.messages.dss1.core.jaxp.ObjectFactory();
+    protected org.certificateservices.messages.dss1.core.jaxb.ObjectFactory dssOf = new org.certificateservices.messages.dss1.core.jaxb.ObjectFactory();
 
     private DSS1CoreSignatureLocationFinder dss1CoreSignatureLocationFinder = new DSS1CoreSignatureLocationFinder();
     @Override
