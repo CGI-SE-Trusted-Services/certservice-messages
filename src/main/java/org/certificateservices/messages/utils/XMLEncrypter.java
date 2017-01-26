@@ -55,6 +55,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
@@ -267,7 +269,9 @@ public class XMLEncrypter {
 			throw new MessageProcessingException("Internal error occurred when decrypting XML: " + e.getMessage(),e);
 		}
 	}
-	
+
+
+
 	/**
 	 * Method to encrypt java.util.Properties in XML-format
 	 * @param properties properties to encrypt
@@ -282,7 +286,17 @@ public class XMLEncrypter {
 			ByteArrayOutputStream os = new ByteArrayOutputStream();		
 			properties.storeToXML(os, null, "UTF-8");			
 			InputStream is = new ByteArrayInputStream(os.toByteArray());
+			documentBuilder.setEntityResolver(new EntityResolver() {
+				@Override
+				public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+					if(systemId != null && systemId.equals("http://java.sun.com/dtd/properties.dtd")){
+						return new InputSource(this.getClass().getResourceAsStream("/properties.dtd"));
+					}
+					return null;
+				}
+			});
 			document = documentBuilder.parse(is);
+
 			encDocument = encryptElement(document, receipients, useKeyId);
 		} catch(Exception e){
 			if(e instanceof MessageProcessingException){
@@ -293,7 +307,8 @@ public class XMLEncrypter {
 
 		return encDocument;
 	}
-	
+
+
 	/**
 	 * Method to decrypt document containing properties in XML-format.
 	 * @param encDocument the document containing encrypted data.

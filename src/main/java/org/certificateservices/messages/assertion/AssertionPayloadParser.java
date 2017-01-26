@@ -12,26 +12,35 @@
 *************************************************************************/
 package org.certificateservices.messages.assertion;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
+import org.certificateservices.messages.MessageContentException;
+import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.MessageSecurityProvider;
+import org.certificateservices.messages.NoDecryptionKeyFoundException;
+import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
+import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
+import org.certificateservices.messages.csmessages.BasePayloadParser;
+import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
+import org.certificateservices.messages.csmessages.XSDLSInput;
+import org.certificateservices.messages.csmessages.jaxb.Approver;
+import org.certificateservices.messages.csmessages.jaxb.CSMessage;
+import org.certificateservices.messages.saml2.BaseSAMLMessageParser;
+import org.certificateservices.messages.saml2.assertion.SAMLAssertionMessageParser;
+import org.certificateservices.messages.saml2.assertion.jaxb.*;
+import org.certificateservices.messages.saml2.protocol.jaxb.AttributeQueryType;
+import org.certificateservices.messages.saml2.protocol.jaxb.ResponseType;
+import org.certificateservices.messages.saml2.protocol.jaxb.StatusCodeType;
+import org.certificateservices.messages.saml2.protocol.jaxb.StatusType;
+import org.certificateservices.messages.utils.*;
+import org.certificateservices.messages.xenc.jaxb.EncryptedDataType;
+import org.w3c.dom.Document;
+import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSResourceResolver;
+import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.*;
 import javax.xml.bind.util.JAXBSource;
+import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -41,46 +50,16 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-
-import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.MessageSecurityProvider;
-import org.certificateservices.messages.NoDecryptionKeyFoundException;
-import org.certificateservices.messages.assertion.jaxb.AssertionType;
-import org.certificateservices.messages.assertion.jaxb.AttributeStatementType;
-import org.certificateservices.messages.assertion.jaxb.AttributeType;
-import org.certificateservices.messages.assertion.jaxb.ConditionsType;
-import org.certificateservices.messages.assertion.jaxb.EncryptedElementType;
-import org.certificateservices.messages.assertion.jaxb.NameIDType;
-import org.certificateservices.messages.assertion.jaxb.ObjectFactory;
-import org.certificateservices.messages.assertion.jaxb.SubjectType;
-import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
-import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
-import org.certificateservices.messages.csmessages.BasePayloadParser;
-import org.certificateservices.messages.csmessages.CSMessageParser;
-import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
-import org.certificateservices.messages.csmessages.XSDLSInput;
-import org.certificateservices.messages.csmessages.jaxb.Approver;
-import org.certificateservices.messages.csmessages.jaxb.CSMessage;
-import org.certificateservices.messages.samlp.jaxb.AttributeQueryType;
-import org.certificateservices.messages.samlp.jaxb.ResponseType;
-import org.certificateservices.messages.samlp.jaxb.StatusCodeType;
-import org.certificateservices.messages.samlp.jaxb.StatusType;
-import org.certificateservices.messages.utils.DefaultSystemTime;
-import org.certificateservices.messages.utils.MessageGenerateUtils;
-import org.certificateservices.messages.utils.SystemTime;
-import org.certificateservices.messages.utils.XMLEncrypter;
-import org.certificateservices.messages.utils.XMLEncrypter.DecryptedXMLConverter;
-import org.certificateservices.messages.utils.XMLSigner;
-import org.certificateservices.messages.utils.XMLSigner.SignatureLocationFinder;
-import org.certificateservices.messages.xenc.jaxb.EncryptedDataType;
-import org.certificateservices.messages.xmldsig.jaxb.X509DataType;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.ls.LSInput;
-import org.w3c.dom.ls.LSResourceResolver;
-import org.xml.sax.SAXException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * Assertion Payload Parser used to parse and generate Assertion Tickets such as:
@@ -105,7 +84,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	private static final String SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/cs-message-saml-schema-protocol-2.0.xsd";
 
 	private ObjectFactory of = new ObjectFactory();
-	private org.certificateservices.messages.samlp.jaxb.ObjectFactory samlpOf = new org.certificateservices.messages.samlp.jaxb.ObjectFactory();
+	private org.certificateservices.messages.saml2.protocol.jaxb.ObjectFactory samlpOf = new org.certificateservices.messages.saml2.protocol.jaxb.ObjectFactory();
 	
 	private static final String[] SUPPORTED_ASSERTION_VERSIONS = {"2.0"};
 	
@@ -125,13 +104,14 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	private SystemTime systemTime = new DefaultSystemTime();
 	private XMLEncrypter xmlEncrypter;
 	private XMLEncrypter userDataXmlEncrypter;
-	EncryptedAssertionXMLConverter encryptedAssertionXMLConverter = new EncryptedAssertionXMLConverter();
+	BaseSAMLMessageParser.EncryptedAssertionXMLConverter encryptedAssertionXMLConverter = new BaseSAMLMessageParser.EncryptedAssertionXMLConverter();
 	private XMLSigner xmlSigner;
 	private CertificateFactory cf;
 	
 	private Validator assertionSchemaValidator;
+	private SAMLAssertionMessageParser samlAssertionMessageParser = new SAMLAssertionMessageParser();
 	
-	private AssertionSignatureLocationFinder assertionSignatureLocationFinder = new AssertionSignatureLocationFinder();
+	private BaseSAMLMessageParser.AssertionSignatureLocationFinder assertionSignatureLocationFinder = new BaseSAMLMessageParser.AssertionSignatureLocationFinder();
 
 	@Override
 	public void init(Properties config, MessageSecurityProvider secProv)
@@ -140,10 +120,11 @@ public class AssertionPayloadParser extends BasePayloadParser {
 		try {
 			xmlEncrypter = new XMLEncrypter(secProv, getDocumentBuilder(), getAssertionMarshaller(), getAssertionUnmarshaller());
 			userDataXmlEncrypter = new XMLEncrypter(secProv, getDocumentBuilder(), getUserDataMarshaller(), getUserDataUnmarshaller());
-			xmlSigner = new XMLSigner(secProv,getDocumentBuilder(), true, "Assertion", NAMESPACE, "ID", "organisation",DefaultCSMessageParser.CSMESSAGE_NAMESPACE);
+			xmlSigner = new XMLSigner(secProv,getDocumentBuilder(), true, assertionSignatureLocationFinder, new CSMessageOrganisationLookup());
 			cf = CertificateFactory.getInstance("X.509");
 			
 			assertionSchemaValidator = generateUserDataSchema().newValidator();
+			samlAssertionMessageParser.init(secProv, null);
 		} catch (Exception e) {
 			throw new MessageProcessingException("Error initializing JAXB in AssertionPayloadParser: " + e.getMessage(),e);
 		}
@@ -160,7 +141,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	 * @see org.certificateservices.messages.csmessages.PayloadParser#getJAXBPackage()
 	 */
 	public String getJAXBPackage() {
-		return "org.certificateservices.messages.assertion.jaxb";
+		return "org.certificateservices.messages.saml2.assertion.jaxb";
 	}
 
 	/**
@@ -479,12 +460,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 			JAXBElement<ResponseType> resp = (JAXBElement<ResponseType>) getUserDataUnmarshaller().unmarshal(new ByteArrayInputStream(response));
 			return resp.getValue();
 		} catch (Exception e) {
-			if(e instanceof MessageContentException){
-				throw (MessageContentException) e;
-			}
-			if(e instanceof MessageProcessingException){
-				throw (MessageProcessingException) e;
-			}
+
 			throw new MessageContentException("Error parsing Attribute Query Response Data: " + e.getMessage(),e);
 		}	
 	}
@@ -534,28 +510,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	 * @throws MessageProcessingException if internal problems occurred generated the message.
 	 */
 	public X509Certificate getCertificateFromAssertion(JAXBElement<AssertionType> assertion) throws MessageContentException, MessageProcessingException{
-		Iterator<Object> keyInfos = assertion.getValue().getSignature().getKeyInfo().getContent().iterator();
-		while(keyInfos.hasNext()){
-			Object next = keyInfos.next();
-			if(next instanceof JAXBElement<?> && ((JAXBElement<?>) next).getValue() instanceof X509DataType){
-			  Iterator<Object> x509Datas = ((X509DataType) ((JAXBElement<?>)next).getValue()).getX509IssuerSerialOrX509SKIOrX509SubjectName().iterator();
-			  while(x509Datas.hasNext()){
-				  Object nextX509Data = x509Datas.next();
-				  if(nextX509Data instanceof JAXBElement<?>){
-					  JAXBElement<?> jaxbElement = (JAXBElement<?>) nextX509Data;
-					  if(jaxbElement.getName().getLocalPart().equals("X509Certificate") && jaxbElement.getName().getNamespaceURI().equals("http://www.w3.org/2000/09/xmldsig#")){
-						  try {
-							return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream((byte[]) jaxbElement.getValue()));
-						} catch (CertificateException e) {
-							throw new MessageContentException("Error parsing certificate from digital signature: " + e.getMessage(),e);
-						}
-					  }
-				  }
-			  }
-			}
-		}
-	
-		throw new MessageContentException("Error parsing certificate from digital signature, no certificate found in KeyInfo data,");
+		return samlAssertionMessageParser.getCertificateFromAssertion(assertion);
 	}
 	
 	/**
@@ -740,7 +695,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 
 
 	
-	
+	private BaseSAMLMessageParser.SimpleConditionLookup  simpleConditionLookup = new BaseSAMLMessageParser.SimpleConditionLookup();
 	/**
 	 * Method that verifies the notBefore and notOnOrAfter conditions, all other conditions set in an assertion
 	 * is ignored.
@@ -748,23 +703,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if conditions wasn't met.
 	 */
 	private void verifyAssertionConditions(AssertionType assertionType) throws MessageContentException {
-		try{
-			Date notBefore = MessageGenerateUtils.xMLGregorianCalendarToDate(assertionType.getConditions().getNotBefore());
-			Date notOnOrAfter = MessageGenerateUtils.xMLGregorianCalendarToDate(assertionType.getConditions().getNotOnOrAfter());
-			Date currentTime = systemTime.getSystemTime();
-			
-			if(notBefore.after(currentTime)){
-				throw new MessageContentException("Error Assertion not yet valid, not valid until: " + notBefore);
-			}
-			if(notOnOrAfter.before(currentTime) || notOnOrAfter.equals(currentTime)){
-				throw new MessageContentException("Error Assertion has expired on: " + notOnOrAfter);
-			}
-		}catch(Exception e){
-			if(e instanceof MessageContentException){
-				throw (MessageContentException) e;
-			}
-			throw new MessageContentException("Error verifying conditions on assertion ticket: " + e.getMessage(),e);
-		}
+		samlAssertionMessageParser.verifyAssertionConditions(assertionType, simpleConditionLookup);
 		
 	}
 	
@@ -780,54 +719,14 @@ public class AssertionPayloadParser extends BasePayloadParser {
 		
 	}
 
-	private JAXBElement<AssertionType> generateAssertion(String issuer, Date notBefore, Date notOnOrAfter, String subjectId, List<Object> attributes) throws MessageProcessingException{
-		AttributeStatementType attributeStatementType = of.createAttributeStatementType();
-		for(Object attribute : attributes){
-		  attributeStatementType.getAttributeOrEncryptedAttribute().add(attribute);
-		}
-		
-		NameIDType issuerNameType = of.createNameIDType();
-		issuerNameType.setValue(issuer);
 
-		NameIDType subjectNameType = of.createNameIDType();
-		subjectNameType.setValue(subjectId);
-		
-		SubjectType subjectType = of.createSubjectType();
-		subjectType.getContent().add(of.createNameID(subjectNameType));
-		
-		ConditionsType conditionsType = of.createConditionsType();
-		conditionsType.setNotBefore(MessageGenerateUtils.dateToXMLGregorianCalendar(notBefore));
-		conditionsType.setNotOnOrAfter(MessageGenerateUtils.dateToXMLGregorianCalendar(notOnOrAfter));
-		
-		AssertionType assertionType = of.createAssertionType();
-		assertionType.setID("_" + MessageGenerateUtils.generateRandomUUID());
-		assertionType.setIssueInstant(MessageGenerateUtils.dateToXMLGregorianCalendar(systemTime.getSystemTime()));
-		assertionType.setVersion(DEFAULT_ASSERTION_VERSION);
-		assertionType.setIssuer(issuerNameType);
-		assertionType.setSubject(subjectType);
-		assertionType.setConditions(conditionsType);
-		assertionType.getStatementOrAuthnStatementOrAuthzDecisionStatement().add(attributeStatementType);
-		
-		return of.createAssertion(assertionType);
+	private JAXBElement<AssertionType> generateAssertion(String issuer, Date notBefore, Date notOnOrAfter, String subjectId, List<Object> attributes) throws MessageProcessingException{
+		return samlAssertionMessageParser.generateSimpleAssertion(issuer,notBefore,notOnOrAfter,subjectId,attributes);
 	}
-	
+
+
 	private JAXBElement<ResponseType> genSuccessfulSAMLPResponse(String inResponseTo, JAXBElement<AssertionType> assertion) throws MessageProcessingException{
-		StatusCodeType statusCodeType = samlpOf.createStatusCodeType();
-		statusCodeType.setValue(ResponseStatusCodes.SUCCESS.getURIValue());
-		
-		StatusType statusType = samlpOf.createStatusType();
-		statusType.setStatusCode(statusCodeType);
-		
-		ResponseType responseType = samlpOf.createResponseType();
-		responseType.setID("_" + MessageGenerateUtils.generateRandomUUID());
-		responseType.setIssueInstant(MessageGenerateUtils.dateToXMLGregorianCalendar(systemTime.getSystemTime()));
-		responseType.setVersion(DEFAULT_ASSERTION_VERSION);
-		responseType.setInResponseTo(inResponseTo);
-		
-		responseType.setStatus(statusType);
-		responseType.getAssertionOrEncryptedAssertion().add(assertion.getValue());
-		
-		return samlpOf.createResponse(responseType);
+		return samlAssertionMessageParser.genSuccessfulSAMLPResponse(inResponseTo,assertion);
 	}
 	
 	/**
@@ -906,26 +805,20 @@ public class AssertionPayloadParser extends BasePayloadParser {
 		} catch (JAXBException e) {
 			throw new MessageProcessingException("Error marshalling message " + e.getMessage(), e);
 		}
-			
-		return xmlSigner.marshallAndSignAssertion(doc, getAssertionMessageID(message), assertionSignatureLocationFinder, "Issuer", NAMESPACE);
+
+		List<QName> beforeSiblings = new ArrayList<QName>();
+		beforeSiblings.add(new QName(NAMESPACE, "Subject"));
+		beforeSiblings.add(new QName(NAMESPACE, "Conditions"));
+		beforeSiblings.add(new QName(NAMESPACE, "Advice"));
+		beforeSiblings.add(new QName(NAMESPACE, "Statement"));
+		beforeSiblings.add(new QName(NAMESPACE, "AuthnStatement"));
+		beforeSiblings.add(new QName(NAMESPACE, "AuthzDecisionStatement"));
+		beforeSiblings.add(new QName(NAMESPACE, "AttributeStatement"));
+
+		return xmlSigner.marshallAndSign(doc,  assertionSignatureLocationFinder, beforeSiblings);
 	}
 
 	
-
-	private String getAssertionMessageID(JAXBElement<?> message)
-			throws MessageProcessingException {
-		try{
-			Object value = message.getValue();
-			if(value instanceof AssertionType){
-				return ((AssertionType) value).getID();
-			}
-			if(value instanceof ResponseType){
-				return ((AssertionType) ((ResponseType) value).getAssertionOrEncryptedAssertion().get(0)).getID();
-			}
-		}catch(Exception e){
-		}
-		throw new MessageProcessingException("Invalid assertion message type sent for signature.");
-	}
 
 	
 	private DocumentBuilder documentBuilder = null;
@@ -983,7 +876,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
      */
     private JAXBContext getJAXBContext() throws JAXBException{
     	if(jaxbContext== null){
-    		String jaxbClassPath = "org.certificateservices.messages.assertion.jaxb:org.certificateservices.messages.samlp.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.xmldsig.jaxb";
+    		String jaxbClassPath = "org.certificateservices.messages.saml2.assertion.jaxb:org.certificateservices.messages.saml2.protocol.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.xmldsig.jaxb";
     			    		
     		jaxbContext = JAXBContext.newInstance(jaxbClassPath);
     		
@@ -997,7 +890,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
      */
     private JAXBContext getUserDataJAXBContext() throws JAXBException{
     	if(userDataJaxbContext== null){
-    		String jaxbClassPath = "org.certificateservices.messages.assertion.jaxb:org.certificateservices.messages.samlp.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.xmldsig.jaxb:org.certificateservices.messages.credmanagement.jaxb";
+    		String jaxbClassPath = "org.certificateservices.messages.saml2.assertion.jaxb:org.certificateservices.messages.saml2.protocol.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.xmldsig.jaxb:org.certificateservices.messages.credmanagement.jaxb";
     			    		
     		userDataJaxbContext = JAXBContext.newInstance(jaxbClassPath);
     		
@@ -1038,54 +931,11 @@ public class AssertionPayloadParser extends BasePayloadParser {
         
         return schema;
     }
-    
-    /**
-     * Converter that replaces all decrypted EncryptedAssertions with Assertions
-     */
-    public class EncryptedAssertionXMLConverter implements DecryptedXMLConverter{
 
+	public static class AssertionLSResourceResolver implements LSResourceResolver {
 
-		public Document convert(Document doc) throws MessageContentException {
-			NodeList nodeList = doc.getElementsByTagNameNS(AssertionPayloadParser.NAMESPACE, "Attribute");
-			for(int i =0; i < nodeList.getLength(); i++){
-				Element attribute= (Element) nodeList.item(i);
-				Element parent = (Element) attribute.getParentNode();
-				if(parent.getLocalName().equals("EncryptedAttribute") && parent.getNamespaceURI().equals(AssertionPayloadParser.NAMESPACE)){
-					parent.getParentNode().replaceChild(attribute, parent);
-				}
-				
-			}
-
-			return doc;
-		}
-		
-	}
-    
-    
-    
-    public class AssertionSignatureLocationFinder implements SignatureLocationFinder{
-
-
-		public Element getSignatureLocation(Document doc)
-				throws MessageProcessingException {
-			try{
-				if(doc.getDocumentElement().getLocalName().equals("Assertion")){
-					return doc.getDocumentElement();
-				}
-				if(doc.getDocumentElement().getLocalName().equals("Response")){
-					return (Element) doc.getElementsByTagNameNS(NAMESPACE, "Assertion").item(0);
-				}
-			}catch(Exception e){
-			}
-			throw new MessageProcessingException("Invalid assertion message type sent for signature.");
-		}
-    	
-    }
-    
-    public class AssertionLSResourceResolver implements  LSResourceResolver {
-		
 		public LSInput resolveResource(String type, String namespaceURI,
-				String publicId, String systemId, String baseURI) {
+									   String publicId, String systemId, String baseURI) {
 			try {
 				if(systemId != null && systemId.equals("http://www.w3.org/2001/XMLSchema.dtd")){
 					return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream("/XMLSchema.dtd"));
@@ -1101,10 +951,10 @@ public class AssertionPayloadParser extends BasePayloadParser {
 						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(DefaultCSMessageParser.XMLENC_XSD_SCHEMA_RESOURCE_LOCATION));
 					}
 					if(namespaceURI.equals(SAMLP_NAMESPACE)){
-						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(AssertionPayloadParser.SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION));
+						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION));
 					}
 					if(namespaceURI.equals(NAMESPACE)){
-						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(AssertionPayloadParser.ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION));
+						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION));
 					}
 				}
 			} catch (MessageProcessingException e) {

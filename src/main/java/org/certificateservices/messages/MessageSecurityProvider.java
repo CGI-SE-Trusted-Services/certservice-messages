@@ -80,8 +80,8 @@ public interface MessageSecurityProvider {
 	 * Method in charge of validating a certificate used to sign a PKI message
 	 * and also check if the certificate is authorized to generate messages.
 	 * @param signCertificate the certificate used to sign the message.
-	 * @param organisation the related organisation to the message
-	 * @return true if the 
+	 * @param organisation the related organisation to the message, null if no organisation lookup should be done.
+	 * @return true if the sign certificate is valid and authorized to sign messages.
 	 * @throws IllegalArgumentException if arguments were invalid.
 	 * @throws MessageProcessingException if internal error occurred validating the certificate.
 	 */

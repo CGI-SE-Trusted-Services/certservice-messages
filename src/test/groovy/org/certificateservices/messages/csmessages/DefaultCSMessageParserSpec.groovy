@@ -12,54 +12,39 @@
  *************************************************************************/
 package org.certificateservices.messages.csmessages;
 
-import groovy.util.slurpersupport.GPathResult;
-import groovy.xml.XmlUtil
+import groovy.util.slurpersupport.GPathResult
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.MessageSecurityProvider
 
-import java.security.Security;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.Properties;
-
-import javax.xml.bind.JAXBContext;
+import java.security.Security
+import java.security.cert.X509Certificate
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.Marshaller;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.parsers.DocumentBuilder;
 
-import org.apache.xml.security.Init;
-import org.apache.xml.security.utils.Base64;
+import org.apache.xml.security.Init
 import org.certificateservices.messages.DummyMessageSecurityProvider;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.assertion.AssertionPayloadParser;
-import org.certificateservices.messages.assertion.AssertionPayloadParserSpec;
-import org.certificateservices.messages.assertion.jaxb.AssertionType;
+import org.certificateservices.messages.assertion.AssertionPayloadParser
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType;
 import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
-import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
-import org.certificateservices.messages.csmessages.PayloadParserRegistry.ConfigurationCallback;
+import org.certificateservices.messages.credmanagement.jaxb.FieldValue
 import org.certificateservices.messages.csmessages.jaxb.ApprovalStatus;
 import org.certificateservices.messages.csmessages.jaxb.Attribute;
-import org.certificateservices.messages.csmessages.jaxb.CSMessage;
-import org.certificateservices.messages.csmessages.jaxb.CSRequest;
+import org.certificateservices.messages.csmessages.jaxb.CSMessage
 import org.certificateservices.messages.csmessages.jaxb.CSResponse;
 import org.certificateservices.messages.csmessages.jaxb.Credential;
 import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
 import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
 import org.certificateservices.messages.dummy.DummyPayloadParser;
 import org.certificateservices.messages.dummy.jaxb.SomePayload;
-import org.certificateservices.messages.samlp.jaxb.ResponseType;
+import org.certificateservices.messages.saml2.protocol.jaxb.ResponseType;
 import org.certificateservices.messages.sysconfig.SysConfigPayloadParser;
-import org.certificateservices.messages.sysconfig.jaxb.GetActiveConfigurationRequest;
-import org.certificateservices.messages.sysconfig.jaxb.Property;
-import org.certificateservices.messages.utils.SystemTime;
-import org.junit.After;
-import org.w3c.dom.Document;
-
-import spock.lang.Ignore;
-import spock.lang.IgnoreRest;
+import org.certificateservices.messages.sysconfig.jaxb.GetActiveConfigurationRequest
+import org.certificateservices.messages.utils.SystemTime
+import org.w3c.dom.Document
 import spock.lang.Specification;
 import spock.lang.Unroll;
 import static org.certificateservices.messages.csmessages.DefaultCSMessageParser.*
@@ -103,8 +88,9 @@ public class DefaultCSMessageParserSpec extends Specification{
 		assertionPayloadParser = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE)
 		assertionPayloadParser.systemTime = Mock(SystemTime)
 		assertionPayloadParser.systemTime.getSystemTime() >> new Date(1436279213000)
-		
-		
+		assertionPayloadParser.samlAssertionMessageParser.systemTime = assertionPayloadParser.systemTime
+
+
 		credManagementPayloadParser = PayloadParserRegistry.getParser(CredManagementPayloadParser.NAMESPACE)
 		
 		
@@ -137,6 +123,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 	def "Verify that generateIsApprovalRequest() generates a valid xml message and generateIsApprovalResponse() generates a valid CSMessageResponseData"(){
 		when:
 		byte[] requestMessage = requestMessageParser.generateIsApprovedRequest(TEST_ID, "SOMESOURCEID", "someorg", "123-212", createOriginatorCredential(), null);
+		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.IsApprovedRequest
 		then:
@@ -362,7 +349,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		when:
 		mp.parseMessage(msg, false)
 		then:
-		0 * mp.xmlSigner.messageSecurityProvider.isValidAndAuthorized(_,_)
+		1 * mp.xmlSigner.messageSecurityProvider.isValidAndAuthorized(_,null) >> {true}
 
 		cleanup:
 		true
@@ -373,23 +360,23 @@ public class DefaultCSMessageParserSpec extends Specification{
 	
 	def "Verify validateCSMessage() method"(){
 		when: "Verify that valid message passes validation"
-		mp.validateCSMessage(mp.getVersionFromMessage(simpleCSMessage), mp.parseMessage(simpleCSMessage), getDoc(simpleCSMessage),true)
+		mp.validateCSMessage(mp.getVersionFromMessage(simpleCSMessage), mp.parseMessage(simpleCSMessage), getDoc(simpleCSMessage),true, true)
 		then:
 		true
 		
 		when: "Verify that non CSMessage object throws MessageContentException"
-		mp.validateCSMessage(null, new Object(), null, true)
+		mp.validateCSMessage(null, new Object(), null, true, true)
 		then:
 		thrown MessageContentException
 		
 		when: "Verify invalid signature throws MessageContentException"
-		mp.validateCSMessage(mp.getVersionFromMessage(cSMessageWithInvalidSignature), mp.parseMessage(cSMessageWithInvalidSignature), getDoc(cSMessageWithInvalidSignature), true)
+		mp.validateCSMessage(mp.getVersionFromMessage(cSMessageWithInvalidSignature), mp.parseMessage(cSMessageWithInvalidSignature), getDoc(cSMessageWithInvalidSignature), true, true)
 		then:
 		final MessageContentException e1 = thrown()
 		e1.message =~ "signed message"
 		
 		when: "Verify invalid payload throws MessageContentException"
-		mp.validateCSMessage(mp.getVersionFromMessage(simpleCSMessageWithInvalidPayload), mp.parseMessage(simpleCSMessageWithInvalidPayload), getDoc(simpleCSMessageWithInvalidPayload), true)
+		mp.validateCSMessage(mp.getVersionFromMessage(simpleCSMessageWithInvalidPayload), mp.parseMessage(simpleCSMessageWithInvalidPayload), getDoc(simpleCSMessageWithInvalidPayload), true, true)
 		then:
 		final MessageContentException e2 = thrown()
 		e2.message =~ "parsing payload"
@@ -412,21 +399,23 @@ public class DefaultCSMessageParserSpec extends Specification{
 		mp.requireSignature() == true
 		
 		when:
-		mp.validateSignature(getDoc(simpleCSMessage), true)
-		// Verify that no exception is thrown
-		mp.validateSignature(getDoc(cSMessageWithInvalidSignature), true)
+		mp.validateSignature(getDoc(simpleCSMessage), true, true)
+		then:
+		true
+		when:
+		mp.validateSignature(getDoc(cSMessageWithInvalidSignature), true, true)
 		then:
 		thrown MessageContentException
 		
 		when:
-		mp.validateSignature(getDoc(simpleCSMessageWithoutSignature), true)
+		mp.validateSignature(getDoc(simpleCSMessageWithoutSignature), true, true)
 		then:
 		thrown MessageContentException
 		
 		when:
 		mp.requireSignature = false
-		mp.validateSignature(getDoc(cSMessageWithInvalidSignature), true)
-		mp.validateSignature(getDoc(simpleCSMessageWithoutSignature), true)
+		mp.validateSignature(getDoc(cSMessageWithInvalidSignature), true, true)
+		mp.validateSignature(getDoc(simpleCSMessageWithoutSignature), true, true)
 		
 		then:
 		true // No exception was thrown for invalid signature
@@ -677,6 +666,71 @@ public class DefaultCSMessageParserSpec extends Specification{
 		csMessage != null
 	}
 
+	def "Verify that parse message with require signature as false doesn't verify signature"(){
+		when:
+		mp.parseMessage(verifyPopulateWithFullCSMessage,true,true)
+		then:
+		thrown MessageContentException
+		when:
+		CSMessage result = mp.parseMessage(verifyPopulateWithFullCSMessage,true,false)
+		then:
+		result != null
+		when:
+		Document doc = mp.getDocumentBuilder().parse(new ByteArrayInputStream(verifyPopulateWithFullCSMessage));
+		mp.parseMessage(doc,true,true)
+		then:
+		thrown MessageContentException
+		when:
+		result = mp.parseMessage(doc,true,false)
+		then:
+		result != null
+	}
+
+	def "Verify that populateOriginatorAssertionsAndSignCSMessage populates requests properly."(){
+		setup:
+		ResponseType ticketResp =  assertionPayloadParser.parseAttributeQueryResponse(assertionPayloadParser.genDistributedAuthorizationTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",["role1", "role2"], recipients))
+		JAXBElement<AssertionType> ticketAssertion = assertionPayloadParser.getAssertionFromResponseType(ticketResp)
+		JAXBElement<AssertionType> approvalResp = assertionPayloadParser.parseApprovalTicket(assertionPayloadParser.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"], null, null,null))
+		def assertions = [approvalResp, ticketAssertion]
+		def newOriginator = createOriginatorCredential()
+		newOriginator.uniqueId = "NewOriginator"
+
+
+		when: "Populate a minimal cs request and make sure all fields are set"
+		CSMessage msg = mp.parseMessage(verifyPopulateWithFullCSMessage,true,false)
+		byte[] populatedReq = mp.populateOriginatorAssertionsAndSignCSMessage(msg, "SomeNewDestination", newOriginator,assertions)
+		CSMessage populatedMsg = mp.parseMessage(populatedReq)
+		then:
+		populatedMsg.destinationId == "SomeNewDestination"
+		populatedMsg.originator.credential.uniqueId == "NewOriginator"
+		populatedMsg.assertions.any.size() == 2
+		populatedMsg.assertions.any[0].value.getID() == approvalResp.value.getID()
+		populatedMsg.assertions.any[1].value.getID() == ticketAssertion.value.getID()
+		// Signature is replaced becase the message parsed with required signature, original message had broken signature.
+		when: "Test not populating any fields"
+		populatedReq = mp.populateOriginatorAssertionsAndSignCSMessage(mp.parseMessage(verifyPopulateWithFullCSMessage,true,false), null, null,null)
+		populatedMsg = mp.parseMessage(populatedReq)
+		then:
+		populatedMsg.destinationId != "SomeNewDestination"
+		populatedMsg.originator.credential.uniqueId != "NewOriginator"
+		populatedMsg.assertions.any.size() == 2
+		populatedMsg.assertions.any[0].value.getID() != approvalResp.value.getID()
+		populatedMsg.assertions.any[1].value.getID() != ticketAssertion.value.getID()
+
+		when: "Test to populate minimal message"
+		msg = mp.parseMessage(verifyPopulateWithMinCSMessage,true,false)
+		populatedReq = mp.populateOriginatorAssertionsAndSignCSMessage(msg, "SomeNewDestination", newOriginator,assertions)
+		populatedMsg = mp.parseMessage(populatedReq)
+		then:
+		populatedMsg.destinationId == "SomeNewDestination"
+		populatedMsg.originator.credential.uniqueId == "NewOriginator"
+		populatedMsg.assertions.any.size() == 2
+		populatedMsg.assertions.any[0].value.getID() == approvalResp.value.getID()
+		populatedMsg.assertions.any[1].value.getID() == ticketAssertion.value.getID()
+
+
+	}
+
 	private void verifyCSHeaderMessage(byte[] messageData, GPathResult xmlMessage, String expectedSourceId, String expectedDestinationId, String expectedOrganisation, String expectedName, Credential expectedOriginator){
 		verifyCSHeaderMessage(messageData, xmlMessage, expectedSourceId, expectedDestinationId, expectedOrganisation, expectedName, expectedOriginator, mp)
 	}
@@ -704,7 +758,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		}
 		
 		assert xmlMessage.Signature != null
-		mp.validateSignature(mp.getDocumentBuilder().parse(new ByteArrayInputStream(message.getBytes())), true)
+		mp.validateSignature(mp.getDocumentBuilder().parse(new ByteArrayInputStream(message.getBytes())), true, true)
 	}
 	
 	public static void verifySuccessfulBasePayload(GPathResult payLoadObject, String expectedResponseTo){
@@ -773,4 +827,178 @@ public class DefaultCSMessageParserSpec extends Specification{
 	private Document getDoc(byte[] message){
 		return mp.getDocumentBuilder().parse(new ByteArrayInputStream(message))
 	}
+
+	byte[] verifyPopulateWithFullCSMessage = """<?xml version="1.0" encoding="UTF-8"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.0" timeStamp="2017-01-06T08:15:06.041+03:00" version="2.0" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd">
+  <cs:name>IsApprovedRequest</cs:name>
+  <cs:sourceId>SOMEREQUESTER</cs:sourceId>
+  <cs:destinationId>SOMESOURCEID</cs:destinationId>
+  <cs:organisation>someorg</cs:organisation>
+  <cs:originator>
+    <cs:credential>
+      <cs:credentialRequestId>123</cs:credentialRequestId>
+      <cs:uniqueId>SomeOriginatorUniqueId</cs:uniqueId>
+      <cs:displayName>SomeOrignatorDisplayName</cs:displayName>
+      <cs:serialNumber>SomeSerialNumber</cs:serialNumber>
+      <cs:issuerId>SomeIssuerId</cs:issuerId>
+      <cs:status>100</cs:status>
+      <cs:credentialType>SomeCredentialType</cs:credentialType>
+      <cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType>
+      <cs:attributes>
+        <cs:attribute>
+          <cs:key>someattrkey</cs:key>
+          <cs:value>someattrvalue</cs:value>
+        </cs:attribute>
+      </cs:attributes>
+      <cs:usages>
+        <cs:usage>someusage</cs:usage>
+      </cs:usages>
+      <cs:credentialData>MTIzNDVBQkNFRg==</cs:credentialData>
+      <cs:issueDate>1970-01-01T03:00:01.234+01:00</cs:issueDate>
+      <cs:expireDate>1970-01-01T03:00:02.234+01:00</cs:expireDate>
+      <cs:validFromDate>1970-01-01T03:00:03.234+01:00</cs:validFromDate>
+    </cs:credential>
+  </cs:originator>
+  <cs:assertions>
+    <saml:Assertion ID="_2696EAC6-DBBA-4A3B-b6ED-1B5597523690" IssueInstant="2015-07-07T17:26:53.000+03:00" Version="2.0">
+      <saml:Issuer>someIssuer</saml:Issuer>
+      <ds:Signature>
+        <ds:SignedInfo>
+          <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+          <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+          <ds:Reference URI="#_2696EAC6-DBBA-4A3B-b6ED-1B5597523690">
+            <ds:Transforms>
+              <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+            </ds:Transforms>
+            <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+            <ds:DigestValue>H1/EMr7aVpFVwqFAVeO9C2nSiyyyrvsDPSblzvr6zHs=</ds:DigestValue>
+          </ds:Reference>
+        </ds:SignedInfo>
+        <ds:SignatureValue>EG0f+C95ue7FrgeRurP+CpLAYQVUWiUKF0gQODAw8FTbhvOGZ/lVHCBoADZYrPqdrxqYjK2HjctLQD59FhxK+4b/59C+C7Q1TLvwb1Hh9U+plGkNzZtNHldvpfuF2quP8OgeRXe8EPB9WSZFRrMyL0G8h4H39IS6/MUb2iuS0AJFaZv0//gfM8nNWmyMTzRCTdYcfXLzkNn/j8XK7QtgwzpdRzHjWwfjiw6PGhIXs9Tw+odx0eqb0Sdbz4nrRcbI0QoGYr9V2XZl4DYEIDyOwHM9EvMcWH8Prt/hZEZuRvk+d4z890GuI1/qfjUz5l+A8gcQw+N/p430YC8yGTFrvg==</ds:SignatureValue>
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBDdXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAxMDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBDdXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/y3i/mT7WwtpW18/QfyUGpYPPxQ4bvPPn61y3jJg/dAbGHvnyQSHfIvrIJUN83q6evvk0bNZNVSENUEP29isE4D+KjD3PFtAzQq18P8m/8mSXMva5VTooEUSDX+VJ/6el6tnyZdc85AlIJkkkvyiDKcjhf10yllaiVCHLunGMDXAec4DapPi5GdmSMMXyPOhRx5e+oy6b5q9XmT3C29VNVFf+tkAt3ew3BoQbd+VrlBI4oRYq+mfbgkXU6dSKr9DRqhsbu5rU4Jdst2KClXsxaxvC0rVeKQ8iXCDKFH5glzhSYoeWl7CI15CdQM6/so7EisSvAgMBAAGjgeMwgeAwHQYDVR0OBBYEFLpidyp0Pc46cUpJf1neFnq/rLJBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUgEn+Hp9+Yxe4lOhaIPmf++Wu7SYwGAYDVR0gBBEwDzANBgsrBgEEAYH1fgMDCTBABgNVHR8EOTA3MDWgM6Axhi9odHRwOi8vYXQtY3JsLndtLm5ldC9kZW1vY3VzdG9tZXIxX3NlcnZlcmNhLmNybDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwDwYDVR0RBAgwBoIEdGVzdDANBgkqhkiG9w0BAQUFAAOCAQEAZxGls/mNT4GyAf9u9lg78sSA27sc3xFvHNogrT4yUCbYAOhLXO4HJ9XuKaFyz4bKz6JGdLaQDknDI1GUvpJLpiPTXk4cq1ppHVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOIWKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4zekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgAZLCP64EJEfE1mGxCJg==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </ds:Signature>
+      <saml:Subject>
+        <saml:NameID>SomeSubject</saml:NameID>
+      </saml:Subject>
+      <saml:Conditions NotBefore="2015-07-07T17:26:52.427+03:00" NotOnOrAfter="2015-07-07T17:28:32.427+03:00"/>
+      <saml:AttributeStatement>
+        <saml:Attribute Name="Type">
+          <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">APPROVAL_TICKET</saml:AttributeValue>
+        </saml:Attribute>
+        <saml:Attribute Name="DestinationId">
+          <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">ANY</saml:AttributeValue>
+        </saml:Attribute>
+        <saml:Attribute Name="ApprovalId">
+          <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">1234</saml:AttributeValue>
+        </saml:Attribute>
+        <saml:Attribute Name="ApprovedRequests">
+          <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">abcdef</saml:AttributeValue>
+          <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">defcva</saml:AttributeValue>
+        </saml:Attribute>
+      </saml:AttributeStatement>
+    </saml:Assertion>
+    <saml:Assertion ID="_92F1A23B-ED97-47CC-aFDC-786BD4E9F20D" IssueInstant="2015-07-07T17:26:53.000+03:00" Version="2.0">
+      <saml:Issuer>someIssuer</saml:Issuer>
+      <ds:Signature>
+        <ds:SignedInfo>
+          <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+          <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+          <ds:Reference URI="#_92F1A23B-ED97-47CC-aFDC-786BD4E9F20D">
+            <ds:Transforms>
+              <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+            </ds:Transforms>
+            <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+            <ds:DigestValue>rxHjM5YRZzmvWzHpvChcOPUN52+F4euZiH1w6a7DWNQ=</ds:DigestValue>
+          </ds:Reference>
+        </ds:SignedInfo>
+        <ds:SignatureValue>LKRUYsfgPDQLWoWGeBgLQ5ablKSUY4/JevtRSLuKdMrc3CmVL3y1f+j9/FKkxen3iYY/dsyHhBj+zVFTVEldWNg0Sz/2RPRSERTGoPcRoB5nVMWc2B2Ec7JH16NAphR2qR5ZTZZj2AknDeNEEQhwCcJtvVdmndtrWKgsOW9HLiJjsKBG0pj3TRiNEGX9Vfy4qe9AX5PwZOlA/3M1iImYu0/W74o7g2B1vGPxEtRCBp1k26uzMChQXQ01ZYgDMiOpiygCbrWCDHogZbN0A5HdhhxYnCPxsv5Fvjxz3wXL+Y4e5v0zmit0HvE+9/bQibqAwwACQjRsnpXDz6pNDsWJAQ==</ds:SignatureValue>
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBDdXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAxMDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBDdXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/y3i/mT7WwtpW18/QfyUGpYPPxQ4bvPPn61y3jJg/dAbGHvnyQSHfIvrIJUN83q6evvk0bNZNVSENUEP29isE4D+KjD3PFtAzQq18P8m/8mSXMva5VTooEUSDX+VJ/6el6tnyZdc85AlIJkkkvyiDKcjhf10yllaiVCHLunGMDXAec4DapPi5GdmSMMXyPOhRx5e+oy6b5q9XmT3C29VNVFf+tkAt3ew3BoQbd+VrlBI4oRYq+mfbgkXU6dSKr9DRqhsbu5rU4Jdst2KClXsxaxvC0rVeKQ8iXCDKFH5glzhSYoeWl7CI15CdQM6/so7EisSvAgMBAAGjgeMwgeAwHQYDVR0OBBYEFLpidyp0Pc46cUpJf1neFnq/rLJBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUgEn+Hp9+Yxe4lOhaIPmf++Wu7SYwGAYDVR0gBBEwDzANBgsrBgEEAYH1fgMDCTBABgNVHR8EOTA3MDWgM6Axhi9odHRwOi8vYXQtY3JsLndtLm5ldC9kZW1vY3VzdG9tZXIxX3NlcnZlcmNhLmNybDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwDwYDVR0RBAgwBoIEdGVzdDANBgkqhkiG9w0BAQUFAAOCAQEAZxGls/mNT4GyAf9u9lg78sSA27sc3xFvHNogrT4yUCbYAOhLXO4HJ9XuKaFyz4bKz6JGdLaQDknDI1GUvpJLpiPTXk4cq1ppHVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOIWKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4zekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgAZLCP64EJEfE1mGxCJg==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </ds:Signature>
+      <saml:Subject>
+        <saml:NameID>SomeSubject</saml:NameID>
+      </saml:Subject>
+      <saml:Conditions NotBefore="2015-07-07T17:26:52.427+03:00" NotOnOrAfter="2015-07-07T17:28:32.427+03:00"/>
+      <saml:AttributeStatement>
+        <saml:Attribute Name="Type">
+          <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">APPROVAL_TICKET</saml:AttributeValue>
+        </saml:Attribute>
+        <saml:Attribute Name="DestinationId">
+          <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">ANY</saml:AttributeValue>
+        </saml:Attribute>
+        <saml:Attribute Name="ApprovalId">
+          <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">2345</saml:AttributeValue>
+        </saml:Attribute>
+        <saml:Attribute Name="ApprovedRequests">
+          <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">fdasdf</saml:AttributeValue>
+          <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">asdf</saml:AttributeValue>
+        </saml:Attribute>
+      </saml:AttributeStatement>
+    </saml:Assertion>
+  </cs:assertions>
+  <cs:payload>
+    <cs:IsApprovedRequest>
+      <cs:approvalId>123-212</cs:approvalId>
+    </cs:IsApprovedRequest>
+  </cs:payload>
+  <ds:Signature>
+    <ds:SignedInfo>
+      <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+      <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+      <ds:Reference URI="#12345678-1234-4444-8000-123456789012">
+        <ds:Transforms>
+          <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+        </ds:Transforms>
+        <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+        <ds:DigestValue>ygEdC6SeAFzVcQBWF7hUnWeRjvLxIj6zanXHCPANeFk=</ds:DigestValue>
+      </ds:Reference>
+    </ds:SignedInfo>
+    <ds:SignatureValue>AFKA35h77/i7nAcAYfnxXaGcGAZ7+pQ76DJL4mfE2DT4d0/Eo0qPC23vUiD0sFoHHI0nWrHbe1DO
+6ZOsiD+Pbf//pmBP/7KCsnarMuEYK6WwV2kXLnIAwPvJVsisqM6Hl2MIX75iw07csA1pMidqFySr
+CDxpWs/BBGVxsf24d66fI+wp30jlEyJG3dAuas1N4RvWbzq7qiuh6XI60Vx3RIZyfVEfX/M1yNZY
+Z0lgYU0xg91Y5gUP76KxSW+fhafRRtonQsblbWFbbrytPe5RFYa3Gwlz1XYmQ+ZLU1sqEkcIdubY
+eNDUMScoSqeSfISfmmk7O9j0SNt3WFbYTA+Z8Q==</ds:SignatureValue>
+    <ds:KeyInfo>
+      <ds:X509Data>
+        <ds:X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBD
+dXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAx
+MDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBD
+dXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/
+y3i/mT7WwtpW18/QfyUGpYPPxQ4bvPPn61y3jJg/dAbGHvnyQSHfIvrIJUN83q6evvk0bNZNVSEN
+UEP29isE4D+KjD3PFtAzQq18P8m/8mSXMva5VTooEUSDX+VJ/6el6tnyZdc85AlIJkkkvyiDKcjh
+f10yllaiVCHLunGMDXAec4DapPi5GdmSMMXyPOhRx5e+oy6b5q9XmT3C29VNVFf+tkAt3ew3BoQb
+d+VrlBI4oRYq+mfbgkXU6dSKr9DRqhsbu5rU4Jdst2KClXsxaxvC0rVeKQ8iXCDKFH5glzhSYoeW
+l7CI15CdQM6/so7EisSvAgMBAAGjgeMwgeAwHQYDVR0OBBYEFLpidyp0Pc46cUpJf1neFnq/rLJB
+MAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUgEn+Hp9+Yxe4lOhaIPmf++Wu7SYwGAYDVR0gBBEw
+DzANBgsrBgEEAYH1fgMDCTBABgNVHR8EOTA3MDWgM6Axhi9odHRwOi8vYXQtY3JsLndtLm5ldC9k
+ZW1vY3VzdG9tZXIxX3NlcnZlcmNhLmNybDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYB
+BQUHAwEwDwYDVR0RBAgwBoIEdGVzdDANBgkqhkiG9w0BAQUFAAOCAQEAZxGls/mNT4GyAf9u9lg7
+8sSA27sc3xFvHNogrT4yUCbYAOhLXO4HJ9XuKaFyz4bKz6JGdLaQDknDI1GUvpJLpiPTXk4cq1pp
+HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
+WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
+ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
+ZLCP64EJEfE1mGxCJg==</ds:X509Certificate>
+      </ds:X509Data>
+    </ds:KeyInfo>
+  </ds:Signature>
+</cs:CSMessage>""".getBytes("UTF-8")
+
+	def verifyPopulateWithMinCSMessage = """<?xml version="1.0" encoding="UTF-8"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.0" timeStamp="2017-01-06T08:03:25.638+03:00" version="2.0" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd">
+  <cs:name>IsApprovedRequest</cs:name>
+  <cs:sourceId>SOMEREQUESTER</cs:sourceId>
+  <cs:destinationId>SOMESOURCEID</cs:destinationId>
+  <cs:organisation>someorg</cs:organisation>
+  <cs:payload>
+    <cs:IsApprovedRequest>
+      <cs:approvalId>123-212</cs:approvalId>
+    </cs:IsApprovedRequest>
+  </cs:payload>
+</cs:CSMessage>
+""".getBytes("UTF-8")
 }

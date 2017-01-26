@@ -1,6 +1,7 @@
 package org.certificateservices.messages
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.utils.XMLSigner
 
 import java.security.Security
 
@@ -73,7 +74,7 @@ class SimplePKIMessageSecurityProviderSpec extends Specification {
 	
 	def "Test that isValidAndAuthorized() trust a trusted certificate"(){
 		setup:
-		prov.systemTime = TestUtils.mockSystemTime("2013-10-01")
+		XMLSigner.systemTime = TestUtils.mockSystemTime("2013-10-01")
 		when:
 		X509Certificate cert = prov.getSigningCertificate();
 		then:
@@ -83,7 +84,7 @@ class SimplePKIMessageSecurityProviderSpec extends Specification {
 	
 	def "Test that isValidAndAuthorized() does not trust an untrusted certificate"(){
 		setup:
-		prov.systemTime = TestUtils.mockSystemTime("2013-10-01")
+		XMLSigner.systemTime = TestUtils.mockSystemTime("2013-10-01")
 		expect:
 		  !prov.isValidAndAuthorized(testCert, "someorg")
 	}
@@ -91,7 +92,7 @@ class SimplePKIMessageSecurityProviderSpec extends Specification {
 	
 	def "Test that isValidAndAuthorized() does not trust an expired certificate"(){
 		setup:
-		prov.systemTime = TestUtils.mockSystemTime("2017-10-01")
+		XMLSigner.systemTime = TestUtils.mockSystemTime("2017-10-01")
 		when:
 		X509Certificate cert = prov.getSigningCertificate();
 		then:
@@ -101,7 +102,7 @@ class SimplePKIMessageSecurityProviderSpec extends Specification {
 	
 	def "Test that isValidAndAuthorized() does not trust an not yet valid certificate"(){
 		setup:
-		prov.systemTime = TestUtils.mockSystemTime("2001-10-01")
+		XMLSigner.systemTime = TestUtils.mockSystemTime("2001-10-01")
 		when:
 		X509Certificate cert = prov.getSigningCertificate();
 		then:

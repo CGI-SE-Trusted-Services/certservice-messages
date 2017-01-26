@@ -1,85 +1,52 @@
-package org.certificateservices.messages.assertion;
+package org.certificateservices.messages.assertion
 
-import groovy.xml.XmlUtil
+import org.apache.xml.security.Init
+import org.apache.xml.security.utils.Base64
 import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.certificateservices.messages.csmessages.CSMessageParserManager;
+import org.certificateservices.messages.DummyMessageSecurityProvider
+import org.certificateservices.messages.MessageContentException
+import org.certificateservices.messages.MessageProcessingException
+import org.certificateservices.messages.MessageSecurityProvider
+import org.certificateservices.messages.credmanagement.CredManagementPayloadParser
+import org.certificateservices.messages.credmanagement.jaxb.FieldValue
+import org.certificateservices.messages.csmessages.CSMessageParserManager
+import org.certificateservices.messages.csmessages.DefaultCSMessageParser
+import org.certificateservices.messages.csmessages.PayloadParserRegistry
+import org.certificateservices.messages.csmessages.constants.AvailableCredentialTypes
+import org.certificateservices.messages.csmessages.jaxb.Approver
+import org.certificateservices.messages.csmessages.jaxb.ApproverType
+import org.certificateservices.messages.csmessages.jaxb.CSMessage
+import org.certificateservices.messages.csmessages.jaxb.Credential
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType
+import org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory
+import org.certificateservices.messages.saml2.protocol.jaxb.ResponseType
+import org.certificateservices.messages.utils.MessageGenerateUtils
+import org.certificateservices.messages.utils.SystemTime
+import org.certificateservices.messages.utils.XMLEncrypter
+import org.w3c.dom.Document
+import org.w3c.dom.Element
+import org.w3c.dom.NodeList
+import org.xml.sax.InputSource
+import spock.lang.Specification
+import spock.lang.Unroll
 
-import java.io.ByteArrayInputStream;
-import java.security.Key;
-import java.security.KeyStore
-import java.security.Security;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.List;
+import javax.xml.bind.JAXBElement
+import javax.xml.crypto.dsig.XMLSignature
+import javax.xml.crypto.dsig.XMLSignatureFactory
+import javax.xml.crypto.dsig.dom.DOMValidateContext
+import javax.xml.parsers.DocumentBuilder
+import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.OutputKeys
+import javax.xml.transform.Transformer
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
+import java.security.Security
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
 
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.crypto.dsig.XMLSignature;
-import javax.xml.crypto.dsig.XMLSignatureFactory;
-import javax.xml.crypto.dsig.dom.DOMValidateContext;
-import javax.xml.datatype.DatatypeFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
-import org.apache.xml.security.Init;
-import org.apache.xml.security.encryption.EncryptedData;
-import org.apache.xml.security.encryption.EncryptedKey;
-import org.apache.xml.security.encryption.XMLCipher;
-import org.apache.xml.security.keys.KeyInfo;
-import org.apache.xml.security.keys.content.KeyInfoReference;
-import org.apache.xml.security.keys.content.KeyName;
-import org.apache.xml.security.keys.content.RetrievalMethod;
-import org.apache.xml.security.keys.content.X509Data;
-import org.apache.xml.security.utils.Base64;
-import org.apache.xml.security.utils.EncryptionConstants;
-import org.apache.xml.security.utils.XMLUtils;
-import org.certificateservices.messages.DummyMessageSecurityProvider;
-import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.MessageSecurityProvider;
-import org.certificateservices.messages.TestUtils;
-import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
-import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
-import org.certificateservices.messages.csmessages.CSMessageResponseData;
-import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
-import org.certificateservices.messages.csmessages.PayloadParserRegistry;
-import org.certificateservices.messages.csmessages.X509DataOnlyKeySelector;
-import org.certificateservices.messages.csmessages.constants.AvailableCredentialTypes;
-import org.certificateservices.messages.csmessages.jaxb.Approver;
-import org.certificateservices.messages.csmessages.jaxb.ApproverType;
-import org.certificateservices.messages.csmessages.jaxb.CSMessage;
-import org.certificateservices.messages.csmessages.jaxb.Credential;
-import org.certificateservices.messages.assertion.jaxb.AssertionType;
-import org.certificateservices.messages.assertion.jaxb.AttributeStatementType;
-import org.certificateservices.messages.assertion.jaxb.AttributeType;
-import org.certificateservices.messages.assertion.jaxb.EncryptedElementType;
-import org.certificateservices.messages.assertion.jaxb.KeyInfoConfirmationDataType;
-import org.certificateservices.messages.assertion.jaxb.NameIDType;
-import org.certificateservices.messages.assertion.jaxb.ObjectFactory;
-import org.certificateservices.messages.samlp.jaxb.ResponseType;
-import org.certificateservices.messages.utils.MessageGenerateUtils;
-import org.certificateservices.messages.utils.SystemTime;
-import org.certificateservices.messages.utils.XMLEncrypter;
-import org.certificateservices.messages.xenc.jaxb.EncryptedDataType;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
-import spock.lang.IgnoreRest;
-import spock.lang.Specification;
-import spock.lang.Unroll;
-import static org.certificateservices.messages.TestUtils.*
-import static org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.*
+import static org.certificateservices.messages.TestUtils.setupRegisteredPayloadParser
+import static org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.TEST_ID
 
 class AssertionPayloadParserSpec extends Specification {
 	
@@ -100,19 +67,24 @@ class AssertionPayloadParserSpec extends Specification {
 	
 	def fv1
 	def fv2
-	
 
+
+	def TimeZone currentTimeZone;
 	def setupSpec(){
 		Security.addProvider(new BouncyCastleProvider())
 		Init.init()
 	}
 
 	def setup(){
+		currentTimeZone = TimeZone.getDefault()
+		TimeZone.setDefault(TimeZone.getTimeZone("Europe/Stockholm"))
+
 		setupRegisteredPayloadParser();
 		
 		pp = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE);
 		pp.systemTime = Mock(SystemTime)
 		pp.systemTime.getSystemTime() >> new Date(1436279213000)
+		pp.samlAssertionMessageParser.systemTime = pp.systemTime
 		csp = CSMessageParserManager.getCSMessageParser()
 		
 		cf = CertificateFactory.getInstance("X.509")
@@ -130,10 +102,14 @@ class AssertionPayloadParserSpec extends Specification {
 		
 		credManagementPayloadParser = PayloadParserRegistry.getParser(CredManagementPayloadParser.NAMESPACE)
 	}
+
+	def cleanup(){
+		TimeZone.setDefault(currentTimeZone)
+	}
 	
 	def "Verify that JAXBPackage(), getNameSpace(), getSchemaAsInputStream(), getSupportedVersions(), getDefaultPayloadVersion() returns the correct values"(){
 		expect:
-		pp.getJAXBPackage() == "org.certificateservices.messages.assertion.jaxb"
+		pp.getJAXBPackage() == "org.certificateservices.messages.saml2.assertion.jaxb"
 		pp.getNameSpace() == "urn:oasis:names:tc:SAML:2.0:assertion"
 		pp.getSchemaAsInputStream("2.0") != null
 		pp.getDefaultPayloadVersion() == "2.0"
@@ -153,7 +129,7 @@ class AssertionPayloadParserSpec extends Specification {
 	
 	def "Verify that schemaValidateAssertion() validates agains schema"(){
 		setup:
-		JAXBElement<AssertionType> assertion = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"], null, genApprovers(),twoReceiptiensValidFirst)) 
+		JAXBElement<AssertionType> assertion = pp.parseApprovalTicket(pp.genApprovalTicket("someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject","1234",["abcdef", "defcva"], null, genApprovers(),twoReceiptiensValidFirst))
 		when:
 		pp.schemaValidateAssertion(assertion)
 		then:
@@ -523,6 +499,7 @@ class AssertionPayloadParserSpec extends Specification {
 	private def createMockedTime(long currentTime){
 		pp.systemTime = Mock(SystemTime)
 		pp.systemTime.getSystemTime() >> new Date(currentTime)
+		pp.samlAssertionMessageParser.systemTime = pp.systemTime
 	}	
 
     private void verifySignature(byte[] message) throws Exception{
@@ -553,7 +530,7 @@ class AssertionPayloadParserSpec extends Specification {
 			
 
 			DOMValidateContext validationContext = new DOMValidateContext(signerCert.getPublicKey(), signature);
-			validationContext.setIdAttributeNS(pp.assertionSignatureLocationFinder.getSignatureLocation(doc), null, "ID");
+			validationContext.setIdAttributeNS(pp.assertionSignatureLocationFinder.getSignatureLocations(doc)[0], null, "ID");
 			XMLSignatureFactory signatureFactory = XMLSignatureFactory.getInstance("DOM",new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
 			XMLSignature sig =  signatureFactory.unmarshalXMLSignature(validationContext);
 			if(!sig.validate(validationContext)){

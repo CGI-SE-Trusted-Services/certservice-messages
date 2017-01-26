@@ -3,26 +3,15 @@ package org.certificateservices.messages.assertion
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 
 import java.security.Security
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 
-import javax.xml.bind.JAXBElement;
-
-import org.apache.xml.security.Init;
-import org.apache.xml.security.utils.Base64;
-import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.assertion.jaxb.AssertionType;
+import org.apache.xml.security.Init
 import org.certificateservices.messages.csmessages.PayloadParserRegistry;
-import org.certificateservices.messages.utils.DefaultSystemTime;
-import org.certificateservices.messages.utils.SystemTime;
-
+import org.certificateservices.messages.utils.DefaultSystemTime
 import spock.lang.Shared;
 import spock.lang.Specification
-import spock.lang.Unroll;
+
 import static org.certificateservices.messages.assertion.AttributeQueryTypeEnum.*
 import static org.certificateservices.messages.TestUtils.*
-import static org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.*
 
 class AttributeQueryDataSpec extends Specification {
 	
