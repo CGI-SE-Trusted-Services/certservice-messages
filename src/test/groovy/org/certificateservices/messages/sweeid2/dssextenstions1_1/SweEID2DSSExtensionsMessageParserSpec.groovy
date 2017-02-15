@@ -68,7 +68,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		Element signRequestElement = xmlDoc.getDocumentElement()
 		Element signRequestExtensionElement = xmlDoc.getElementsByTagNameNS(SweEID2DSSExtensionsMessageParser.NAMESPACE,"SignRequestExtension").item(0)
 		Element signTasksElement = xmlDoc.getElementsByTagNameNS(SweEID2DSSExtensionsMessageParser.NAMESPACE,"SignTasks").item(0)
-		printXML(data)
+		//printXML(data)
 		def xml = slurpXml(data)
 		then:
 		// Check namespacing is correct.

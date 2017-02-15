@@ -6,6 +6,7 @@ import org.certificateservices.messages.DummyMessageSecurityProvider
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.csexport.data.CSExportDataParser
 import org.certificateservices.messages.csexport.data.jaxb.CSExport
+import org.certificateservices.messages.csexport.data.jaxb.FieldConstraint
 import org.certificateservices.messages.csexport.data.jaxb.ObjectFactory
 import org.certificateservices.messages.csexport.data.jaxb.Organisation
 import org.certificateservices.messages.csexport.data.jaxb.TokenType
@@ -56,7 +57,7 @@ class CSExportDataParserSpec extends Specification {
 		def org = genOrganisation()
 		def tt = genTokenType()
 		when:
-		byte[] data = p.genCSExport_1_0([org],[tt])
+		byte[] data = p.genCSExport_1_x("1.0",[org],[tt])
 		String message = new String(data, "UTF-8")
 		//printXML(message)
 		def xml = slurpXml(message)
@@ -82,16 +83,34 @@ class CSExportDataParserSpec extends Specification {
 		exp != null
 
 		when: "Verify that empty lists works as well"
-		CSExport emptyListExp = p.parse(p.genCSExport_1_0([],[]))
+		CSExport emptyListExp = p.parse(p.genCSExport_1_x("1.0",[],[]))
 		then:
 		emptyListExp.getOrganisations() == null
 		emptyListExp.getTokenTypes() == null
 
 		when: "Verify that  null lists works as well"
-		CSExport nullListExp = p.parse(p.genCSExport_1_0(null,null))
+		CSExport nullListExp = p.parse(p.genCSExport_1_x("1.0",null,null))
 		then:
 		nullListExp.getOrganisations() == null
 		nullListExp.getTokenTypes() == null
+
+		when: "Verify that 1.1 generation is supported"
+		def ttWithConditional = genTokenType("1.1")
+		data = p.genCSExport_1_x("1.1",[org],[ttWithConditional])
+		message = new String(data, "UTF-8")
+		//printXML(message)
+		xml = slurpXml(message)
+		then:
+		message =~ 'xmlns:ds="http://www.w3.org/2000/09/xmldsig#"'
+		message =~ 'xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0"'
+
+		xml.@version == CSExportDataParser.VERSION_1_1
+		def o2 = xml.organisations.organisation[0]
+		o2.shortName == "testorg1"
+
+		def t2 = xml.tokenTypes.tokenType[0]
+		t2.name == "tokentype1"
+		t2.fieldConstraints.fieldConstraint[0].relatedField == "SomeRelatedField"
 	}
 
 	def "Verify that genCSExport_1_0AsObject generates a valid JAXB element with signature and i marshallable to byte[]"(){
@@ -99,7 +118,7 @@ class CSExportDataParserSpec extends Specification {
 		def org = genOrganisation()
 		def tt = genTokenType()
 		when:
-		CSExport csExport = p.genCSExport_1_0AsObject([org],[tt])
+		CSExport csExport = p.genCSExport_1_xAsObject("1.0",[org],[tt])
 		then:
 		csExport.organisations.organisation.size() == 1
 		csExport.tokenTypes.tokenType.size() == 1
@@ -129,7 +148,7 @@ class CSExportDataParserSpec extends Specification {
 
 	def "Verify that parser verifies signatures if required"(){
 		setup:
-		byte[] data = p.genCSExport_1_0([genOrganisation()],[genTokenType()])
+		byte[] data = p.genCSExport_1_x("1.0",[genOrganisation()],[genTokenType()])
 		String msg = new String(data,"UTF-8")
 		boolean expectionThrown = false
 		when:
@@ -143,6 +162,19 @@ class CSExportDataParserSpec extends Specification {
 		p.requireSignature = false
 		then:
 		p.parse(msg.getBytes("UTF-8")) != null
+	}
+
+	def "Verify that trying to parse a 1.1 xml using version 1.0 parser generates error"(){
+		setup: // Generate 1.1 data with 1.0 version tag
+		def org = genOrganisation()
+		def tt = genTokenType("1.1")
+		byte[] data = p.genCSExport_1_x("1.0",[org],[tt])
+
+		when:
+		p.parse(data)
+		then:
+		thrown MessageContentException
+
 	}
 
 
@@ -159,11 +191,19 @@ class CSExportDataParserSpec extends Specification {
 		return o
 	}
 
-	public static TokenType genTokenType(){
+	public static TokenType genTokenType(String version = "1.0"){
 		TokenType tt = of.createTokenType()
 
 		tt.setName("tokentype1")
 		tt.setDisplayName("Token Type 1")
+
+		if(version == "1.1"){
+			FieldConstraint fc = of.createFieldConstraint()
+			fc.relatedField = "SomeRelatedField"
+
+			tt.fieldConstraints = new TokenType.FieldConstraints()
+			tt.fieldConstraints.fieldConstraint.add(fc)
+		}
 
 		return tt
 	}

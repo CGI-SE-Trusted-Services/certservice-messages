@@ -15,24 +15,17 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for RelatedTokenAttribute complex type.
+ * <p>Java class for ConditionalListInListMapping complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="RelatedTokenAttribute">
+ * &lt;complexType name="ConditionalListInListMapping">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="key">
- *           &lt;simpleType>
- *             &lt;restriction base="{http://www.w3.org/2001/XMLSchema}string">
- *               &lt;pattern value="[a-z0-9_\-\.]+"/>
- *             &lt;/restriction>
- *           &lt;/simpleType>
- *         &lt;/element>
- *         &lt;element name="displayName" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="storeInCredentialStore" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/>
+ *         &lt;element name="key" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="value" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -42,17 +35,16 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "RelatedTokenAttribute", propOrder = {
+@XmlType(name = "ConditionalListInListMapping", propOrder = {
     "key",
-    "displayName",
-    "storeInCredentialStore"
+    "value"
 })
-public class RelatedTokenAttribute {
+public class ConditionalListInListMapping {
 
     @XmlElement(required = true)
     protected String key;
-    protected String displayName;
-    protected Boolean storeInCredentialStore;
+    @XmlElement(required = true)
+    protected String value;
 
     /**
      * Gets the value of the key property.
@@ -79,51 +71,27 @@ public class RelatedTokenAttribute {
     }
 
     /**
-     * Gets the value of the displayName property.
+     * Gets the value of the value property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getDisplayName() {
-        return displayName;
+    public String getValue() {
+        return value;
     }
 
     /**
-     * Sets the value of the displayName property.
+     * Sets the value of the value property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setDisplayName(String value) {
-        this.displayName = value;
-    }
-
-    /**
-     * Gets the value of the storeInCredentialStore property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Boolean }
-     *     
-     */
-    public Boolean isStoreInCredentialStore() {
-        return storeInCredentialStore;
-    }
-
-    /**
-     * Sets the value of the storeInCredentialStore property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Boolean }
-     *     
-     */
-    public void setStoreInCredentialStore(Boolean value) {
-        this.storeInCredentialStore = value;
+    public void setValue(String value) {
+        this.value = value;
     }
 
 }
