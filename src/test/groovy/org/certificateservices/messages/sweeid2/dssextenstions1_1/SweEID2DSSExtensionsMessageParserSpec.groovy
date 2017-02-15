@@ -68,7 +68,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		Element signRequestElement = xmlDoc.getDocumentElement()
 		Element signRequestExtensionElement = xmlDoc.getElementsByTagNameNS(SweEID2DSSExtensionsMessageParser.NAMESPACE,"SignRequestExtension").item(0)
 		Element signTasksElement = xmlDoc.getElementsByTagNameNS(SweEID2DSSExtensionsMessageParser.NAMESPACE,"SignTasks").item(0)
-		printXML(data)
+		//printXML(data)
 		def xml = slurpXml(data)
 		then:
 		// Check namespacing is correct.
@@ -98,7 +98,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 
 		when: "Try unsigned"
 		data = emp.genSignRequest("SomeRequestId","SomeProfile", signRequestExtension,signTasks, false);
-		printXML(data)
+		//printXML(data)
 		xml = slurpXml(data)
 		then:
 		xml.@Profile == "SomeProfile"
@@ -335,7 +335,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		t = emp.genSignEncryptedMessage(true, "SomeDisplayEntity", SignMessageMimeType.HTML, "SomeMessage".getBytes("UTF-8"),
 				createOtherAttributes(), twoReceiptiensValidFirst);
 		d = emp.marshall(eidOf.createSignMessage(t))
-		printXML(d);
+		//printXML(d);
 		xml = slurpXml(d)
 		then:
 		xml.@MustShow == true
@@ -363,7 +363,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 				emp.genSignerAssertionInfo(createContextInfo(), createAttributeStatement(), null),
 				twoReceiptiensValidFirst, createOtherResponseInfo());
 		byte[] d = emp.marshall(t)
-		printXML(d);
+		//printXML(d);
 		def xml = slurpXml(d)
 		then:
 		xml.@Version == "1.5"
