@@ -12,6 +12,7 @@ import org.certificateservices.messages.saml2.protocol.jaxb.*;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 import org.certificateservices.messages.utils.XMLSigner;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBElement;
@@ -32,6 +33,8 @@ import java.util.List;
 public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
 
     private static final String BASE_JAXB_CONTEXT = "org.certificateservices.messages.saml2.assertion.jaxb:org.certificateservices.messages.saml2.protocol.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.xmldsig.jaxb";
+
+    private AuthNSignatureLocationFinder authNSignatureLocationFinder = new AuthNSignatureLocationFinder();
     @Override
     public String getNameSpace() {
         return PROTOCOL_NAMESPACE;
@@ -189,14 +192,7 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
         }
 
         if(signRequest){
-            List<QName> beforeSiblings = new ArrayList<QName>();
-            beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "Extensions"));
-            beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Subject"));
-            beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "NameIDPolicy"));
-            beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Conditions"));
-            beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "RequestedAuthnContext"));
-            beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "Scoping"));
-            xmlSigner.sign(doc, samlpSignatureLocationFinder);
+            xmlSigner.sign(doc, authNSignatureLocationFinder);
         }
 
         return xmlSigner.marshallDoc(doc);
@@ -342,6 +338,24 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
         statusResponseType.setConsent(consent);
         statusResponseType.setExtensions(extensions);
 
+    }
+
+    /**
+     * AuthNSignature specific signature location finder.
+     */
+    private class AuthNSignatureLocationFinder extends SAMLPSignatureLocationFinder{
+
+        @Override
+        public List<QName> getSiblingsBeforeSignature(Element element) throws MessageContentException {
+            List<QName> beforeSiblings = new ArrayList<QName>();
+            beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "Extensions"));
+            beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Subject"));
+            beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "NameIDPolicy"));
+            beforeSiblings.add(new QName(ASSERTION_NAMESPACE, "Conditions"));
+            beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "RequestedAuthnContext"));
+            beforeSiblings.add(new QName(PROTOCOL_NAMESPACE, "Scoping"));
+            return beforeSiblings;
+        }
     }
 
 
