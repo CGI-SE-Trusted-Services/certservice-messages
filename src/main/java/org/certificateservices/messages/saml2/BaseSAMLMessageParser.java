@@ -548,9 +548,9 @@ public abstract class BaseSAMLMessageParser {
 			}
 			return object;
 		}catch(SAXException e){
-			throw new MessageProcessingException("Error occurred during SAML unmarshaller: " + e.getMessage(),e);
+			throw new MessageContentException("Error occurred during SAML unmarshaller: " + e.getMessage(),e);
 		}catch(JAXBException e){
-			throw new MessageProcessingException("Error occurred during SAML unmarshaller: " + e.getMessage(),e);
+			throw new MessageContentException("Error occurred during SAML unmarshaller: " + e.getMessage(),e);
 		}
 
 	}
