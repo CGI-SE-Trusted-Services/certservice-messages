@@ -88,4 +88,38 @@ class KerberosUtilsSpec extends Specification{
 
 	}
 
+	def "Verify that generateKerberosOriginator without GSSCredential generates kerberous XML that contains valid XML"(){
+		when:
+		Credential originator = KerberosUtils.generateKerberosOriginator("kerberostype", "kerberossubtype", "SomeIssuerId",
+				36000000,
+				100, "SomeUserUniqueId", "SomeUserDisplayName")
+		// Verify that the Originator can be written in XML
+		byte[] req = mp.generateIsApprovedRequest(MessageGenerateUtils.generateRandomUUID(),"SomeDestination", "SomeOrganisation", "SomeApprovalId", originator, null);
+		//printXML(req)
+		def xml = slurpXml(req)
+		def c = xml.originator.credential
+		then:
+		c.uniqueId.toString().startsWith("kb:")
+		c.displayName == "SomeUserUniqueId"
+		"kb:" + c.serialNumber.toString() == c.uniqueId.toString()
+		c.issuerId == "SomeIssuerId"
+		c.status == 100
+		c.credentialType == "kerberostype"
+		c.credentialSubType == "kerberossubtype"
+		c.attributes.attribute.size() == 2
+		c.attributes.attribute[0].key == "USER_UNIQUEID"
+		c.attributes.attribute[0].value == "SomeUserUniqueId"
+		c.attributes.attribute[1].key == "USER_USERDISPLAYNAME"
+		c.attributes.attribute[1].value == "SomeUserDisplayName"
+		c.issueDate == "2015-07-07T16:26:51.000+02:00"
+		c.expireDate == "2015-07-08T02:26:51.000+02:00"
+		c.validFromDate == "2015-07-07T16:26:51.000+02:00"
+
+		// Then parse to check schema validation
+		when:
+		CSMessage m = mp.parseMessage(req)
+		then:
+		m.originator.credential.credentialData == new byte[0]
+	}
+
 }
