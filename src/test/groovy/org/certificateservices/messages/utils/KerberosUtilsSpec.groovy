@@ -88,7 +88,7 @@ class KerberosUtilsSpec extends Specification{
 
 	}
 
-	def "Verify that generateKerberosOriginator without GSSCredential generates kerberous XML that contains valid XML"(){
+	def "Verify that generateKerberosOriginator without GSS Credential generates kerberous XML that contains valid XML"(){
 		when:
 		Credential originator = KerberosUtils.generateKerberosOriginator("kerberostype", "kerberossubtype", "SomeIssuerId",
 				36000000,
