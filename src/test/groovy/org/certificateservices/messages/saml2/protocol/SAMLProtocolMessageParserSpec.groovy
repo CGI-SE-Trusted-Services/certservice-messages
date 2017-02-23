@@ -1,5 +1,6 @@
 package org.certificateservices.messages.saml2.protocol
 
+import org.certificateservices.messages.ContextMessageSecurityProvider
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.assertion.ResponseStatusCodes
 import org.certificateservices.messages.saml2.BaseSAMLMessageParser
@@ -25,11 +26,11 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 
 	def setup(){
 		spmp = new SAMLProtocolMessageParser();
-		spmp.init(secProv);
+		spmp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv);
 		spmp.systemTime = mockedSystemTime
 
 		samp = new SAMLAssertionMessageParser()
-		samp.init(secProv)
+		samp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT, secProv)
 		samp.systemTime = mockedSystemTime;
 	}
 

@@ -12,10 +12,7 @@
 *************************************************************************/
 package org.certificateservices.messages.saml2;
 
-import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.MessageSecurityProvider;
-import org.certificateservices.messages.NoDecryptionKeyFoundException;
+import org.certificateservices.messages.*;
 import org.certificateservices.messages.assertion.ResponseStatusCodes;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.csmessages.XSDLSInput;
@@ -89,6 +86,7 @@ public abstract class BaseSAMLMessageParser {
 	protected static final String ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/cs-message-saml-schema-assertion-2.0.xsd";
 	protected static final String SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/cs-message-saml-schema-protocol-2.0.xsd";
 
+	protected ContextMessageSecurityProvider.Context securityProviderContext;
 
 	protected String customJAXBClasspath = null;
 	protected String[] customSchemaLocations = new String[0];
@@ -109,24 +107,28 @@ public abstract class BaseSAMLMessageParser {
 	protected SAMLPSignatureLocationFinder samlpSignatureLocationFinder = new SAMLPSignatureLocationFinder();
 
 
+
 	/**
 	 * Method to initialise the SAML parser using standard XSDs.
+	 * @param context related context used by messageSecurityProvider to determine which key to use for signing/decryption.
 	 * @param secProv Message Security Provider to use.
 	 * @throws MessageProcessingException if internal problems occurred setting up the SAMLMessageParser.
      */
-	public void init(MessageSecurityProvider secProv) throws MessageProcessingException {
-		init(secProv,null);
+	public void init(ContextMessageSecurityProvider.Context context, ContextMessageSecurityProvider secProv) throws MessageProcessingException {
+		init(context, secProv,null);
 	}
 
 	/**
-	 * Method to initialise the SAML parser using standard XSDs and extra XSD used for extentions.
+	 * Method to initialise the parser using standard XSDs and extra XSD used for extentions.
 	 *
-	 * @param secProv Message Security Provider to use.
+	 * @param context related context used by messageSecurityProvider to determine which key to use for signing/decryption.
+	 *                use ContextMessageSecurityProvider.DEFAULT_CONTEXT for default usages.
+	 * @param secProv Message Security Provider to use. If context is not default must a ContextMessageSecurityProvider be specified.
 	 * @param customisations implementation to specify non-SAML core JAXB extensions.
 	 *
 	 * @throws MessageProcessingException if internal problems occurred setting up the SAMLMessageParser.
 	 */
-	public void init(MessageSecurityProvider secProv, SAMLParserCustomisations customisations)
+	public void init(ContextMessageSecurityProvider.Context context,MessageSecurityProvider secProv, SAMLParserCustomisations customisations)
 			throws MessageProcessingException {
 		try {
 			this.customisations = customisations;
@@ -136,8 +138,8 @@ public abstract class BaseSAMLMessageParser {
 				customSchemaLocations = customisations.getCustomSchemaLocations();
 			}
 			messageSecurityProvider = secProv;
-			xmlEncrypter = new XMLEncrypter(secProv, getDocumentBuilder(), getMarshaller(), getUnmarshaller());
-			xmlSigner = new XMLSigner(secProv,getDocumentBuilder(), true, getSignatureLocationFinder(), getOrganisationLookup());
+			xmlEncrypter = new XMLEncrypter(context, secProv, getDocumentBuilder(), getMarshaller(), getUnmarshaller());
+			xmlSigner = new XMLSigner(context,secProv,getDocumentBuilder(), true, getSignatureLocationFinder(), getOrganisationLookup());
 			cf = CertificateFactory.getInstance("X.509");
 
 			schemaValidator = generateSchema().newValidator();

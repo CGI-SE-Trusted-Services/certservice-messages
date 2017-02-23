@@ -1,5 +1,6 @@
 package org.certificateservices.messages.dss1.core
 
+import org.certificateservices.messages.ContextMessageSecurityProvider
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser
 import org.certificateservices.messages.dss1.core.jaxb.*
@@ -16,7 +17,7 @@ class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 	protected org.certificateservices.messages.dss1.core.jaxb.ObjectFactory dssOf = new org.certificateservices.messages.dss1.core.jaxb.ObjectFactory();
 
 	def setup() {
-		dmp.init(secProv);
+		dmp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv);
 		dmp.systemTime = mockedSystemTime
 
 	}
