@@ -63,7 +63,7 @@ class CSExportProtocolPayloadParserSpec extends Specification {
 		when:
 		csMessageParser.sourceId = "SOMESOURCEID"
 		CSMessage request = pp.parseMessage(requestMessage)
-		CSExport csExportData = csExportDataParser.genCSExport_1_0AsObject([CSExportDataParserSpec.genOrganisation()], [CSExportDataParserSpec.genTokenType()])
+		CSExport csExportData = csExportDataParser.genCSExport_1_xAsObject("1.0",[CSExportDataParserSpec.genOrganisation()], [CSExportDataParserSpec.genTokenType()])
 		CSMessageResponseData rd = pp.genGetCSExportResponse("SomeRelatedEndEntity", request, "1.0", csExportData, null)
 		//printXML(rd.responseData)
 		xml = slurpXml(rd.responseData)

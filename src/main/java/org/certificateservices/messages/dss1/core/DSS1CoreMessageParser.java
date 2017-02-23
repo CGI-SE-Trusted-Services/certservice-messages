@@ -369,7 +369,7 @@ public class DSS1CoreMessageParser extends BaseSAMLMessageParser{
                 }
             }catch(Exception e){
             }
-            throw new MessageContentException("Invalid SAMLP message type sent for signature.");
+            throw new MessageContentException("Invalid DSS message type sent for signature.");
         }
 
         // TODO, empty reference and verity the entire XML document is scoped.

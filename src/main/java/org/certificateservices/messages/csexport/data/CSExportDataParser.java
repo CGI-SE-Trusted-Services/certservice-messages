@@ -47,7 +47,9 @@ import javax.xml.validation.SchemaFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class to generate and parse Hard Token Data Structures.
@@ -62,10 +64,19 @@ public class CSExportDataParser {
 
 	public static String NAMESPACE = "http://certificateservices.org/xsd/csexport_data_1_0";
 
-	public static String DEFAULT_VERSION = "1.0";
+	public static String DEFAULT_VERSION = "1.1";
 	public static String VERSION_1_0 = "1.0";
+	public static String VERSION_1_1 = "1.1";
 
-	private static final String CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION = "/cs-export-data_1_0.xsd";
+	private static final String CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_0 = "/cs-export-data_1_0.xsd";
+	private static final String CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_1 = "/cs-export-data_1_1.xsd";
+
+	private static final Map<String, String> versionToSchemaMap;
+	static{
+		versionToSchemaMap = new HashMap<String,String>();
+		versionToSchemaMap.put(VERSION_1_0, CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_0);
+		versionToSchemaMap.put(VERSION_1_1, CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_1);
+	}
 
 	private ObjectFactory of = new ObjectFactory();
 
@@ -107,7 +118,12 @@ public class CSExportDataParser {
 		try {
 			doc = getDocumentBuilder().parse(new ByteArrayInputStream(data));
 
-			Object retval = getUnmarshaller().unmarshal(doc);
+			String version = doc.getDocumentElement().getAttribute("version");
+			if(version == null || versionToSchemaMap.get(version) == null){
+				throw new MessageContentException("Invalid CSExport XML, bad version attribute found");
+			}
+
+			Object retval = getUnmarshaller(version).unmarshal(doc);
 			validateCSExportData(retval,doc);
 
 			return (CSExport)  retval;
@@ -157,30 +173,32 @@ public class CSExportDataParser {
 	 * <p>
 	 * All parameters must be set.
 	 *
+	 * @param version the export data schema version to use.
 	 * @param organisations the list of organisations to include in export
 	 * @param tokenTypes the list of token types to include in export
 	 * @return a newly generated cs export data.
 	 * @throws MessageProcessingException if internal errors occurred processing the message.
 	 * @throws MessageContentException if parameter contained data that didn't fullfill schema.
 	 */
-	public CSExport genCSExport_1_0AsObject(List<Organisation> organisations, List<TokenType> tokenTypes) throws MessageProcessingException, MessageContentException {
-		return parse(genCSExport_1_0(organisations,tokenTypes));
+	public CSExport genCSExport_1_xAsObject(String version, List<Organisation> organisations, List<TokenType> tokenTypes) throws MessageProcessingException, MessageContentException {
+		return parse(genCSExport_1_x(version, organisations,tokenTypes));
 	}
 
 	/**
 	 * Method to create a signed CSExport data structure returned as byte[].
 	 * <p>
-	 * All parameters must be set. 
+	 * All parameters must be set.
 	 *
+	 * @param version the export data schema version to use.
 	 * @param organisations the list of organisations to include in export
 	 * @param tokenTypes the list of token types to include in export
 	 * @return a newly generated cs export data.
 	 * @throws MessageProcessingException if internal errors occurred processing the message.
 	 * @throws MessageContentException if parameter contained data that didn't fullfill schema.
 	 */
-	public byte[] genCSExport_1_0(List<Organisation> organisations, List<TokenType> tokenTypes) throws MessageProcessingException, MessageContentException {
+	public byte[] genCSExport_1_x(String version, List<Organisation> organisations, List<TokenType> tokenTypes) throws MessageProcessingException, MessageContentException {
 		CSExport csexp = of.createCSExport();
-		csexp.setVersion(VERSION_1_0);
+		csexp.setVersion(version);
 		csexp.setID(MessageGenerateUtils.generateRandomUUID());
 		csexp.setTimeStamp(MessageGenerateUtils.dateToXMLGregorianCalendar(systemTime.getSystemTime()));
 
@@ -197,7 +215,6 @@ public class CSExportDataParser {
 
 		return marshallAndSign(csexp);
 	}
-
 	/**
 	 * Method to marshall an CSExport method to an byte array. This method doesn't do any signing only
 	 * converts from JAXB to byte[]
@@ -262,13 +279,15 @@ public class CSExportDataParser {
 		return marshaller;
 	}
 	
-	private Unmarshaller unmarshaller = null;
-	Unmarshaller getUnmarshaller() throws JAXBException, SAXException{
-		if(unmarshaller == null){
-			unmarshaller = getJAXBContext().createUnmarshaller();
-			unmarshaller.setSchema(generateSchema());
+	private Map<String,Unmarshaller> unmarshallers = new HashMap<String,Unmarshaller>();
+	Unmarshaller getUnmarshaller(String version) throws JAXBException, SAXException{
+		Unmarshaller retval = unmarshallers.get(version);
+		if(retval == null){
+			retval = getJAXBContext().createUnmarshaller();
+			retval.setSchema(generateSchema(version));
+			unmarshallers.put(version,retval);
 		}
-		return unmarshaller;
+		return retval;
 	}
 	
 	private JAXBContext jaxbContext = null;
@@ -286,14 +305,14 @@ public class CSExportDataParser {
     }
     
 
-    private Schema generateSchema() throws SAXException{
+    private Schema generateSchema(String version) throws SAXException{
     	SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
     	
-    	schemaFactory.setResourceResolver(new CSExportLSResourceResolver());
+    	schemaFactory.setResourceResolver(new CSExportLSResourceResolver(version));
 		
         Source[] sources = new Source[2];
         sources[0] = new StreamSource(getClass().getResourceAsStream(DefaultCSMessageParser.XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
-        sources[1] = new StreamSource(getClass().getResourceAsStream(CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION));
+        sources[1] = new StreamSource(getClass().getResourceAsStream(versionToSchemaMap.get(version)));
 
         Schema schema = schemaFactory.newSchema(sources);       
         
@@ -302,7 +321,13 @@ public class CSExportDataParser {
 
     
     public class CSExportLSResourceResolver implements  LSResourceResolver {
-		
+
+		private String version;
+
+		public CSExportLSResourceResolver(String version){
+			this.version = version;
+		}
+
 		public LSInput resolveResource(String type, String namespaceURI,
 				String publicId, String systemId, String baseURI) {
 			try {
@@ -317,7 +342,7 @@ public class CSExportDataParser {
 						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(DefaultCSMessageParser.XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
 					}
 					if(namespaceURI.equals(NAMESPACE)){
-						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION));
+						return new XSDLSInput(publicId, systemId, DefaultCSMessageParser.class.getResourceAsStream(versionToSchemaMap.get(version)));
 					}
 				}
 			} catch (MessageProcessingException e) {
