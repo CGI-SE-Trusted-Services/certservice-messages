@@ -25,7 +25,7 @@ class CredManagementPayloadParserSpec extends Specification {
 	
 	CredManagementPayloadParser pp;
 	ObjectFactory of = new ObjectFactory()
-	org.certificateservices.messages.csmessages.jaxb.ObjectFactory csMessageOf = new org.certificateservices.messages.csmessages.jaxb.ObjectFactory()
+	static org.certificateservices.messages.csmessages.jaxb.ObjectFactory csMessageOf = new org.certificateservices.messages.csmessages.jaxb.ObjectFactory()
 	Calendar cal = Calendar.getInstance();
 
 	DefaultCSMessageParser csMessageParser
@@ -667,7 +667,7 @@ class CredManagementPayloadParserSpec extends Specification {
 		return [createToken("serial123"),createToken("serial124")]
 	}
 	
-	private Attribute createAttribute(String key, String value){
+	private static Attribute createAttribute(String key, String value){
 		Attribute retval = csMessageOf.createAttribute();
 		retval.setKey(key)
 		retval.setValue(value)
@@ -681,21 +681,24 @@ class CredManagementPayloadParserSpec extends Specification {
 		retval.tokenContainer = "SomeTokenContainer"
 		retval.tokenType = "SomeTokenType"
 		retval.tokenClass = "SomeTokenClass"
-		
+
+		retval.setCredentialRequests(new TokenRequest.CredentialRequests())
+		retval.getCredentialRequests().getCredentialRequest().add(createCredentialRequest())
+
+		return retval
+	}
+
+	private static CredentialRequest createCredentialRequest(){
 		CredentialRequest cr = csMessageOf.createCredentialRequest();
 		cr.credentialRequestId = 123
 		cr.credentialType = "SomeCredentialType"
 		cr.credentialSubType = "SomeCredentialSubType"
 		cr.x509RequestType = "SomeX509RequestType"
 		cr.credentialRequestData = "12345ABC"
-		
-		retval.setCredentialRequests(new TokenRequest.CredentialRequests())
-		retval.getCredentialRequests().getCredentialRequest().add(cr)
-
-		return retval
+		return cr
 	}
-	
-	private Credential createCredential(int status = 100){
+
+	private static Credential createCredential(int status = 100){
 		Credential c = csMessageOf.createCredential();
 
 		c.credentialRequestId = 123
