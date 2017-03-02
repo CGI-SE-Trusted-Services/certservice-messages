@@ -124,7 +124,7 @@ class AutoEnrollPayloadParserSpec extends Specification {
                                                 pp.genClientActionRequestType("SECURENETWORK", secureNetworkActions)]
 
         byte[] requestMessage = pp.genClientActionRequest(TEST_ID, "SOMESOURCEID", "someorg", types, createOriginatorCredential(), null)
-        printXML(requestMessage)
+        //printXML(requestMessage)
         def xml = slurpXml(requestMessage)
         def payloadObject = xml.payload.ClientActionRequest
         then:

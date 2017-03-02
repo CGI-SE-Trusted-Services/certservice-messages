@@ -6,6 +6,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.credmanagement.jaxb.FieldValue
 import org.certificateservices.messages.credmanagement.jaxb.HardTokenData
+import org.certificateservices.messages.credmanagement.jaxb.Key
 import org.certificateservices.messages.credmanagement.jaxb.ObjectFactory
 import org.certificateservices.messages.csmessages.CSMessageParserManager
 import org.certificateservices.messages.csmessages.CSMessageResponseData
@@ -33,7 +34,7 @@ class CredManagementPayloadParserSpec extends Specification {
 		Security.addProvider(new BouncyCastleProvider())
 		Init.init();
 	}
-	
+
 
 	def setup(){
 		setupRegisteredPayloadParser();
@@ -46,8 +47,8 @@ class CredManagementPayloadParserSpec extends Specification {
 		pp.getJAXBPackage() == "org.certificateservices.messages.credmanagement.jaxb"
 		pp.getNameSpace() == "http://certificateservices.org/xsd/credmanagement2_0"
 		pp.getSchemaAsInputStream("2.0") != null
-		pp.getDefaultPayloadVersion() == "2.0"
-		pp.getSupportedVersions() == ["2.0"] as String[]
+		pp.getDefaultPayloadVersion() == "2.1"
+		pp.getSupportedVersions() == ["2.0","2.1"] as String[]
 	}
 	
 	
@@ -156,7 +157,29 @@ class CredManagementPayloadParserSpec extends Specification {
 		then:
 		thrown MessageContentException
 	}
-	
+
+	def "Verify that genIssueTokenCredentialsRequest() generates a valid ver 2.1 message"(){
+		when:
+		csMessageParser.sourceId = "SOMEREQUESTER"
+		byte[] requestMessage = pp.genIssueTokenCredentialsRequest(TEST_ID, "SOMESOURCEID", "someorg", createTokenRequest(), createFieldValues(), createHardTokenData(), createKeys(), createOriginatorCredential(), null)
+		def xml = slurpXml(requestMessage)
+		def payloadObject = xml.payload.IssueTokenCredentialsRequest
+		then:
+		payloadObject.recoverableKeys.key.size() == 2
+	}
+
+	def "Verify backward compability of 2.0 messages"(){
+		when:
+		CSMessage msg = pp.parseMessage(ver2_0IssueTokenCredentialMessage)
+		then:
+		msg != null
+
+		when: // Verify that parsing a 2.1 message with payload 2.0 version
+		pp.parseMessage(invalidVersionIssueTokenCredentials_2_0)
+		then:
+		thrown MessageContentException
+	}
+
 	def "Verify that genChangeCredentialStatusRequest() generates a valid xml message and genChangeCredentialStatusResponse() generates a valid CSMessageResponseData"(){
 		setup:
 		cal.set(2014, 11, 01)
@@ -498,6 +521,49 @@ class CredManagementPayloadParserSpec extends Specification {
 		pp.parseMessage(rd.responseData)
 
 	}
+
+	def "Verify that genRecoverHardTokenRequest() generates a valid xml message and genRecoverHardTokenDataResponse() generates a valid CSMessageResponseData"(){
+		when:
+		csMessageParser.sourceId = "SOMEREQUESTER"
+		byte[] requestMessage = pp.genRecoverHardTokenRequest(TEST_ID, "SOMESOURCEID", "someorg", "someTokenSerial", "someRelatedCredentialIssuerId", createCredential(), createOriginatorCredential(), null)
+		//printXML(requestMessage)
+		def xml = slurpXml(requestMessage)
+		def payloadObject = xml.payload.RecoverHardTokenRequest
+		then:
+		messageContainsPayload requestMessage, "credmanagement:RecoverHardTokenRequest"
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","RecoverHardTokenRequest", createOriginatorCredential(), csMessageParser)
+
+		payloadObject.tokenSerial == "someTokenSerial"
+		payloadObject.relatedCredentialIssuerId == "someRelatedCredentialIssuerId"
+		payloadObject.adminCredential.displayName == "SomeDisplayName"
+
+		when:
+		csMessageParser.sourceId = "SOMESOURCEID"
+		CSMessage request = pp.parseMessage(requestMessage)
+
+		List keys = createKeys()
+		CSMessageResponseData rd = pp.genRecoverHardTokenResponse("SomeRelatedEndEntity", request, "someTokenSerial", "someencrypteddata".getBytes(),keys,null)
+		//printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.RecoverHardTokenResponse
+
+		then:
+		messageContainsPayload rd.responseData, "credmanagement:RecoverHardTokenResponse"
+
+		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "RecoverHardTokenResponse", "SomeRelatedEndEntity"
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","RecoverHardTokenResponse", createOriginatorCredential(), csMessageParser)
+		verifySuccessfulBasePayload(payloadObject, TEST_ID)
+
+		payloadObject.tokenSerial == "someTokenSerial"
+		new String(Base64.decode(((String)payloadObject.encryptedData))) == "someencrypteddata"
+		payloadObject.recoveredKeys.key[0].relatedCredential.size() == 1
+		payloadObject.recoveredKeys.key[0].encryptedData.size() == 1
+		payloadObject.recoveredKeys.key[1].relatedCredential.size() == 1
+		payloadObject.recoveredKeys.key[1].encryptedData.size() == 1
+		expect:
+		pp.parseMessage(rd.responseData)
+
+	}
 	
 	def "Verify that genStoreHardTokenDataRequest() generates a valid xml message and genStoreHardTokenDataResponse() generates a valid CSMessageResponseData"(){
 		when:
@@ -607,6 +673,82 @@ class CredManagementPayloadParserSpec extends Specification {
 		
 		payloadObject.users.user.size() == 2
 		
+		expect:
+		pp.parseMessage(rd.responseData)
+
+	}
+
+	def "Verify that genRecoverKeyRequest() generates a valid xml message and genRecoverKeyResponse() generates a valid CSMessageResponseData"(){
+		when:
+		csMessageParser.sourceId = "SOMEREQUESTER"
+		byte[] requestMessage = pp.genRecoverKeyRequest(TEST_ID, "SOMESOURCEID", "someorg",  createCredential(), [createCredential(),createCredential()],createOriginatorCredential(), null)
+		//printXML(requestMessage)
+		def xml = slurpXml(requestMessage)
+		def payloadObject = xml.payload.RecoverKeyRequest
+		then:
+		messageContainsPayload requestMessage, "credmanagement:RecoverKeyRequest"
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","RecoverKeyRequest", createOriginatorCredential(), csMessageParser)
+
+		payloadObject.adminCredential.displayName == "SomeDisplayName"
+		payloadObject.relatedCredentials.credential.size() == 2
+
+		when:
+		csMessageParser.sourceId = "SOMESOURCEID"
+		CSMessage request = pp.parseMessage(requestMessage)
+
+		List keys = createKeys()
+		CSMessageResponseData rd = pp.genRecoverKeyResponse("SomeRelatedEndEntity", request, keys,null)
+		//printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.RecoverKeyResponse
+
+		then:
+		messageContainsPayload rd.responseData, "credmanagement:RecoverKeyResponse"
+
+		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "RecoverKeyResponse", "SomeRelatedEndEntity"
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","RecoverKeyResponse", createOriginatorCredential(), csMessageParser)
+		verifySuccessfulBasePayload(payloadObject, TEST_ID)
+
+		payloadObject.recoveredKeys.key[0].relatedCredential.size() == 1
+		payloadObject.recoveredKeys.key[0].encryptedData.size() == 1
+		payloadObject.recoveredKeys.key[1].relatedCredential.size() == 1
+		payloadObject.recoveredKeys.key[1].encryptedData.size() == 1
+		expect:
+		pp.parseMessage(rd.responseData)
+
+	}
+
+	def "Verify that genStoreKeyRequest() generates a valid xml message and genStoreKeyResponse() generates a valid CSMessageResponseData"(){
+		when:
+		csMessageParser.sourceId = "SOMEREQUESTER"
+		byte[] requestMessage = pp.genStoreKeyRequest(TEST_ID, "SOMESOURCEID", "someorg", createKeys(), createOriginatorCredential(), null)
+		//printXML(requestMessage)
+		def xml = slurpXml(requestMessage)
+		def payloadObject = xml.payload.StoreKeyRequest
+		then:
+		messageContainsPayload requestMessage, "credmanagement:StoreKeyRequest"
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","StoreKeyRequest", createOriginatorCredential(), csMessageParser)
+
+		payloadObject.recoverableKeys.key[0].relatedCredential.size() == 1
+		payloadObject.recoverableKeys.key[0].encryptedData.size() == 1
+		payloadObject.recoverableKeys.key[1].relatedCredential.size() == 1
+		payloadObject.recoverableKeys.key[1].encryptedData.size() == 1
+		when:
+		csMessageParser.sourceId = "SOMESOURCEID"
+		CSMessage request = pp.parseMessage(requestMessage)
+
+		CSMessageResponseData rd = pp.genStoreKeyResponse("SomeRelatedEndEntity", request,null)
+		//printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.StoreKeyResponse
+
+		then:
+		messageContainsPayload rd.responseData, "credmanagement:StoreKeyResponse"
+
+		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "StoreKeyResponse", "SomeRelatedEndEntity"
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","StoreKeyResponse", createOriginatorCredential(), csMessageParser)
+		verifySuccessfulBasePayload(payloadObject, TEST_ID)
+
 		expect:
 		pp.parseMessage(rd.responseData)
 
@@ -786,5 +928,162 @@ class CredManagementPayloadParserSpec extends Specification {
 		retval.relatedCredentialIssuerId="CN=SomeIssuerId"
 		return retval
 	}
-	
+
+	private List<Key> createKeys(){
+		return [pp.genKey(createCredential(),key1Data),pp.genKey(createCredential(),key2Data)]
+	}
+
+
+
+	byte[] ver2_0IssueTokenCredentialMessage = """<?xml version="1.0" encoding="UTF-8" standalone="no"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:ae="http://certificateservices.org/xsd/autoenroll2_x" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:key="http://certificateservices.org/xsd/sensitivekeys" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.0" timeStamp="2017-03-02T15:51:57.225+01:00" version="2.0" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd"><cs:name>IssueTokenCredentialsRequest</cs:name><cs:sourceId>SOMEREQUESTER</cs:sourceId><cs:destinationId>SOMESOURCEID</cs:destinationId><cs:organisation>someorg</cs:organisation><cs:originator><cs:credential><cs:credentialRequestId>123</cs:credentialRequestId><cs:uniqueId>SomeOriginatorUniqueId</cs:uniqueId><cs:displayName>SomeOrignatorDisplayName</cs:displayName><cs:serialNumber>SomeSerialNumber</cs:serialNumber><cs:issuerId>SomeIssuerId</cs:issuerId><cs:status>100</cs:status><cs:credentialType>SomeCredentialType</cs:credentialType><cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType><cs:attributes><cs:attribute><cs:key>someattrkey</cs:key><cs:value>someattrvalue</cs:value></cs:attribute></cs:attributes><cs:usages><cs:usage>someusage</cs:usage></cs:usages><cs:credentialData>MTIzNDVBQkNFRg==</cs:credentialData><cs:issueDate>1970-01-01T01:00:01.234+01:00</cs:issueDate><cs:expireDate>1970-01-01T01:00:02.234+01:00</cs:expireDate><cs:validFromDate>1970-01-01T01:00:03.234+01:00</cs:validFromDate></cs:credential></cs:originator><cs:payload><credmanagement:IssueTokenCredentialsRequest><credmanagement:tokenRequest><cs:credentialRequests><cs:credentialRequest><cs:credentialRequestId>123</cs:credentialRequestId><cs:credentialType>SomeCredentialType</cs:credentialType><cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType><cs:x509RequestType>SomeX509RequestType</cs:x509RequestType><cs:credentialRequestData>MTIzNDVBQkM=</cs:credentialRequestData></cs:credentialRequest></cs:credentialRequests><cs:user>someuser</cs:user><cs:tokenContainer>SomeTokenContainer</cs:tokenContainer><cs:tokenType>SomeTokenType</cs:tokenType><cs:tokenClass>SomeTokenClass</cs:tokenClass></credmanagement:tokenRequest><credmanagement:fieldValues><credmanagement:fieldValue><credmanagement:key>someKey1</credmanagement:key><credmanagement:value>someValue1</credmanagement:value></credmanagement:fieldValue><credmanagement:fieldValue><credmanagement:key>someKey2</credmanagement:key><credmanagement:value>someValue2</credmanagement:value></credmanagement:fieldValue></credmanagement:fieldValues><credmanagement:hardTokenData><credmanagement:relatedCredentialIssuerId>CN=SomeIssuerId</credmanagement:relatedCredentialIssuerId><credmanagement:encryptedData>MTIz</credmanagement:encryptedData></credmanagement:hardTokenData></credmanagement:IssueTokenCredentialsRequest></cs:payload><ds:Signature><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#12345678-1234-4444-8000-123456789012"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>4N+Z5XCfsbvalSY8j3zug/TnHLFBEDqcOOTlmMGxAJ4=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>IG6UqeRGFX0TbozQ5wAOstfQp3bqlP+t5qqOtvuSLANIX9D5kA3Y3F5g9H3WkHR4wB0pdczO9DUJ
+kkOVk2CiQ/y1wsshtiAgPM3qBAGnSxvNaEWyLRM4GkgBU7eGnzBV0Hpcnug2HbO0MH3dk5cCsvXV
+vKSc7XIKyAo/p+KhMdtliVG+sRfDELGiqdmhsJVbrTugdQJ+iecntSDPGJ2FzpDdvrhkCxz4eDw6
+e+hjicC+4QjCQqbiyq+pd3KOEqGSv5uR4ovxoGN2BGbExFCvqYnW4B+2w8oosn3xBfyaX0uSjVcI
+zPNpTGu3z5mg5AjAcXt30ZLc+q9RsHZ4tE0y5g==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBD
+dXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAx
+MDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBD
+dXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/
+y3i/mT7WwtpW18/QfyUGpYPPxQ4bvPPn61y3jJg/dAbGHvnyQSHfIvrIJUN83q6evvk0bNZNVSEN
+UEP29isE4D+KjD3PFtAzQq18P8m/8mSXMva5VTooEUSDX+VJ/6el6tnyZdc85AlIJkkkvyiDKcjh
+f10yllaiVCHLunGMDXAec4DapPi5GdmSMMXyPOhRx5e+oy6b5q9XmT3C29VNVFf+tkAt3ew3BoQb
+d+VrlBI4oRYq+mfbgkXU6dSKr9DRqhsbu5rU4Jdst2KClXsxaxvC0rVeKQ8iXCDKFH5glzhSYoeW
+l7CI15CdQM6/so7EisSvAgMBAAGjgeMwgeAwHQYDVR0OBBYEFLpidyp0Pc46cUpJf1neFnq/rLJB
+MAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUgEn+Hp9+Yxe4lOhaIPmf++Wu7SYwGAYDVR0gBBEw
+DzANBgsrBgEEAYH1fgMDCTBABgNVHR8EOTA3MDWgM6Axhi9odHRwOi8vYXQtY3JsLndtLm5ldC9k
+ZW1vY3VzdG9tZXIxX3NlcnZlcmNhLmNybDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYB
+BQUHAwEwDwYDVR0RBAgwBoIEdGVzdDANBgkqhkiG9w0BAQUFAAOCAQEAZxGls/mNT4GyAf9u9lg7
+8sSA27sc3xFvHNogrT4yUCbYAOhLXO4HJ9XuKaFyz4bKz6JGdLaQDknDI1GUvpJLpiPTXk4cq1pp
+HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
+WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
+ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
+ZLCP64EJEfE1mGxCJg==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></cs:CSMessage>""".getBytes("UTF-8")
+
+	byte[] invalidVersionIssueTokenCredentials_2_0 = """<?xml version="1.0" encoding="UTF-8" standalone="no"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:ae="http://certificateservices.org/xsd/autoenroll2_x" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:key="http://certificateservices.org/xsd/sensitivekeys" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.0" timeStamp="2017-03-02T15:56:49.524+01:00" version="2.0" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd"><cs:name>IssueTokenCredentialsRequest</cs:name><cs:sourceId>SOMEREQUESTER</cs:sourceId><cs:destinationId>SOMESOURCEID</cs:destinationId><cs:organisation>someorg</cs:organisation><cs:originator><cs:credential><cs:credentialRequestId>123</cs:credentialRequestId><cs:uniqueId>SomeOriginatorUniqueId</cs:uniqueId><cs:displayName>SomeOrignatorDisplayName</cs:displayName><cs:serialNumber>SomeSerialNumber</cs:serialNumber><cs:issuerId>SomeIssuerId</cs:issuerId><cs:status>100</cs:status><cs:credentialType>SomeCredentialType</cs:credentialType><cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType><cs:attributes><cs:attribute><cs:key>someattrkey</cs:key><cs:value>someattrvalue</cs:value></cs:attribute></cs:attributes><cs:usages><cs:usage>someusage</cs:usage></cs:usages><cs:credentialData>MTIzNDVBQkNFRg==</cs:credentialData><cs:issueDate>1970-01-01T01:00:01.234+01:00</cs:issueDate><cs:expireDate>1970-01-01T01:00:02.234+01:00</cs:expireDate><cs:validFromDate>1970-01-01T01:00:03.234+01:00</cs:validFromDate></cs:credential></cs:originator><cs:payload><credmanagement:IssueTokenCredentialsRequest><credmanagement:tokenRequest><cs:credentialRequests><cs:credentialRequest><cs:credentialRequestId>123</cs:credentialRequestId><cs:credentialType>SomeCredentialType</cs:credentialType><cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType><cs:x509RequestType>SomeX509RequestType</cs:x509RequestType><cs:credentialRequestData>MTIzNDVBQkM=</cs:credentialRequestData></cs:credentialRequest></cs:credentialRequests><cs:user>someuser</cs:user><cs:tokenContainer>SomeTokenContainer</cs:tokenContainer><cs:tokenType>SomeTokenType</cs:tokenType><cs:tokenClass>SomeTokenClass</cs:tokenClass></credmanagement:tokenRequest><credmanagement:fieldValues><credmanagement:fieldValue><credmanagement:key>someKey1</credmanagement:key><credmanagement:value>someValue1</credmanagement:value></credmanagement:fieldValue><credmanagement:fieldValue><credmanagement:key>someKey2</credmanagement:key><credmanagement:value>someValue2</credmanagement:value></credmanagement:fieldValue></credmanagement:fieldValues><credmanagement:hardTokenData><credmanagement:relatedCredentialIssuerId>CN=SomeIssuerId</credmanagement:relatedCredentialIssuerId><credmanagement:encryptedData>MTIz</credmanagement:encryptedData></credmanagement:hardTokenData><credmanagement:recoverableKeys><credmanagement:key><credmanagement:relatedCredential><cs:credentialRequestId>123</cs:credentialRequestId><cs:uniqueId>SomeUniqueId</cs:uniqueId><cs:displayName>SomeDisplayName</cs:displayName><cs:serialNumber>SomeSerialNumber</cs:serialNumber><cs:issuerId>SomeIssuerId</cs:issuerId><cs:status>100</cs:status><cs:credentialType>SomeCredentialType</cs:credentialType><cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType><cs:attributes><cs:attribute><cs:key>someattrkey</cs:key><cs:value>someattrvalue</cs:value></cs:attribute></cs:attributes><cs:usages><cs:usage>someusage</cs:usage></cs:usages><cs:credentialData>MTIzNDVBQkNFRg==</cs:credentialData><cs:issueDate>1970-01-01T01:00:01.234+01:00</cs:issueDate><cs:expireDate>1970-01-01T01:00:02.234+01:00</cs:expireDate><cs:validFromDate>1970-01-01T01:00:03.234+01:00</cs:validFromDate></credmanagement:relatedCredential><credmanagement:encryptedData>PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PHhlbmM6RW5jcnlwdGVkRGF0YSB4bWxuczp4ZW5jPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGVuYyMiIFR5cGU9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvMDQveG1sZW5jI0VsZW1lbnQiPjx4ZW5jOkVuY3J5cHRpb25NZXRob2QgQWxnb3JpdGhtPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGVuYyNhZXMyNTYtY2JjIi8+PGRzOktleUluZm8geG1sbnM6ZHM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvMDkveG1sZHNpZyMiPgo8eGVuYzpFbmNyeXB0ZWRLZXk+PHhlbmM6RW5jcnlwdGlvbk1ldGhvZCBBbGdvcml0aG09Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvMDQveG1sZW5jI3JzYS1vYWVwLW1nZjFwIi8+PGRzOktleUluZm8+CjxkczpYNTA5RGF0YT4KPGRzOlg1MDlDZXJ0aWZpY2F0ZT4KTUlJRGNUQ0NBbG1nQXdJQkFnSUVaZjA4ZHpBTkJna3Foa2lHOXcwQkFRc0ZBREJwTVJBd0RnWURWUVFHRXdkVmJtdHViM2R1TVJBdwpEZ1lEVlFRSUV3ZFZibXR1YjNkdU1SQXdEZ1lEVlFRSEV3ZFZibXR1YjNkdU1SQXdEZ1lEVlFRS0V3ZDBaWE4wYjNKbk1SQXdEZ1lEClZRUUxFd2RWYm10dWIzZHVNUTB3Q3dZRFZRUURFd1JyWlhreE1CNFhEVEUxTURjd05qRXdORFl3TWxvWERUTTFNRE15TXpFd05EWXcKTWxvd2FURVFNQTRHQTFVRUJoTUhWVzVyYm05M2JqRVFNQTRHQTFVRUNCTUhWVzVyYm05M2JqRVFNQTRHQTFVRUJ4TUhWVzVyYm05MwpiakVRTUE0R0ExVUVDaE1IZEdWemRHOXlaekVRTUE0R0ExVUVDeE1IVlc1cmJtOTNiakVOTUFzR0ExVUVBeE1FYTJWNU1UQ0NBU0l3CkRRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFLRUZaZkVVa3FWdzNmZTlZZlB1SytYL0dkQUpndzJ6dlo4UU5ZM0oKWC9kSmpNamVmakRsWklrQU0xemFWemp4aXU5NFVoclMvQ0VMK291TFdnUmkzZHZ0T1lDc2lsa1RqbDZOUEt3UEZrVTFFZlJWT1ZuUAphSm9hcWVMTHZEY2sraU4vZisweHRPZDFZWTZ2WlppdlBlWEFPSW9uTVdwcnh6YUZVaS8vLzF0TDVRU1EwOUZVUjZFSE5QdEZrOEFqCkNHRjdqN1kxREN3YXlmWVllNWF1eVB2Uk5iSjJJa21FZW1yV2luYTh1VjZ2MmdxSWhqajNIUGU4aWRVa1Fmc2JkN0NuNTAzNkVUTGIKTklIQ0Y5TWhBUU80VnZTY211Y2FaWmNiSkFzYzZ1Si9kakNYNU9tZnFtMkU3RFdwRFFESEtMRzFmbG42NXR4SnBQYTIzV1RhNWZFQwpBd0VBQWFNaE1COHdIUVlEVlIwT0JCWUVGTTFjbjBJQlR6bnBVZTFBWEpLck9ydnNvb2ZSTUEwR0NTcUdTSWIzRFFFQkN3VUFBNElCCkFRQ1B1U0hLLzFOWCtuV2J5NjdTUkMveFlwWWVuTHF5amg2dmRyeEE4QWZxT3VacTBITm9HUG1BUWM2SFFuM2FYMUZKKzZzVmlvaGwKMVNxSTM4RjlyYUI4T3BxZzhlMHpPTkVaVjFGTnRTMlY3U3gvSUEwV2N4bnNvTXVXUmVZS3FWUit5ZmZxc2duODlxM01VV3d1RDlZeApzU1JqUHhDZUJkN2FyQWdadjcyUHJpaXF4dnZGQ0dvWHJYNVBybmc4ZXVTL2dJZURRWkJORVdDM016Ykx0eThRd01xS0ZkMCtWMmZ6CkxhUk1BcllMcDBuUzNUd0YyNEtkZ2FLdVN5QTBucTFqL1pOeWkvVG93ck5QQTRGTEUyZi8xYWtqbjNtdmdwbjYyWFFvUE8xQmZaQ3EKdXRrVUpyT3g1UDdaSXI5MWVyWFVmc1FiUERzUWtjakFpM0lQSkZBcgo8L2RzOlg1MDlDZXJ0aWZpY2F0ZT4KPC9kczpYNTA5RGF0YT4KPC9kczpLZXlJbmZvPjx4ZW5jOkNpcGhlckRhdGE+PHhlbmM6Q2lwaGVyVmFsdWU+WHFpM2J4ME5QVzN5RCtCTGxMQVA4Rm5WaXlsZkJSbS9FOEhXaURPMnl6cjVwRXpLbVZHb04rN1d5NEFnUUVYQ2FLbW03TG1uZnRFUgp6ODJwZU40L3JrZTBmU0F0NFpEbHhPZFY0TTh1L2wwNm5YQS9ROVBiSXhKNldwVGI5SS9raHhkOWZNeGVKc1VFQXhLQVAzVmF1VlllCmJKU3dJM1FNM1VSQm1BSDlCd0VZV3hsRFZxZzRIVUFGUDA4TWl2dU02SDhoR05COWxscXo0QkY2b2FKU1VFSzYrYVd0MUxib1BmY3AKTmFpaU50NmtDN2RqcUpUN0k5YVFPcllEc2QyTitEcVRGUEFpYWVEZHlzbjd0bVEvNE1RaXBFaGh6bkhQMXdveFZHbTRPQzZxSmJMNgpLekNsTVJUQmhBQnkyWDZUaFk3MlFYTTZzR09BZmxFak5DNnRldz09PC94ZW5jOkNpcGhlclZhbHVlPjwveGVuYzpDaXBoZXJEYXRhPjwveGVuYzpFbmNyeXB0ZWRLZXk+PC9kczpLZXlJbmZvPjx4ZW5jOkNpcGhlckRhdGE+PHhlbmM6Q2lwaGVyVmFsdWU+V2hNZ05xWHk5UjgwcXRzTU42TGxIdzNaZW4xbEVzYmp0MzMvdytHeHR4TCtUajEvbVBBVzlXaWh1U1NVQWN3aEJzb2htVHZsN3pJWApOc2F0S2FyYWxqN3kyZDZMRkVlWlBEVThJUHllVjZMaWI4WDhkd3NtK3NyNWVqVmR6eU8wc3JLRytmZjhraGFRMDhMNFkwdzBuRnVNCllENjBoSnBnR1FXb09XU0d2eUFiSmE4SE10bGpwT0s0dVgwUUIyb0dmNERnN1NnVVo4d0MxL09lM0JmNG8wUWpQdlFpb3FuNVBHOUwKNzN3RzE3ZnBlVGJTdm91NjVkeUhlVWExMDZ0T3p0bnJCNklLcHZaT1RleE42SmxQSmUrSVRKeVNQRTZaVzB1WldNMnBxV1VFWnpaNgpyU1o4M2ZPMmFURnR5TkhjR0pma3ZrN1RTdG9SYlZGL0lzZ1ROUU1RQTB2d0JMT2hyeHR4QUZaV1pvRnB0QitPOHNmT1JwaUNJWVNuCmU4ZlhyM1M3WU51amZuendxZEE3dE9RaVFtL2IybFpGSDNrSkpRVGxkQ0xWaDkweWhoZTlnS0pYK05hYUpZckRYc2hseDdVNXpIalMKMyt1Zk15Nk9GcVZremJHNUtaR2h2eUhONlQwK3BkMHJMTVJpNlM5ZHlJMG1wYXNDcjFpczI0ZnM4bmcwN2l6bjdNMVkyVEZWOHo5LwpNK0tQWnJ1SitkbW0zNDFCQjNLNTJSL1BZbWcwRllGRm8rMjM3dldnbjB2RTRwUTF2akZqQXozK3lTRms5YUs2TjhhcVUwQlhUOXlQCllWVGNBZGpKR1B0UlNIckI5TStRR0Q4NTlqNzJ5UURyVnYrSXRVdUsybzJYV2IrVis3enVsREJMZklwdzgrcW55U2FFOUI3ZnZ5ZVkKdDVtR0I0akVON3h2Zmdabkw5UTVrVjZJbWRkOFV6Q1lYN2NQL2d3MXZOeVNsTE5RODdVMFAxWUl1MjkzY1NycklGVXcramRISnJiQworV0g0SEhyWExYOUxKSFp6YnBoYUNXOE5VWFRPMVpWeG83TGVXajdDVWRHWS9JdDNZSDlLd2prN2RsSFhoRm5UcnU1SzZDWkEzS1JwCm01N1NwVnpUcmZBZFB3cFdydmVHd3doN0poa3loTFpvcm1lbi9mcTFXcmNoT0lVL25JSnZvLzlxWnhKb2ZQTVFQUmVJQmdrRGV0cmUKT3hoc2JvK2pHNll0U0ZtV1h0dTVacmo5Y3F1VnhjYUpkSjVvZXVuNFQwNkJ6NERCRjFIcDZmSGJnaVgyQnJHeEpXYi9ERUFBbDFveQpmY1NqVlNoK2ZrenNQbERVOXhtQ1A0NS9wZkRUaDdpaEUvRG9XbllRbGk0a25OVWtpR3V6SmFYVld5YnZqUGo5M3RjdGJDbzJtZ1gyClUrT3pVSE5jOVJsNnowM3hPbkphc1RWclBLbzU5S0hOODhqUUlXYjlGQlo3UlhoaU5UclhuNVN4WHBXb2x0bUYrbFRwN0N3Umw0UXgKNWI2NVEzelEwcCtrNFdBektMZXZGOVBab2NDT0I5NFBEMXl2L0ZKWWxpZ01ZTVhqM21KWEhJeU5UOXdVVFhVTEl6TW1oNVJwc3pLTQo5Mm5WeEk3cUNKWkNrNk9CUGVNOWNhSW1WY3BWNEpxcm00OCttTVpIWld0Ny9wYUFKNVpkRDZIa0xwV3FpeVVHSCtDYzQzb2Y2N3IxCmJveVJpTktuNWYxQXF3SEpFRDk5SWwrRVl4cStUUkwxWko1UDVpWi9qUnU5NlJOaVY3aXRITFlCL2t2STFQWU5wTFFkRFgxeFE2c0QKa043ZUV3Lzgxa0NIcjFodWY4UURLZ3FiZGcrdUZ1ZEh4TW5pSjlRL25VL0dmaElCTThuMERxbGNZWm5neG1Ld095bU11elQzSzRrRgpaR082VmJNbHVnYS9Qakp1MytXVFpOVDk0K1ZtdzNpd2FOK2R5N2RqTmhzOFVLZFRVazRJbWFyQmVVSFlCT082RTNvRU1MSlpURDl5CmhsYXNTaVVtNGZXWjViNjRjajdRZTU4Nyt4WEdjZXJjb2hLS1JaMFBRQWtyYXlHMXhBb2VKa1RiNHZDbjltMEZPL2UyWkY0Q1FvNjMKcFF4K0tXMHRuWVU5Ni8xYW5QdGFyQ0RZZll4QXZTSkQ1Q3M5WjZERHl1Q3dxTWI5YWR6ZnVFV1JrelhLVFFFck45WnIzOG1BcEREaQpzWldKeXk3Qm1xbkJUanZ4ZjVJN0kzRFUrVEhHOUloV2hZcitkaE1QR2Z5eHhXQ0prOUtUNE1nYjVDcG51M3VTR2JWQlUwcWo0R0tpCjNSb1o5Zm1wcXc1a2FVR2FUY0pWQjZ1aEZPK0R6SFpNaGJ4ZnZmTkNwNmVOTVhQOUVIekpJeXNUdDF4OGFhY1ZIeENGRDFxTGZHUEoKZjlNY2FJVElwS3lKVExjQ2wwQXM1QnlsSTJ6bldia25BNGFINXU4L3dWVG1Ib3N2SXZxZXBNVTRQTU1ORGdHS2lyUVFWY2ovdU1NbwpbMTA5LCA0MywgMTAxLCA2NSwgMTIwLCA5OCwgNDksIDEyMiwgOTksIDEwMiwgNzYsIDUwLCA4MCwgMTA3LCA2NiwgMTAzLCAxMTAsIDEyMiwgMTAzLCAxMTIsIDgzLCAxMDMsIDEwOSwgMTEwLCA3MiwgNzQsIDEwNSwgMTIwLCA1NiwgODEsIDExMCwgNTAsIDEwNywgMTEyLCA4NCwgNDcsIDg0LCA3NSwgNTcsIDEyMCwgODcsIDU0LCA2OCwgNDcsIDg5LCAxMTYsIDEyMSwgMTE4LCA2OSwgMTA4LCA1MSwgOTcsIDEyMiwgMTE4LCA0MywgODksIDgxLCAxMTQsIDEwOSwgMTE4LCA1NiwgMTA0LCA3NywgNjEsIDYwLCA0NywgMTIwLCAxMDEsIDExMCwgOTksIDU4LCA2NywgMTA1LCAxMTIsIDEwNCwgMTAxLCAxMTQsIDg2LCA5NywgMTA4LCAxMTcsIDEwMSwgNjIsIDYwLCA0NywgMTIwLCAxMDEsIDExMCwgOTksIDU4LCA2NywgMTA1LCAxMTIsIDEwNCwgMTAxLCAxMTQsIDY4LCA5NywgMTE2LCA5NywgNjIsIDYwLCA0NywgMTIwLCAxMDEsIDExMCwgOTksIDU4LCA2OSwgMTEwLCA5OSwgMTE0LCAxMjEsIDExMiwgMTE2LCAxMDEsIDEwMCwgNjgsIDk3LCAxMTYsIDk3LCA2Ml0=</credmanagement:encryptedData></credmanagement:key><credmanagement:key><credmanagement:relatedCredential><cs:credentialRequestId>123</cs:credentialRequestId><cs:uniqueId>SomeUniqueId</cs:uniqueId><cs:displayName>SomeDisplayName</cs:displayName><cs:serialNumber>SomeSerialNumber</cs:serialNumber><cs:issuerId>SomeIssuerId</cs:issuerId><cs:status>100</cs:status><cs:credentialType>SomeCredentialType</cs:credentialType><cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType><cs:attributes><cs:attribute><cs:key>someattrkey</cs:key><cs:value>someattrvalue</cs:value></cs:attribute></cs:attributes><cs:usages><cs:usage>someusage</cs:usage></cs:usages><cs:credentialData>MTIzNDVBQkNFRg==</cs:credentialData><cs:issueDate>1970-01-01T01:00:01.234+01:00</cs:issueDate><cs:expireDate>1970-01-01T01:00:02.234+01:00</cs:expireDate><cs:validFromDate>1970-01-01T01:00:03.234+01:00</cs:validFromDate></credmanagement:relatedCredential><credmanagement:encryptedData>PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PHhlbmM6RW5jcnlwdGVkRGF0YSB4bWxuczp4ZW5jPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGVuYyMiIFR5cGU9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvMDQveG1sZW5jI0VsZW1lbnQiPjx4ZW5jOkVuY3J5cHRpb25NZXRob2QgQWxnb3JpdGhtPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGVuYyNhZXMyNTYtY2JjIi8+PGRzOktleUluZm8geG1sbnM6ZHM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvMDkveG1sZHNpZyMiPgo8eGVuYzpFbmNyeXB0ZWRLZXk+PHhlbmM6RW5jcnlwdGlvbk1ldGhvZCBBbGdvcml0aG09Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvMDQveG1sZW5jI3JzYS1vYWVwLW1nZjFwIi8+PGRzOktleUluZm8+CjxkczpYNTA5RGF0YT4KPGRzOlg1MDlDZXJ0aWZpY2F0ZT4KTUlJRGNUQ0NBbG1nQXdJQkFnSUVaZjA4ZHpBTkJna3Foa2lHOXcwQkFRc0ZBREJwTVJBd0RnWURWUVFHRXdkVmJtdHViM2R1TVJBdwpEZ1lEVlFRSUV3ZFZibXR1YjNkdU1SQXdEZ1lEVlFRSEV3ZFZibXR1YjNkdU1SQXdEZ1lEVlFRS0V3ZDBaWE4wYjNKbk1SQXdEZ1lEClZRUUxFd2RWYm10dWIzZHVNUTB3Q3dZRFZRUURFd1JyWlhreE1CNFhEVEUxTURjd05qRXdORFl3TWxvWERUTTFNRE15TXpFd05EWXcKTWxvd2FURVFNQTRHQTFVRUJoTUhWVzVyYm05M2JqRVFNQTRHQTFVRUNCTUhWVzVyYm05M2JqRVFNQTRHQTFVRUJ4TUhWVzVyYm05MwpiakVRTUE0R0ExVUVDaE1IZEdWemRHOXlaekVRTUE0R0ExVUVDeE1IVlc1cmJtOTNiakVOTUFzR0ExVUVBeE1FYTJWNU1UQ0NBU0l3CkRRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFLRUZaZkVVa3FWdzNmZTlZZlB1SytYL0dkQUpndzJ6dlo4UU5ZM0oKWC9kSmpNamVmakRsWklrQU0xemFWemp4aXU5NFVoclMvQ0VMK291TFdnUmkzZHZ0T1lDc2lsa1RqbDZOUEt3UEZrVTFFZlJWT1ZuUAphSm9hcWVMTHZEY2sraU4vZisweHRPZDFZWTZ2WlppdlBlWEFPSW9uTVdwcnh6YUZVaS8vLzF0TDVRU1EwOUZVUjZFSE5QdEZrOEFqCkNHRjdqN1kxREN3YXlmWVllNWF1eVB2Uk5iSjJJa21FZW1yV2luYTh1VjZ2MmdxSWhqajNIUGU4aWRVa1Fmc2JkN0NuNTAzNkVUTGIKTklIQ0Y5TWhBUU80VnZTY211Y2FaWmNiSkFzYzZ1Si9kakNYNU9tZnFtMkU3RFdwRFFESEtMRzFmbG42NXR4SnBQYTIzV1RhNWZFQwpBd0VBQWFNaE1COHdIUVlEVlIwT0JCWUVGTTFjbjBJQlR6bnBVZTFBWEpLck9ydnNvb2ZSTUEwR0NTcUdTSWIzRFFFQkN3VUFBNElCCkFRQ1B1U0hLLzFOWCtuV2J5NjdTUkMveFlwWWVuTHF5amg2dmRyeEE4QWZxT3VacTBITm9HUG1BUWM2SFFuM2FYMUZKKzZzVmlvaGwKMVNxSTM4RjlyYUI4T3BxZzhlMHpPTkVaVjFGTnRTMlY3U3gvSUEwV2N4bnNvTXVXUmVZS3FWUit5ZmZxc2duODlxM01VV3d1RDlZeApzU1JqUHhDZUJkN2FyQWdadjcyUHJpaXF4dnZGQ0dvWHJYNVBybmc4ZXVTL2dJZURRWkJORVdDM016Ykx0eThRd01xS0ZkMCtWMmZ6CkxhUk1BcllMcDBuUzNUd0YyNEtkZ2FLdVN5QTBucTFqL1pOeWkvVG93ck5QQTRGTEUyZi8xYWtqbjNtdmdwbjYyWFFvUE8xQmZaQ3EKdXRrVUpyT3g1UDdaSXI5MWVyWFVmc1FiUERzUWtjakFpM0lQSkZBcgo8L2RzOlg1MDlDZXJ0aWZpY2F0ZT4KPC9kczpYNTA5RGF0YT4KPC9kczpLZXlJbmZvPjx4ZW5jOkNpcGhlckRhdGE+PHhlbmM6Q2lwaGVyVmFsdWU+SlVVaWpFZWhpaG9mQmNUMTFaVWZtdGx5a3puTERzbzhhR3VCbWVoanFxb1hlTExDQ2dMOFl2SUtwMWNCQVBmcDV0Y2NWWUFnVTgwdAo1Qk5lUFZucDYyc2JCVUNzcjNQWkx0Y1BubzJaaUhMWHdhRlBoVWNPbkRaeDdBRC9CWE9PTk1JNXlhRXFiL2ROYnJQNFlRVVVrVVhTCndxemRKdmZ4bDdhdXc2T0pua2ZwUU9McnhEUStPWXVlS0JzVDVnc3J6U2NJb0VJR01nMjVVc0hpVS8xaUU0cGJMR0Q1ckJEek05c3YKSloydmV5Y00wLzlvNDFXbVhWTXhoeUVLU0RXWG5nOUF4Z0NZSFhRUEtFT0J0U0xlb2ZneFQyRGh4V2lQUXU0dHhrNWU4SkVJM1JYTApBN1RmZ25HbWc4MHpMc29IYkdCclBscnRZeVJEWUtZaEhoTXJwUT09PC94ZW5jOkNpcGhlclZhbHVlPjwveGVuYzpDaXBoZXJEYXRhPjwveGVuYzpFbmNyeXB0ZWRLZXk+PC9kczpLZXlJbmZvPjx4ZW5jOkNpcGhlckRhdGE+PHhlbmM6Q2lwaGVyVmFsdWU+TmJyaVBXK3JDNnJqVHc0cW4wZWpuQTd6ckdRYnVQSWF1SUhQWGMxT3JoVUZNZ0x2aHpESzNpOGhZVkdYWWticTdBL1JGNVNwM2grbApyMDY4L2pyM2pLamRIdEVsa1lWZ29HdWdLTStqTjFKcUJ5eDlBcFNSem1DR1M2Z1ZQWTdqL3VDYzgwWEZCL3FCWndpcVcvdGZ1YWVVCm52ZnRnbXdYbUhHNW9vQ0xKcDAvbEFIMVdSN2lLTVZmRURzQW5aUjZJNnVWMExyK2hlSFdqMWh3aWl5NHI1SHlaQnE0UW96c0tubEsKemdkVHZYdC80RFVHN20rc0hEZEo3dGxDU0YvSEN2MFNvenNWZVI5bGduWmtMVE85bTJ4WGE3UUxEZnpCNjVlUWlkbTEyYjhpdUIvQgpUNU52Q1kzUDRpZUVJalRDSlBDUUgwY0RtUTVXOHZwUXBlNy84aUwvd2ROQ3JWTVdXeG1nZlJJd1UzM1hqLzBuY1NUSDdvY21sc0lBCnI3eVJ0QWNUNGhJM2xSeVdZbnB6eHk4WVcrbXBLcU54ZEpkVm9vRGUrYi9ZWXM1SFQrbTkxNFNTc00zN1Vlb1ZtZk5uRndPeThnd04KVnFNMGV0TE5zbkx2anJTOU9NV3JabG5jMy9UWEhvcEhrL2ZIUG9pQVc1c1QvMnpJMGdyYWVTaWh1Unhyb2VVclRXbE1rV215ano5dgptci93amxiUmdRWEhEQXdxRXlaZUpGQUZMc1NGTnN2eGE2VEtTanIrVUVBRUM1SWdYaVl1ZmxGTWd2aGZ0d2l1bXhManZnSWN1ZW9mCmxhYTVUNmxLU1YweW1zaTQyR25BK1FYNzZTcUZWcEE2Q1Q3YlVOY29MTHVkMDlabG80MUJzTmJLUWhBSkRmMkx6ZlFUeTQ5NkVndUIKbGRQV3QwcEdmTE5peW01MDA1bVA3akZyVm5zNGtrVG5MTFVlZ2d5Y1I0VlhaUktDV2ZQM0dIMENZOU9DbU9DTVc4eXNad29WN3NNVAptNEVEbktPWGFIY0UwcjVDM0QydFU1enRJcEx1UlIyVENXN25jdDN6a044bTN6ajBhQW1YRDhHbmNKRElPK0lGUS8wMDZDbjdGc2tqClBpdldMWkNjem04UmFxWFgwb1ZXSFFLNGpxL1BOcG9RZStreG1hZkg5K051WkxTR0FwTThLYlNxeVhZT3EyYURITTZQL2tBSDBTNGMKbER0amEzK2ZsMkY2bThlWWlJQ2NrbDVjNlVDbU45SHVwbTNiZkpDWFh1aVRhS1RuaHpvb29tb1NqUU83WkVWd2hmY0RRbjZETFNYdApJWWZ5Q21qNUVOREJ3M0I2Yyt0VmVkQTR4MVVIdFp2a0d4SEgzQUphZDNVOHNueHR0eDFTY0dEYngrZVRpaVErZjBJcTYvelpCaytNCjMrK3FSbXJJc3ZUU0FNRGllUTlyWjdnbWNHSHVmVjBZUFZQRkVhVHdzcnVhV0RYWVNRWXp5eUNqUWtDZGtUNnJ5SlN3TVVtN1B5YU0KMk9Oc3dPalBEbzQyb1l3WURFSW1XajhwN3IxUm8zU2Zta3hnS0ZkNk9PRE1oNi9WZzdsbVBpR3gyK09pQ3Z1UHhvZEVPYjgvY0tvMApvbXNMUmJZV3Q0RzBXSXJ3UUEvVFowblRqNUZFTmZOb1ZnWUR2a0NWM1l2OHphSEh3NEM3NUhPMnJZaTdQOWtqNUIyVyt0Z1NPL3ovClk4OERobTlrRU5jSmVhOEY3T0JzVTBNWGhicnk5ZmRaUlVrNGVMNjdxSHA4WTBHQXhtdFEzNkQ3cVJ0ck9DcTFYOHZsM3BudVVjeDAKdmczcGFBMHIzd01DYnY5bU44bm9TU0E5SmFEaXhNQ0JhNllHaXBXS0dtTXliR2NYN2UzaUo3cWs1QnNtcFg1VGJkLy8rU3V6NnBMMQppb3JpcmZzNEpvMWdXYW82QlBzeFdvYnNqRWdhUnUvbGVSZ3RaL1lEYVNCNGk5TjkwU0I2L3Y3b0V2U0F1QkJrQlVNZlNPbVQ1WWRKCk01R1prWDAxUnpKbDhlZE90TkprVUd0ZnY0MldUV1ZTRXplcjRTZVkvQXFGTmRZakd2bFkreXFsQVdXSVJYT3RYY0Rlc0tWVDUvMzcKMnVTRlpqbURMWVNITXVRR3lVN2NrODJITVdkdVZyQ3B0WWdyWXp6bGpQRjU0RXJ6aFdkbHN3ZFQvUzJpYmE5ZHlMcFdRa2ZBY0pYdgpxVW82bGZEb0VkUVVYMmQraERJRk40MWR0WUcvTjIyWm5lbWNXQjlEakYyMkFTVnY0aVUzY0JDTm5NQndOdGtkVTlPcW5xbkVXWkJvCmkwMHQzOXZEVStrOWEyTGpyb1VVWXlSTlhiYi8vWnYwZXNKKzdUZFNTOWhtUHlOVk5ZMFFHMXZmeHUyUWR3TUkvMVB2Q3JLNStQT08KQXYxb0lQa3hEZGdhN3A2bnhzcld5VkwxcllqNjcwRkhpTitXckp0OUVEZ1E3bFZuSHVJbTUzbDAyeTVxR2IrNnpiRDliMmwyYzkrUQpbNzMsIDgzLCA0OCwgODcsIDc0LCAxMTYsIDExNCwgNjcsIDU0LCA4OCwgODMsIDEwOSwgNjgsIDQ5LCAxMjAsIDEyMSwgMTA5LCA4MSwgMTA4LCA4MSwgNTQsIDUzLCAxMTQsIDgyLCA4OSwgOTksIDExNCwgMTIwLCA3MiwgODUsIDgyLCA1NSwgODYsIDg1LCAxMTAsIDc4LCA0OCwgMTE1LCA5NywgMTIwLCA3NiwgNTYsIDEwNCwgNjksIDEwOCwgODMsIDEwOCwgODEsIDEwNCwgNTAsIDkwLCAxMTAsIDExNywgMTExLCA4MSwgMTEyLCA2OCwgNjksIDEwNiwgNTMsIDY4LCAxMDksIDc3LCA2MSwgNjAsIDQ3LCAxMjAsIDEwMSwgMTEwLCA5OSwgNTgsIDY3LCAxMDUsIDExMiwgMTA0LCAxMDEsIDExNCwgODYsIDk3LCAxMDgsIDExNywgMTAxLCA2MiwgNjAsIDQ3LCAxMjAsIDEwMSwgMTEwLCA5OSwgNTgsIDY3LCAxMDUsIDExMiwgMTA0LCAxMDEsIDExNCwgNjgsIDk3LCAxMTYsIDk3LCA2MiwgNjAsIDQ3LCAxMjAsIDEwMSwgMTEwLCA5OSwgNTgsIDY5LCAxMTAsIDk5LCAxMTQsIDEyMSwgMTEyLCAxMTYsIDEwMSwgMTAwLCA2OCwgOTcsIDExNiwgOTcsIDYyXQ==</credmanagement:encryptedData></credmanagement:key></credmanagement:recoverableKeys></credmanagement:IssueTokenCredentialsRequest></cs:payload><ds:Signature><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#12345678-1234-4444-8000-123456789012"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>ZegeBKq8gU+afipUU9OQLC5dqpDzClEcxZmlw0wKMBM=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>E8nLeQeNhLLpl1pPhCO7PQw1c2vQ5SFlRAG1AJL/7wu0vIfFb+mneiTAS1eTqc+u0oBxdq4ubESm
+viIj2G1Sjk7V/6RWVg9BQtCO8V3dkK37g9ES1kytDQVnKjd/d6urToB5JvkYs3dmwy3UMokJ+fAp
+1gYq71EaJvAt5XRsi3oGEFZisgRvV++YjU7+mBK4zNTFShwSJ3eujD18+N/0g+OxI7wsUg7Q1XA1
+OXI59ZYkzXOGz567eniddFrvlEVxCRVY3kMH+AefzTSNsXi1FObz+YueNSLUzSm+uWldoqectG5Z
+xGVTKNZFMzQFK3FMg4y1mkd8HmdPz6qBVJLvQw==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBD
+dXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAx
+MDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBD
+dXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/
+y3i/mT7WwtpW18/QfyUGpYPPxQ4bvPPn61y3jJg/dAbGHvnyQSHfIvrIJUN83q6evvk0bNZNVSEN
+UEP29isE4D+KjD3PFtAzQq18P8m/8mSXMva5VTooEUSDX+VJ/6el6tnyZdc85AlIJkkkvyiDKcjh
+f10yllaiVCHLunGMDXAec4DapPi5GdmSMMXyPOhRx5e+oy6b5q9XmT3C29VNVFf+tkAt3ew3BoQb
+d+VrlBI4oRYq+mfbgkXU6dSKr9DRqhsbu5rU4Jdst2KClXsxaxvC0rVeKQ8iXCDKFH5glzhSYoeW
+l7CI15CdQM6/so7EisSvAgMBAAGjgeMwgeAwHQYDVR0OBBYEFLpidyp0Pc46cUpJf1neFnq/rLJB
+MAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUgEn+Hp9+Yxe4lOhaIPmf++Wu7SYwGAYDVR0gBBEw
+DzANBgsrBgEEAYH1fgMDCTBABgNVHR8EOTA3MDWgM6Axhi9odHRwOi8vYXQtY3JsLndtLm5ldC9k
+ZW1vY3VzdG9tZXIxX3NlcnZlcmNhLmNybDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYB
+BQUHAwEwDwYDVR0RBAgwBoIEdGVzdDANBgkqhkiG9w0BAQUFAAOCAQEAZxGls/mNT4GyAf9u9lg7
+8sSA27sc3xFvHNogrT4yUCbYAOhLXO4HJ9XuKaFyz4bKz6JGdLaQDknDI1GUvpJLpiPTXk4cq1pp
+HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
+WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
+ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
+ZLCP64EJEfE1mGxCJg==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></cs:CSMessage>""".getBytes("UTF-8")
+
+	byte[] key1Data = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><xenc:EncryptedData xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\" Type=\"http://www.w3.org/2001/04/xmlenc#Element\"><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#aes256-cbc\"/><ds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
+			"<xenc:EncryptedKey><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p\"/><ds:KeyInfo>\n" +
+			"<ds:X509Data>\n" +
+			"<ds:X509Certificate>\n" +
+			"MIIDcTCCAlmgAwIBAgIEZf08dzANBgkqhkiG9w0BAQsFADBpMRAwDgYDVQQGEwdVbmtub3duMRAw\n" +
+			"DgYDVQQIEwdVbmtub3duMRAwDgYDVQQHEwdVbmtub3duMRAwDgYDVQQKEwd0ZXN0b3JnMRAwDgYD\n" +
+			"VQQLEwdVbmtub3duMQ0wCwYDVQQDEwRrZXkxMB4XDTE1MDcwNjEwNDYwMloXDTM1MDMyMzEwNDYw\n" +
+			"MlowaTEQMA4GA1UEBhMHVW5rbm93bjEQMA4GA1UECBMHVW5rbm93bjEQMA4GA1UEBxMHVW5rbm93\n" +
+			"bjEQMA4GA1UEChMHdGVzdG9yZzEQMA4GA1UECxMHVW5rbm93bjENMAsGA1UEAxMEa2V5MTCCASIw\n" +
+			"DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKEFZfEUkqVw3fe9YfPuK+X/GdAJgw2zvZ8QNY3J\n" +
+			"X/dJjMjefjDlZIkAM1zaVzjxiu94UhrS/CEL+ouLWgRi3dvtOYCsilkTjl6NPKwPFkU1EfRVOVnP\n" +
+			"aJoaqeLLvDck+iN/f+0xtOd1YY6vZZivPeXAOIonMWprxzaFUi///1tL5QSQ09FUR6EHNPtFk8Aj\n" +
+			"CGF7j7Y1DCwayfYYe5auyPvRNbJ2IkmEemrWina8uV6v2gqIhjj3HPe8idUkQfsbd7Cn5036ETLb\n" +
+			"NIHCF9MhAQO4VvScmucaZZcbJAsc6uJ/djCX5Omfqm2E7DWpDQDHKLG1fln65txJpPa23WTa5fEC\n" +
+			"AwEAAaMhMB8wHQYDVR0OBBYEFM1cn0IBTznpUe1AXJKrOrvsoofRMA0GCSqGSIb3DQEBCwUAA4IB\n" +
+			"AQCPuSHK/1NX+nWby67SRC/xYpYenLqyjh6vdrxA8AfqOuZq0HNoGPmAQc6HQn3aX1FJ+6sViohl\n" +
+			"1SqI38F9raB8Opqg8e0zONEZV1FNtS2V7Sx/IA0WcxnsoMuWReYKqVR+yffqsgn89q3MUWwuD9Yx\n" +
+			"sSRjPxCeBd7arAgZv72PriiqxvvFCGoXrX5Prng8euS/gIeDQZBNEWC3MzbLty8QwMqKFd0+V2fz\n" +
+			"LaRMArYLp0nS3TwF24KdgaKuSyA0nq1j/ZNyi/TowrNPA4FLE2f/1akjn3mvgpn62XQoPO1BfZCq\n" +
+			"utkUJrOx5P7ZIr91erXUfsQbPDsQkcjAi3IPJFAr\n" +
+			"</ds:X509Certificate>\n" +
+			"</ds:X509Data>\n" +
+			"</ds:KeyInfo><xenc:CipherData><xenc:CipherValue>Xqi3bx0NPW3yD+BLlLAP8FnViylfBRm/E8HWiDO2yzr5pEzKmVGoN+7Wy4AgQEXCaKmm7LmnftER\n" +
+			"z82peN4/rke0fSAt4ZDlxOdV4M8u/l06nXA/Q9PbIxJ6WpTb9I/khxd9fMxeJsUEAxKAP3VauVYe\n" +
+			"bJSwI3QM3URBmAH9BwEYWxlDVqg4HUAFP08MivuM6H8hGNB9llqz4BF6oaJSUEK6+aWt1LboPfcp\n" +
+			"NaiiNt6kC7djqJT7I9aQOrYDsd2N+DqTFPAiaeDdysn7tmQ/4MQipEhhznHP1woxVGm4OC6qJbL6\n" +
+			"KzClMRTBhABy2X6ThY72QXM6sGOAflEjNC6tew==</xenc:CipherValue></xenc:CipherData></xenc:EncryptedKey></ds:KeyInfo><xenc:CipherData><xenc:CipherValue>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</xenc:CipherValue></xenc:CipherData></xenc:EncryptedData>".getBytes("UTF-8")
+
+	byte[] key2Data = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><xenc:EncryptedData xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\" Type=\"http://www.w3.org/2001/04/xmlenc#Element\"><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#aes256-cbc\"/><ds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
+			"<xenc:EncryptedKey><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p\"/><ds:KeyInfo>\n" +
+			"<ds:X509Data>\n" +
+			"<ds:X509Certificate>\n" +
+			"MIIDcTCCAlmgAwIBAgIEZf08dzANBgkqhkiG9w0BAQsFADBpMRAwDgYDVQQGEwdVbmtub3duMRAw\n" +
+			"DgYDVQQIEwdVbmtub3duMRAwDgYDVQQHEwdVbmtub3duMRAwDgYDVQQKEwd0ZXN0b3JnMRAwDgYD\n" +
+			"VQQLEwdVbmtub3duMQ0wCwYDVQQDEwRrZXkxMB4XDTE1MDcwNjEwNDYwMloXDTM1MDMyMzEwNDYw\n" +
+			"MlowaTEQMA4GA1UEBhMHVW5rbm93bjEQMA4GA1UECBMHVW5rbm93bjEQMA4GA1UEBxMHVW5rbm93\n" +
+			"bjEQMA4GA1UEChMHdGVzdG9yZzEQMA4GA1UECxMHVW5rbm93bjENMAsGA1UEAxMEa2V5MTCCASIw\n" +
+			"DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKEFZfEUkqVw3fe9YfPuK+X/GdAJgw2zvZ8QNY3J\n" +
+			"X/dJjMjefjDlZIkAM1zaVzjxiu94UhrS/CEL+ouLWgRi3dvtOYCsilkTjl6NPKwPFkU1EfRVOVnP\n" +
+			"aJoaqeLLvDck+iN/f+0xtOd1YY6vZZivPeXAOIonMWprxzaFUi///1tL5QSQ09FUR6EHNPtFk8Aj\n" +
+			"CGF7j7Y1DCwayfYYe5auyPvRNbJ2IkmEemrWina8uV6v2gqIhjj3HPe8idUkQfsbd7Cn5036ETLb\n" +
+			"NIHCF9MhAQO4VvScmucaZZcbJAsc6uJ/djCX5Omfqm2E7DWpDQDHKLG1fln65txJpPa23WTa5fEC\n" +
+			"AwEAAaMhMB8wHQYDVR0OBBYEFM1cn0IBTznpUe1AXJKrOrvsoofRMA0GCSqGSIb3DQEBCwUAA4IB\n" +
+			"AQCPuSHK/1NX+nWby67SRC/xYpYenLqyjh6vdrxA8AfqOuZq0HNoGPmAQc6HQn3aX1FJ+6sViohl\n" +
+			"1SqI38F9raB8Opqg8e0zONEZV1FNtS2V7Sx/IA0WcxnsoMuWReYKqVR+yffqsgn89q3MUWwuD9Yx\n" +
+			"sSRjPxCeBd7arAgZv72PriiqxvvFCGoXrX5Prng8euS/gIeDQZBNEWC3MzbLty8QwMqKFd0+V2fz\n" +
+			"LaRMArYLp0nS3TwF24KdgaKuSyA0nq1j/ZNyi/TowrNPA4FLE2f/1akjn3mvgpn62XQoPO1BfZCq\n" +
+			"utkUJrOx5P7ZIr91erXUfsQbPDsQkcjAi3IPJFAr\n" +
+			"</ds:X509Certificate>\n" +
+			"</ds:X509Data>\n" +
+			"</ds:KeyInfo><xenc:CipherData><xenc:CipherValue>JUUijEehihofBcT11ZUfmtlykznLDso8aGuBmehjqqoXeLLCCgL8YvIKp1cBAPfp5tccVYAgU80t\n" +
+			"5BNePVnp62sbBUCsr3PZLtcPno2ZiHLXwaFPhUcOnDZx7AD/BXOONMI5yaEqb/dNbrP4YQUUkUXS\n" +
+			"wqzdJvfxl7auw6OJnkfpQOLrxDQ+OYueKBsT5gsrzScIoEIGMg25UsHiU/1iE4pbLGD5rBDzM9sv\n" +
+			"JZ2veycM0/9o41WmXVMxhyEKSDWXng9AxgCYHXQPKEOBtSLeofgxT2DhxWiPQu4txk5e8JEI3RXL\n" +
+			"A7TfgnGmg80zLsoHbGBrPlrtYyRDYKYhHhMrpQ==</xenc:CipherValue></xenc:CipherData></xenc:EncryptedKey></ds:KeyInfo><xenc:CipherData><xenc:CipherValue>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</xenc:CipherValue></xenc:CipherData></xenc:EncryptedData>".getBytes("UTF-8")
 }
