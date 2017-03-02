@@ -72,7 +72,7 @@ public class SensitiveKeysParser {
 
 	public static String DEFAULT_VERSION = "2.0";
 
-	private static final String SENSITIVE_KEYS_XSD_SCHEMA_RESOURCE_LOCATION = "/sensitivekeys_schema2_0.xsd";
+	public static final String SENSITIVE_KEYS_XSD_SCHEMA_RESOURCE_LOCATION = "/sensitivekeys_schema2_0.xsd";
 
 	private ObjectFactory of = new ObjectFactory();
 

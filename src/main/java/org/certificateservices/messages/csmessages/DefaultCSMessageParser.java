@@ -63,6 +63,7 @@ import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
 import org.certificateservices.messages.csmessages.jaxb.Originator;
 import org.certificateservices.messages.csmessages.jaxb.Payload;
 import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
+import org.certificateservices.messages.sensitivekeys.SensitiveKeysParser;
 import org.certificateservices.messages.utils.*;
 import org.certificateservices.messages.utils.XMLSigner.SignatureLocationFinder;
 import org.w3c.dom.Document;
@@ -876,7 +877,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	     */
 	    JAXBContext getJAXBContext() throws JAXBException, MessageProcessingException{
 	    	if(jaxbContext== null){
-	    		jaxbClassPath = "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.xmldsig.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.csexport.data.jaxb";
+	    		jaxbClassPath = "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.xmldsig.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.csexport.data.jaxb:org.certificateservices.messages.sensitivekeys.jaxb";
 	    			    		
 	    		for(String namespace : PayloadParserRegistry.getRegistredNamespaces()){
 	    			String jaxbPackage = PayloadParserRegistry.getParser(namespace).getJAXBPackage();
@@ -900,11 +901,12 @@ public class DefaultCSMessageParser implements CSMessageParser {
 				InputStream payLoadSchemaStream = pp.getSchemaAsInputStream(payLoadVersion);
 		    	String csMessageSchemaLocation = csMessageSchemaMap.get(version);
 				
-		        Source[] sources = new Source[(payLoadSchemaStream == null ? 2: 3)];
+		        Source[] sources = new Source[(payLoadSchemaStream == null ? 3: 4)];
 		        sources[0] = new StreamSource(getClass().getResourceAsStream(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
-		        sources[1] = new StreamSource(getClass().getResourceAsStream(csMessageSchemaLocation));
+				sources[1] = new StreamSource(getClass().getResourceAsStream(SensitiveKeysParser.SENSITIVE_KEYS_XSD_SCHEMA_RESOURCE_LOCATION));
+		        sources[2] = new StreamSource(getClass().getResourceAsStream(csMessageSchemaLocation));
 		        if(payLoadSchemaStream != null){
-		          sources[2] = new StreamSource(payLoadSchemaStream);
+		          sources[3] = new StreamSource(payLoadSchemaStream);
 		        }
 				try {
 					Schema s = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema(sources);
