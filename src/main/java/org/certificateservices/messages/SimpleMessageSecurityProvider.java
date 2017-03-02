@@ -44,7 +44,7 @@ import org.certificateservices.messages.utils.*;
  *
  */
 public class SimpleMessageSecurityProvider implements
-		MessageSecurityProvider {
+		ContextMessageSecurityProvider {
 	
 	Logger log = Logger.getLogger(SimpleMessageSecurityProvider.class);
 	
@@ -197,6 +197,18 @@ public class SimpleMessageSecurityProvider implements
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getSigningKey()
 	 */
 	public PrivateKey getSigningKey() throws MessageProcessingException {
+		return getSigningKey(DEFAULT_CONTEXT);
+	}
+
+	/**
+	 * Fetches the signing key used to create the digital signatures of the XML file.
+	 *
+	 * @param context  is currently ignored.
+	 * @return the signing key used.
+	 * @throws MessageProcessingException if key isn't accessible or activated.
+	 */
+	@Override
+	public PrivateKey getSigningKey(Context context) throws MessageProcessingException {
 		return signPrivateKey;
 	}
 
@@ -204,6 +216,18 @@ public class SimpleMessageSecurityProvider implements
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getSigningCertificate()
 	 */
 	public X509Certificate getSigningCertificate() throws MessageProcessingException {
+		return getSigningCertificate(DEFAULT_CONTEXT);
+	}
+
+	/**
+	 * Fetches the signing certificate used to create the digital signatures of the XML file.
+	 *
+	 * @param context  is currently ignored.
+	 * @return the signing certificate used.
+	 * @throws MessageProcessingException if certificate isn't accessible.
+	 */
+	@Override
+	public X509Certificate getSigningCertificate(Context context) throws MessageProcessingException {
 		return signCertificate;
 	}
 
@@ -220,12 +244,27 @@ public class SimpleMessageSecurityProvider implements
 	public boolean isValidAndAuthorized(X509Certificate signCertificate,
 			String organisation) throws IllegalArgumentException,
 			MessageProcessingException {
-		
+		return isValidAndAuthorized(DEFAULT_CONTEXT,signCertificate,organisation);
+
+	}
+
+	/**
+	 * Method in charge of validating a certificate used to sign a PKI message
+	 * and also check if the certificate is authorized to generate messages.
+	 *
+	 * @param context is currently ignored.
+	 * @param signCertificate the certificate used to sign the message.
+	 * @param organisation    the related organisation to the message, null if no organisation lookup should be done.
+	 * @return true if the sign certificate is valid and authorized to sign messages.
+	 * @throws IllegalArgumentException   if arguments were invalid.
+	 * @throws MessageProcessingException if internal error occurred validating the certificate.
+	 */
+	@Override
+	public boolean isValidAndAuthorized(Context context, X509Certificate signCertificate, String organisation) throws IllegalArgumentException, MessageProcessingException {
 		if(!XMLSigner.checkBasicCertificateValidation(signCertificate)){
 			return false;
 		}
-		
-		
+
 		boolean foundMatching = true;
 		try{
 			Enumeration<String> aliases = trustStore.aliases();
@@ -234,13 +273,13 @@ public class SimpleMessageSecurityProvider implements
 					foundMatching = true;
 					break;
 				}
-			}		  
+			}
 		}catch(CertificateEncodingException e){
 			throw new MessageProcessingException("Error reading certificates from truststore: " + e.getMessage());
 		} catch (KeyStoreException e) {
 			throw new MessageProcessingException("Error reading certificates from truststore: " + e.getMessage());
 		}
-		
+
 		return foundMatching;
 	}
 	
@@ -258,15 +297,40 @@ public class SimpleMessageSecurityProvider implements
 	 */
 	public PrivateKey getDecryptionKey(String keyId)
 			throws MessageProcessingException {
-		return decryptionKeys.get((keyId == null ? defaultDecryptionKeyId : keyId));
+		return getDecryptionKey(DEFAULT_CONTEXT,keyId);
 	}
 
+	/**
+	 * Fetches a private key given it's unique identifier.
+	 *
+	 * @param context is currently ignored.
+	 * @param keyId   unique identifier of the key, if null should a default key be retrieved
+	 * @return the related decryption key.
+	 * @throws MessageProcessingException
+	 */
+	@Override
+	public PrivateKey getDecryptionKey(Context context, String keyId) throws MessageProcessingException {
+		return decryptionKeys.get((keyId == null ? defaultDecryptionKeyId : keyId));
+	}
 
 	/**
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getDecryptionCertificate(String)
 	 */
 	public X509Certificate getDecryptionCertificate(String keyId)
 			throws MessageProcessingException {
+		return getDecryptionCertificate(DEFAULT_CONTEXT,keyId);
+	}
+
+	/**
+	 * Fetches the decryption certificate of related key id.
+	 *
+	 * @param context is currently ignored.
+	 * @param keyId   unique identifier of the key, if null should a default key certificate be retrieved
+	 * @return the related decryption certificate.
+	 * @throws MessageProcessingException if certificate isn't accessible.
+	 */
+	@Override
+	public X509Certificate getDecryptionCertificate(Context context, String keyId) throws MessageProcessingException {
 		return decryptionCertificates.get((keyId == null ? defaultDecryptionKeyId : keyId))[0];
 	}
 
@@ -275,6 +339,19 @@ public class SimpleMessageSecurityProvider implements
 	 */
 	public X509Certificate[] getDecryptionCertificateChain(String keyId)
 			throws MessageProcessingException {
+		return getDecryptionCertificateChain(DEFAULT_CONTEXT,keyId);
+	}
+
+	/**
+	 * Fetches the decryption certificate chain of related key id can be one or more in size..
+	 *
+	 * @param context is currently ignored.
+	 * @param keyId   unique identifier of the key, if null should a default key certificate be retrieved
+	 * @return the related decryption certificate chain
+	 * @throws MessageProcessingException if certificate isn't accessible.
+	 */
+	@Override
+	public X509Certificate[] getDecryptionCertificateChain(Context context, String keyId) throws MessageProcessingException {
 		return decryptionCertificates.get((keyId == null ? defaultDecryptionKeyId : keyId));
 	}
 
@@ -282,6 +359,18 @@ public class SimpleMessageSecurityProvider implements
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getDecryptionKeyIds()
 	 */
 	public Set<String> getDecryptionKeyIds() throws MessageProcessingException {
+		return getDecryptionKeyIds(DEFAULT_CONTEXT);
+	}
+
+	/**
+	 * Returns key identifiers of all available decryption keys.
+	 *
+	 * @param context  is currently ignored.
+	 * @return key identifiers of all available decryption keys.
+	 * @throws MessageProcessingException
+	 */
+	@Override
+	public Set<String> getDecryptionKeyIds(Context context) throws MessageProcessingException {
 		return decryptionKeys.keySet();
 	}
 
@@ -290,6 +379,18 @@ public class SimpleMessageSecurityProvider implements
 	 */
 	public EncryptionAlgorithmScheme getEncryptionAlgorithmScheme()
 			throws MessageProcessingException {
+		return getEncryptionAlgorithmScheme(DEFAULT_CONTEXT);
+	}
+
+	/**
+	 * Method to fetch the EncryptionAlgorithmScheme to use when encrypting messages.
+	 *
+	 * @param context is currently ignored.
+	 * @return Configured EncryptionAlgorithmScheme to use.
+	 * @throws MessageProcessingException if internal error determining algorithm scheme to use
+	 */
+	@Override
+	public EncryptionAlgorithmScheme getEncryptionAlgorithmScheme(Context context) throws MessageProcessingException {
 		return encryptionAlgorithmScheme;
 	}
 
@@ -298,6 +399,18 @@ public class SimpleMessageSecurityProvider implements
 	 */
 	public SigningAlgorithmScheme getSigningAlgorithmScheme()
 			throws MessageProcessingException {
+		return getSigningAlgorithmScheme(DEFAULT_CONTEXT);
+	}
+
+	/**
+	 * Method to fetch the SigningAlgorithmScheme to use when signing messages.
+	 *
+	 * @param context is currently ignored.
+	 * @return Configured SigningAlgorithmScheme to use.
+	 * @throws MessageProcessingException if internal error determining algorithm scheme to use
+	 */
+	@Override
+	public SigningAlgorithmScheme getSigningAlgorithmScheme(Context context) throws MessageProcessingException {
 		return signingAlgorithmScheme;
 	}
 
@@ -400,6 +513,10 @@ public class SimpleMessageSecurityProvider implements
 		
 		throw new MessageProcessingException("Error finding supported cryptographic algorithm, check setting: " + setting + ", unsupported value is: " + settingValue);
 	}
+
+
+
+
 
 
 

@@ -12,10 +12,7 @@
 *************************************************************************/
 package org.certificateservices.messages.assertion;
 
-import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.MessageSecurityProvider;
-import org.certificateservices.messages.NoDecryptionKeyFoundException;
+import org.certificateservices.messages.*;
 import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
 import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
 import org.certificateservices.messages.csmessages.BasePayloadParser;
@@ -124,7 +121,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 			cf = CertificateFactory.getInstance("X.509");
 			
 			assertionSchemaValidator = generateUserDataSchema().newValidator();
-			samlAssertionMessageParser.init(secProv, null);
+			samlAssertionMessageParser.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv, null);
 		} catch (Exception e) {
 			throw new MessageProcessingException("Error initializing JAXB in AssertionPayloadParser: " + e.getMessage(),e);
 		}

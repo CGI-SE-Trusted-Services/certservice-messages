@@ -18,6 +18,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -59,6 +60,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import org.certificateservices.messages.ContextMessageSecurityProvider.Context;
+
 /**
  * Class containing help methods for digital XML signatures
  * 
@@ -84,24 +87,30 @@ public class XMLSigner {
 	private MessageSecurityProvider messageSecurityProvider;
 	private Transformer transformer;
 	private boolean signMessages;
-	
-	public XMLSigner(MessageSecurityProvider messageSecurityProvider,
-			DocumentBuilder documentBuilder, 
-			boolean signMessages,
-			SignatureLocationFinder defaultSignatureLocationFinder,
-			OrganisationLookup defaultOrganisationLookup) throws MessageProcessingException{
+
+	private Context context;
+
+	/**
+	 * Constructor used for context based message security providers.
+     */
+	public XMLSigner(Context context, MessageSecurityProvider messageSecurityProvider,
+					 DocumentBuilder documentBuilder,
+					 boolean signMessages,
+					 SignatureLocationFinder defaultSignatureLocationFinder,
+					 OrganisationLookup defaultOrganisationLookup) throws MessageProcessingException{
+		this.context = context;
 		this.messageSecurityProvider = messageSecurityProvider;
 		this.defaultSignatureLocationFinder = defaultSignatureLocationFinder;
 		this.defaultOrganisationLookup = defaultOrganisationLookup;
 		this.documentBuilder = documentBuilder;
 		this.signMessages = signMessages;
 
-		
+
 		try {
 			cf = CertificateFactory.getInstance("X.509");
 		} catch (CertificateException e) {
 			throw new MessageProcessingException("Error instanciating CertificateFactory for XMLSigner: " + e.getMessage(),e);
-		} 
+		}
 
 		supportedDigestsAlgorithm = new HashSet<String>();
 		supportedSignatureAlgorithm = new HashSet<String>();
@@ -109,14 +118,25 @@ public class XMLSigner {
 			supportedDigestsAlgorithm.add(scheme.getHashAlgorithmURI());
 			supportedSignatureAlgorithm.add(scheme.getSignatureAlgorithmURI());
 		}
-		
+
 		TransformerFactory tf = TransformerFactory.newInstance();
 		try {
 			transformer = tf.newTransformer();
 		} catch (TransformerConfigurationException e) {
-			throw new MessageProcessingException("Error instanciating Transformer for XMLSigner: " + e.getMessage(),e);
+			throw new MessageProcessingException("Error creating Transformer for XMLSigner: " + e.getMessage(),e);
 		}
-		
+
+	}
+
+	/**
+	 * Constructor used for message security providers that doesn't need any context.
+     */
+	public XMLSigner(MessageSecurityProvider messageSecurityProvider,
+			DocumentBuilder documentBuilder, 
+			boolean signMessages,
+			SignatureLocationFinder defaultSignatureLocationFinder,
+			OrganisationLookup defaultOrganisationLookup) throws MessageProcessingException{
+		this(ContextMessageSecurityProvider.DEFAULT_CONTEXT, messageSecurityProvider, documentBuilder,signMessages,defaultSignatureLocationFinder,defaultOrganisationLookup);
 	}
 	
 	
@@ -281,9 +301,16 @@ public class XMLSigner {
 					organisation = organisationLookup.findOrganisation(doc);
 				}
 
-				if (!messageSecurityProvider.isValidAndAuthorized(signerCert, organisation)) {
-					throw new MessageContentException("A certificate with DN " + signerCert.getSubjectDN().toString() + " signing a message wasn't authorized or valid.");
+				if(messageSecurityProvider instanceof ContextMessageSecurityProvider){
+					if (!((ContextMessageSecurityProvider) messageSecurityProvider).isValidAndAuthorized(context,signerCert, organisation)) {
+						throw new MessageContentException("A certificate with DN " + signerCert.getSubjectDN().toString() + " signing a message wasn't authorized or valid.");
+					}
+				}else{
+					if (!messageSecurityProvider.isValidAndAuthorized(signerCert, organisation)) {
+						throw new MessageContentException("A certificate with DN " + signerCert.getSubjectDN().toString() + " signing a message wasn't authorized or valid.");
+					}
 				}
+
 			}
 
 		}catch(Exception e){
@@ -398,8 +425,8 @@ public class XMLSigner {
 				Element[] signatureLocations = signatureLocationFinder.getSignatureLocations(doc);
 				for(Element signatureLocation : signatureLocations) {
 					XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM",new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
-					DigestMethod digestMethod = fac.newDigestMethod
-							(messageSecurityProvider.getSigningAlgorithmScheme().getHashAlgorithmURI(), null);
+					SigningAlgorithmScheme scheme = (messageSecurityProvider instanceof ContextMessageSecurityProvider ? ((ContextMessageSecurityProvider) messageSecurityProvider).getSigningAlgorithmScheme(context) : messageSecurityProvider.getSigningAlgorithmScheme());
+					DigestMethod digestMethod = fac.newDigestMethod(scheme.getHashAlgorithmURI(), null);
 
 					String messageID = signatureLocationFinder.getIDValue(signatureLocation);
 					List<Transform> transFormList = new ArrayList<Transform>();
@@ -410,7 +437,7 @@ public class XMLSigner {
 					ArrayList<Reference> refList = new ArrayList<Reference>();
 					refList.add(ref);
 					CanonicalizationMethod cm =  fac.newCanonicalizationMethod(CanonicalizationMethod.EXCLUSIVE,(C14NMethodParameterSpec) null);
-					SignatureMethod sm = fac.newSignatureMethod(messageSecurityProvider.getSigningAlgorithmScheme().getSignatureAlgorithmURI(),null);
+					SignatureMethod sm = fac.newSignatureMethod(scheme.getSignatureAlgorithmURI(),null);
 					SignedInfo signedInfo =fac.newSignedInfo(cm,sm,refList);
 
 					List<QName> beforeSiblings = signatureLocationFinder.getSiblingsBeforeSignature(signatureLocation);
@@ -424,11 +451,12 @@ public class XMLSigner {
 							}
 						}
 					}
+					PrivateKey signingKey = (messageSecurityProvider instanceof ContextMessageSecurityProvider ? ((ContextMessageSecurityProvider) messageSecurityProvider).getSigningKey(context) : messageSecurityProvider.getSigningKey());
 					DOMSignContext signContext;
 					if (siblingNode != null) {
-						signContext = new DOMSignContext(messageSecurityProvider.getSigningKey(), signatureLocation, siblingNode);
+						signContext = new DOMSignContext(signingKey, signatureLocation, siblingNode);
 					} else {
-						signContext = new DOMSignContext(messageSecurityProvider.getSigningKey(), signatureLocation);
+						signContext = new DOMSignContext(signingKey, signatureLocation);
 					}
 					String idAttribute = signatureLocationFinder.getIDAttribute();
 					if(idAttribute != null) {
@@ -438,7 +466,7 @@ public class XMLSigner {
 
 					KeyInfoFactory kif = KeyInfoFactory.getInstance("DOM", new org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI());
 					List<X509Certificate> certs = new ArrayList<X509Certificate>();
-					X509Certificate cert = messageSecurityProvider.getSigningCertificate();
+					X509Certificate cert = (messageSecurityProvider instanceof ContextMessageSecurityProvider ? ((ContextMessageSecurityProvider) messageSecurityProvider).getSigningCertificate(context) : messageSecurityProvider.getSigningCertificate());
 					certs.add(cert);
 					X509Data x509Data = kif.newX509Data(certs);
 					KeyInfo ki = kif.newKeyInfo(Collections.singletonList(x509Data));

@@ -1,5 +1,6 @@
 package org.certificateservices.messages.saml2.metadata
 
+import org.certificateservices.messages.ContextMessageSecurityProvider
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser
 import org.certificateservices.messages.saml2.BaseSAMLMessageParser
@@ -27,7 +28,7 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 	Duration cacheDuration
 
 	def setup() {
-		smdmp.init(secProv);
+		smdmp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv);
 		smdmp.systemTime = mockedSystemTime
 
 		validUntil = simpleDateFormat.parse("2016-02-1")
