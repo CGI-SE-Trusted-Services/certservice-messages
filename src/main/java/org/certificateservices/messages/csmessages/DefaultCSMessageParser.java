@@ -130,7 +130,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	private String sourceId = null;
 	private XMLSigner xmlSigner;
 	
-	private final String defaultVersion = CSMESSAGE_VERSION_2_0;
+	public static final String DEFAULT_CSMESSAGE_PROTOCOL = CSMESSAGE_VERSION_2_0;
 	
 	private CSMessageSignatureLocationFinder cSMessageSignatureLocationFinder = new CSMessageSignatureLocationFinder();
 	/**
@@ -288,7 +288,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * 
 	 */
 	public byte[] generateCSRequestMessage(String requestId, String destinationId, String organisation, String payLoadVersion, Object payload, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
-		CSMessage message = genCSMessage(defaultVersion, payLoadVersion,null, requestId, destinationId, organisation, originator, payload,  assertions);
+		CSMessage message = genCSMessage(DEFAULT_CSMESSAGE_PROTOCOL, payLoadVersion,null, requestId, destinationId, organisation, originator, payload,  assertions);
 		return marshallAndSignCSMessage( message);
 	}
 
@@ -340,7 +340,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		IsApprovedRequest payload = objectFactory.createIsApprovedRequest();
 		payload.setApprovalId(approvalId);
 		
-		return generateCSRequestMessage(requestId, destinationId, organisation, defaultVersion, payload, originator, assertions);
+		return generateCSRequestMessage(requestId, destinationId, organisation, DEFAULT_CSMESSAGE_PROTOCOL, payload, originator, assertions);
 	}
 	
 	/**
@@ -585,8 +585,34 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		
 		
 	}
-		
-    /**
+
+
+	/**
+	 * Method that marshalls the message to byte array in UTF-8 format without adding any signature.
+	 * @param csMessage the CSMessage to marshall, never null.
+	 * @return a marshalled message.
+	 * @throws MessageProcessingException if problems occurred when processing the message.
+	 */
+	public byte[] marshallCSMessage(CSMessage csMessage) throws MessageProcessingException, MessageContentException{
+		if(csMessage == null){
+			throw new MessageProcessingException("Error marshalling CS Message, message cannot be null.");
+		}
+
+		try {
+			Document doc = getDocumentBuilder().newDocument();
+			String version = csMessage.getVersion();
+
+			jaxbData.getCSMessageMarshaller(version).marshal(csMessage, doc);
+
+			return xmlSigner.marshallDoc(doc);
+		} catch (JAXBException e) {
+			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
+		} catch (ParserConfigurationException e) {
+			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
+		}
+	}
+
+	/**
      * Method that tries to parse the xml version from a message
      * @param messageData the messageData to extract version from.
      * @return the version in the version and payLoadVersion attributes of the message.

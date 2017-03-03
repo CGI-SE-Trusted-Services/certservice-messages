@@ -16,9 +16,7 @@ package org.certificateservices.messages.autoenroll;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.autoenroll.jaxb.*;
-import org.certificateservices.messages.csmessages.BasePayloadParser;
-import org.certificateservices.messages.csmessages.CSMessageResponseData;
-import org.certificateservices.messages.csmessages.PayloadParser;
+import org.certificateservices.messages.csmessages.*;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.csmessages.jaxb.Credential;
 import org.certificateservices.messages.csmessages.jaxb.CredentialRequest;
@@ -44,9 +42,9 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 
 	private ObjectFactory of = new ObjectFactory();
 	
-	private static final String[] SUPPORTED_AUTHORIZATION_VERSIONS = {"2.0"};
+	private static final String[] SUPPORTED_AUTOENROLL_VERSIONS = {"2.0"};
 	
-	private static final String DEFAULT_AUTHORIZATION_VERSION = "2.0";
+	private static final String DEFAULT_AUTOENROLL_VERSION = "2.0";
 	
 	
 	/**
@@ -80,7 +78,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 */
 	@Override
 	protected String[] getSupportedVersions() {
-		return SUPPORTED_AUTHORIZATION_VERSIONS;
+		return SUPPORTED_AUTOENROLL_VERSIONS;
 	}
 
 	/**
@@ -88,14 +86,13 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 */
 	@Override
 	protected String getDefaultPayloadVersion() {
-		return DEFAULT_AUTHORIZATION_VERSION;
+		return DEFAULT_AUTOENROLL_VERSION;
 	}
-
 
 
 	/**
 	 *  Method to create a CheckStatusRequest message with a list CheckStatusRequest.Type for each enabled
-	 *  auto enrollment profile.
+	 *  auto enrollment profile. The message is unsigned.
 	 *
 	 * @param requestId the id of the request
 	 * @param destinationId the destinationId used in the CSMessage.
@@ -110,7 +107,9 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	public byte[] genCheckStatusRequest(String requestId, String destinationId, String organisation, List<CheckStatusRequest.Type> autoEnrollmentProfileTypes, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		CheckStatusRequest payload = of.createCheckStatusRequest();
 		payload.getType().addAll(autoEnrollmentProfileTypes);
-		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		CSMessageParser csMessageParser = getCSMessageParser();
+		CSMessage message = csMessageParser.genCSMessage(DefaultCSMessageParser.DEFAULT_CSMESSAGE_PROTOCOL, DEFAULT_AUTOENROLL_VERSION,null, requestId, destinationId, organisation, originator, payload,  assertions);
+		return csMessageParser.marshallCSMessage(message);
 	}
 
 
@@ -136,7 +135,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 
 	/**
 	 *  Method to create a ClientActionRequest message with a list ClientActionRequest.Type for each enabled
-	 *  auto enrollment profile.
+	 *  auto enrollment profile. The message is unsigned.
 	 *
 	 * @param requestId the id of the request
 	 * @param destinationId the destinationId used in the CSMessage.
@@ -151,7 +150,9 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	public byte[] genClientActionRequest(String requestId, String destinationId, String organisation, List<ClientActionRequest.Type> autoEnrollmentProfileTypes, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		ClientActionRequest payload = of.createClientActionRequest();
 		payload.getType().addAll(autoEnrollmentProfileTypes);
-		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		CSMessageParser csMessageParser = getCSMessageParser();
+		CSMessage message = csMessageParser.genCSMessage(DefaultCSMessageParser.DEFAULT_CSMESSAGE_PROTOCOL, DEFAULT_AUTOENROLL_VERSION,null, requestId, destinationId, organisation, originator, payload,  assertions);
+		return csMessageParser.marshallCSMessage(message);
 	}
 
 	/**
@@ -207,12 +208,16 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	/**
 	 * Help method to create a client action request for a specific autoEnrollmentProfile type.
 	 * @param autoEnrollmentProfile the types related profile
+	 * @param currentCredentials the current credentials that exists on current computer for given type.
 	 * @param actions specifies the given actions the client what to perform.
 	 * @return a new ClientActionRequest.Type object.
 	 */
-	ClientActionRequest.Type genClientActionRequestType(String autoEnrollmentProfile, ClientActionRequest.Type.Actions actions){
+	ClientActionRequest.Type genClientActionRequestType(String autoEnrollmentProfile, List<Credential> currentCredentials, ClientActionRequest.Type.Actions actions){
 		ClientActionRequest.Type retval = of.createClientActionRequestType();
 		retval.setAutoEnrollmentProfile(autoEnrollmentProfile);
+		ClientActionRequest.Type.CurrentCredentials cc = of.createClientActionRequestTypeCurrentCredentials();
+		cc.getCredential().addAll(currentCredentials);
+		retval.setCurrentCredentials(cc);
 		retval.setActions(actions);
 
 		return retval;

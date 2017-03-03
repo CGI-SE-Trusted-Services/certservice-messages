@@ -116,6 +116,13 @@
 							<xs:complexType>
 								<xs:sequence>
 									<xs:element minOccurs="1" maxOccurs="1" name="autoEnrollmentProfile" type="cs:notemptystring" />
+                                    <xs:element minOccurs="0" maxOccurs="1" name="currentCredentials">
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element minOccurs="0" maxOccurs="unbounded" name="credential" type="cs:Credential" />
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
 									<xs:element minOccurs="1" maxOccurs="1" name="actions">
 										<xs:complexType>
 											<xs:sequence>

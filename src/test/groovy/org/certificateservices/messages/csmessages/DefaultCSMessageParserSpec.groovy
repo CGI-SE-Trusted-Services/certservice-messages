@@ -323,6 +323,16 @@ public class DefaultCSMessageParserSpec extends Specification{
 		
 	}
 
+	def "Verify that marshallCSMessage generates message without signatures"(){
+		setup:
+		def csMessage = mp.genCSMessage("2.0", "2.0", null, TEST_ID, "somedest", "someorg", null, createPayLoad(), createAssertions())
+
+		when:
+		String msg = new String(mp.marshallCSMessage(csMessage), "UTF-8")
+		then:
+		msg !=~ "ds:Signature"
+		mp.parseMessage(msg.getBytes("UTF-8"),false,false)
+	}
 
 	def "Verify that parseMessage performsValidation if flag is set to true"(){
 		setup:
@@ -735,7 +745,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		verifyCSHeaderMessage(messageData, xmlMessage, expectedSourceId, expectedDestinationId, expectedOrganisation, expectedName, expectedOriginator, mp)
 	}
 	
-	private static void verifyCSHeaderMessage(byte[] messageData, GPathResult xmlMessage, String expectedSourceId, String expectedDestinationId, String expectedOrganisation, String expectedName, Credential expectedOriginator, DefaultCSMessageParser mp){
+	private static void verifyCSHeaderMessage(byte[] messageData, GPathResult xmlMessage, String expectedSourceId, String expectedDestinationId, String expectedOrganisation, String expectedName, Credential expectedOriginator, DefaultCSMessageParser mp, boolean requireSignature=true){
 		String message = new String(messageData,"UTF-8")
 		assert message.contains("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"")
 		assert message.contains("xmlns:cs=\"http://certificateservices.org/xsd/csmessages2_0\"")
@@ -756,9 +766,10 @@ public class DefaultCSMessageParserSpec extends Specification{
 		if(expectedOriginator != null){
 			assert xmlMessage.originator.credential.displayName == expectedOriginator.displayName
 		}
-		
-		assert xmlMessage.Signature != null
-		mp.validateSignature(mp.getDocumentBuilder().parse(new ByteArrayInputStream(message.getBytes())), true, true)
+		if(requireSignature) {
+			assert xmlMessage.Signature != null
+			mp.validateSignature(mp.getDocumentBuilder().parse(new ByteArrayInputStream(message.getBytes())), true, true)
+		}
 	}
 	
 	public static void verifySuccessfulBasePayload(GPathResult payLoadObject, String expectedResponseTo){
