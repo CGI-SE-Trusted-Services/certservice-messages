@@ -47,12 +47,13 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	public static String NAMESPACE = "http://certificateservices.org/xsd/credmanagement2_0";
 	
 	public static final String CREDMANAGEMENT_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/credmanagement_schema2_0.xsd";
+	public static final String CREDMANAGEMENT_XSD_SCHEMA_2_1_RESOURCE_LOCATION = "/credmanagement_schema2_1.xsd";
 
 	private ObjectFactory of = new ObjectFactory();
 	
-	private static final String[] SUPPORTED_CREDMANAGEMENT_VERSIONS = {"2.0"};
+	private static final String[] SUPPORTED_CREDMANAGEMENT_VERSIONS = {"2.0","2.1"};
 	
-	private static final String DEFAULT_CREDMANAGEMENT_VERSION = "2.0";
+	private static final String DEFAULT_CREDMANAGEMENT_VERSION = "2.1";
 	
 	
 	/**
@@ -77,6 +78,9 @@ public class CredManagementPayloadParser extends BasePayloadParser {
     	if(payLoadVersion.equals("2.0")){
     		return getClass().getResourceAsStream(CREDMANAGEMENT_XSD_SCHEMA_2_0_RESOURCE_LOCATION);
     	}
+		if(payLoadVersion.equals("2.1")){
+			return getClass().getResourceAsStream(CREDMANAGEMENT_XSD_SCHEMA_2_1_RESOURCE_LOCATION);
+		}
     	
     	throw new MessageContentException("Error unsupported Credential Management Payload version: " + payLoadVersion);
 	}
@@ -96,12 +100,11 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	protected String getDefaultPayloadVersion() {
 		return DEFAULT_CREDMANAGEMENT_VERSION;
 	}
-	
 
 
 	/**
 	 * Method to a IssueTokenCredentialRequest message and populating it with the tokenRequest.
-	 * 
+	 *
 	 * @param requestId the id of the request
 	 * @param destinationId the destinationId used in the CSMessage.
 	 * @param organisation the related organisation
@@ -115,6 +118,26 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
 	public byte[] genIssueTokenCredentialsRequest(String requestId, String destinationId, String organisation, TokenRequest tokenRequest, List<FieldValue> fieldValues, HardTokenData hardTokenData, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
+		return genIssueTokenCredentialsRequest(requestId,destinationId,organisation,tokenRequest,fieldValues,hardTokenData,null,originator,assertions);
+	}
+
+	/**
+	 * Method to a IssueTokenCredentialRequest message and populating it with the tokenRequest.
+	 * 
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param tokenRequest the tokenRequest to add to the CSRequest.
+	 * @param fieldValues containing complementary input data to the request. Can be null if no complementary data is available.
+	 * @param hardTokenData related hard token data to be stored in encrypted storage. Null if not applicable
+	 * @param recoverableKeys a list of keys that should be stored in backed for later recovery in case token is lost.
+	 * @param originator the original requester of a message, null if not applicable
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return generated and signed CSMessage in byte[] format.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genIssueTokenCredentialsRequest(String requestId, String destinationId, String organisation, TokenRequest tokenRequest, List<FieldValue> fieldValues, HardTokenData hardTokenData, List<Key> recoverableKeys, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		IssueTokenCredentialsRequest payload = of.createIssueTokenCredentialsRequest();
 		payload.setTokenRequest(tokenRequest);
 		
@@ -128,7 +151,12 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		if(hardTokenData != null){
 			payload.setHardTokenData(hardTokenData);
 		}
-		
+
+		if(recoverableKeys != null) {
+			IssueTokenCredentialsRequest.RecoverableKeys rks = of.createIssueTokenCredentialsRequestRecoverableKeys();
+			rks.getKey().addAll(recoverableKeys);
+			payload.setRecoverableKeys(rks);
+		}
 		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
@@ -510,10 +538,10 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		payload.setTokenSerial(tokenSerial);
 		payload.setRelatedCredentialIssuerId(relatedCredentialIssuerId);
 		payload.setAdminCredential(adminCredential);
-		
-		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), of.createFetchHardTokenDataRequest(payload), originator, assertions);
 	}
-	
+
 	/**
 	 * Method to generate a FetchHardTokenDataResponse
 	 * 
@@ -531,6 +559,54 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		response.setTokenSerial(tokenSerial);
 		response.setEncryptedData(encryptedData);
 		
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), of.createFetchHardTokenDataResponse(response));
+	}
+
+	/**
+	 * Method to generate a RecoverHardTokenDataRequest
+	 *
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param tokenSerial The unique serial number of the hard token within the organisation
+	 * @param relatedCredentialIssuerId The unique id of the issuer of the related credential, usually the subject DN name of the issuer.
+	 * @param adminCredential the credential of the requesting card administrator that need the hard token data. The response data is encrypted with this administrator as recipient.
+	 * @param originator the original requester of a message, null if not applicable.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genRecoverHardTokenRequest(String requestId, String destinationId, String organisation, String tokenSerial, String relatedCredentialIssuerId, Credential adminCredential, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		FetchHardTokenDataRequest payload = of.createFetchHardTokenDataRequest();
+		payload.setTokenSerial(tokenSerial);
+		payload.setRelatedCredentialIssuerId(relatedCredentialIssuerId);
+		payload.setAdminCredential(adminCredential);
+
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), of.createRecoverHardTokenRequest(payload), originator, assertions);
+	}
+
+	/**
+	 * Method to generate a RecoverHardTokenResponse
+	 *
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the request this message is a response to.
+	 * @param tokenSerial The unique serial number of the hard token within the organisation.
+	 * @param encryptedData The token data encrypted with the token administrators credential sent in the request.
+	 * @param keys list of encrypted keys recovered from backend syste,
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public CSMessageResponseData genRecoverHardTokenResponse(String relatedEndEntity, CSMessage request, String tokenSerial, byte[] encryptedData, List<Key> keys, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		RecoverHardTokenResponse response = of.createRecoverHardTokenResponse();
+		response.setTokenSerial(tokenSerial);
+		response.setEncryptedData(encryptedData);
+		RecoverHardTokenResponse.RecoveredKeys rk = of.createRecoverHardTokenResponseRecoveredKeys();
+		rk.getKey().addAll(keys);
+		response.setRecoveredKeys(rk);
+
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
@@ -646,7 +722,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	
 	
 	/**
-	 * Method to generate a GetTokensResponse
+	 * Method to generate a GetUsersResponse
 	 * 
 	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
 	 * @param request the request this message is a response to.
@@ -668,4 +744,100 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 
+	/**
+	 * Method to generate a RecoverKeyRequest
+	 *
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param adminCredential the admin credential to encrypt the key store data to.
+	 * @param relatedCredentials the credentials pointing out which keys should be recovered from backend store.
+	 * @param originator the original requester of a message, null if not applicable.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genRecoverKeyRequest(String requestId, String destinationId, String organisation, Credential adminCredential, List<Credential> relatedCredentials,  Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		RecoverKeyRequest payload = of.createRecoverKeyRequest();
+		payload.setAdminCredential(adminCredential);
+		RecoverKeyRequest.RelatedCredentials rc = of.createRecoverKeyRequestRelatedCredentials();
+		rc.getCredential().addAll(relatedCredentials);
+		payload.setRelatedCredentials(rc);
+
+
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+	}
+
+	/**
+	 * Method to generate a RecoverKeyResponse
+	 *
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the request this message is a response to.
+	 * @param keys a list of recovered keys, never null.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public CSMessageResponseData genRecoverKeyResponse(String relatedEndEntity, CSMessage request, List<Key> keys, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		RecoverKeyResponse response = of.createRecoverKeyResponse();
+		RecoverKeyResponse.RecoveredKeys rk = of.createRecoverKeyResponseRecoveredKeys();
+		rk.getKey().addAll(keys);
+		response.setRecoveredKeys(rk);
+
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+	}
+
+	/**
+	 * Method to generate a StoreKeyRequest
+	 *
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param keys a list en encrypted keys to store in backend system.
+	 * @param originator the original requester of a message, null if not applicable.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genStoreKeyRequest(String requestId, String destinationId, String organisation, List<Key> keys,  Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		StoreKeyRequest payload = of.createStoreKeyRequest();
+		StoreKeyRequest.RecoverableKeys rk = of.createStoreKeyRequestRecoverableKeys();
+		rk.getKey().addAll(keys);
+		payload.setRecoverableKeys(rk);
+
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+	}
+
+	/**
+	 * Method to generate a StoreKeyResponse
+	 *
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the request this message is a response to.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public CSMessageResponseData genStoreKeyResponse(String relatedEndEntity, CSMessage request, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		StoreKeyResponse response = of.createStoreKeyResponse();
+
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+	}
+
+	/**
+	 * Help method to generate a Key structure consisting of a relatedCredential and an encryptedKey.
+	 *
+	 * @param relatedCredential the related credential to the key.
+	 * @param encryptedKey the key in xml encrypted base64binary string.
+     * @return a newly generate key.
+     */
+	public Key genKey(Credential relatedCredential, byte[] encryptedKey){
+		Key retval = of.createKey();
+		retval.setRelatedCredential(relatedCredential);
+		retval.setEncryptedData(encryptedKey);
+		return retval;
+	}
 }

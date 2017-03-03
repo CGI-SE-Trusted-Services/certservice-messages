@@ -68,7 +68,7 @@ class AutoEnrollPayloadParserSpec extends Specification {
         def payloadObject = xml.payload.CheckStatusRequest
         then:
         messageContainsPayload requestMessage, "ae:CheckStatusRequest"
-        verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg", "CheckStatusRequest", createOriginatorCredential(), csMessageParser)
+        verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg", "CheckStatusRequest", createOriginatorCredential(), csMessageParser, false)
 
         payloadObject.type[0].autoEnrollmentProfile == "SMIME"
         payloadObject.type[0].currentCredentials.credential.size() == 1
@@ -77,7 +77,7 @@ class AutoEnrollPayloadParserSpec extends Specification {
 
         when:
         csMessageParser.sourceId = "SOMESOURCEID"
-        CSMessage request = pp.parseMessage(requestMessage)
+        CSMessage request = pp.parseMessage(requestMessage, false, false)
 
         CheckStatusResponse.Type.PerformActions sMimePerformActions = of.createCheckStatusResponseTypePerformActions()
         sMimePerformActions.setFetchExistingTokens(pp.genPerformFetchExistingTokensAction())
@@ -120,25 +120,27 @@ class AutoEnrollPayloadParserSpec extends Specification {
         ClientActionRequest.Type.Actions secureNetworkActions = of.createClientActionRequestTypeActions()
         secureNetworkActions.setRemoveCredentials(pp.genPerformedRemoveCredentialsAction([credential]))
 
-        List types = [pp.genClientActionRequestType("SMIME", smimeActions),
-                                                pp.genClientActionRequestType("SECURENETWORK", secureNetworkActions)]
+        List types = [pp.genClientActionRequestType("SMIME", [credential], smimeActions),
+                                                pp.genClientActionRequestType("SECURENETWORK", [credential], secureNetworkActions)]
 
         byte[] requestMessage = pp.genClientActionRequest(TEST_ID, "SOMESOURCEID", "someorg", types, createOriginatorCredential(), null)
-        printXML(requestMessage)
+        //printXML(requestMessage)
         def xml = slurpXml(requestMessage)
         def payloadObject = xml.payload.ClientActionRequest
         then:
         messageContainsPayload requestMessage, "ae:ClientActionRequest"
-        verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg", "ClientActionRequest", createOriginatorCredential(), csMessageParser)
+        verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg", "ClientActionRequest", createOriginatorCredential(), csMessageParser, false)
 
         payloadObject.type[0].autoEnrollmentProfile == "SMIME"
+        payloadObject.type[0].currentCredentials.credential.size() == 1
         payloadObject.type[0].actions.fetchExistingTokens.size() == 1
         payloadObject.type[1].autoEnrollmentProfile == "SECURENETWORK"
+        payloadObject.type[1].currentCredentials.credential.size() == 1
         payloadObject.type[1].actions.removeCredentials.credential.size() == 1
 
         when:
         csMessageParser.sourceId = "SOMESOURCEID"
-        CSMessage request = pp.parseMessage(requestMessage)
+        CSMessage request = pp.parseMessage(requestMessage, false, false)
 
         CheckStatusResponse.Type.PerformActions sMimePerformActions = of.createCheckStatusResponseTypePerformActions()
         sMimePerformActions.setFetchExistingTokens(pp.genPerformFetchExistingTokensAction())

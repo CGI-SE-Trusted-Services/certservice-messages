@@ -12,19 +12,20 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
+import org.certificateservices.messages.csmessages.jaxb.Credential;
 
 
 /**
- * <p>Java class for HardTokenData complex type.
+ * <p>Java class for Key complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="HardTokenData">
+ * &lt;complexType name="Key">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="relatedCredentialIssuerId" type="{http://certificateservices.org/xsd/csmessages2_0}notemptystring"/>
+ *         &lt;element name="relatedCredential" type="{http://certificateservices.org/xsd/csmessages2_0}Credential"/>
  *         &lt;element name="encryptedData" type="{http://www.w3.org/2001/XMLSchema}base64Binary"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -35,39 +36,39 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "HardTokenData", propOrder = {
-    "relatedCredentialIssuerId",
+@XmlType(name = "Key", propOrder = {
+    "relatedCredential",
     "encryptedData"
 })
-public class HardTokenData {
+public class Key {
 
     @XmlElement(required = true)
-    protected String relatedCredentialIssuerId;
+    protected Credential relatedCredential;
     @XmlElement(required = true)
     protected byte[] encryptedData;
 
     /**
-     * Gets the value of the relatedCredentialIssuerId property.
+     * Gets the value of the relatedCredential property.
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link Credential }
      *     
      */
-    public String getRelatedCredentialIssuerId() {
-        return relatedCredentialIssuerId;
+    public Credential getRelatedCredential() {
+        return relatedCredential;
     }
 
     /**
-     * Sets the value of the relatedCredentialIssuerId property.
+     * Sets the value of the relatedCredential property.
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link Credential }
      *     
      */
-    public void setRelatedCredentialIssuerId(String value) {
-        this.relatedCredentialIssuerId = value;
+    public void setRelatedCredential(Credential value) {
+        this.relatedCredential = value;
     }
 
     /**

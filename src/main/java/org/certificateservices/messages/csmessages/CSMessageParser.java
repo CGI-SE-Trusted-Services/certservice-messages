@@ -324,7 +324,16 @@ public interface CSMessageParser {
 	 * @throws MessageProcessingException if problems occurred when processing the message.
 	 */
 	byte[] marshallAndSignCSMessage(CSMessage csMessage) throws MessageProcessingException, MessageContentException;
-	
+
+	/**
+	 * Method that marshalls the message to byte array in UTF-8 format without adding any signature.
+	 * @param csMessage the CSMessage to marshall, never null.
+	 * @return a marshalled message.
+	 * @throws MessageProcessingException if problems occurred when processing the message.
+	 */
+	byte[] marshallCSMessage(CSMessage csMessage) throws MessageProcessingException, MessageContentException;
+
+
 	/**
 	 * Method to validate a payload object separately, used for special cases such when validating GetApprovalRequest requestData etc.
 	 * 
