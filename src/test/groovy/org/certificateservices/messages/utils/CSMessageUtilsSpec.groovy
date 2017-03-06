@@ -1,13 +1,16 @@
 package org.certificateservices.messages.utils
 import org.certificateservices.messages.DummyMessageSecurityProvider
 import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
+import org.certificateservices.messages.credmanagement.CredManagementPayloadParser
+import org.certificateservices.messages.credmanagement.CredManagementPayloadParserSpec
+import org.certificateservices.messages.credmanagement.jaxb.FetchHardTokenDataRequest;
 import org.certificateservices.messages.credmanagement.jaxb.IsIssuerRequest;
 import org.certificateservices.messages.csmessages.CSMessageParser;
 import org.certificateservices.messages.csmessages.CSMessageParserManager;
 import org.certificateservices.messages.csmessages.PayloadParser;
 import org.certificateservices.messages.csmessages.PayloadParserRegistry;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage
+import org.certificateservices.messages.csmessages.jaxb.Credential
 import org.certificateservices.messages.csmessages.jaxb.IsApprovedRequest;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 
@@ -22,6 +25,7 @@ class CSMessageUtilsSpec extends Specification {
 	
 	CSMessage isApprovedRequestMessage
 	CSMessage getApprovedRequestMessage
+	CSMessage fetchHardTokenDataRequestMessage
 	
 	static def config = """
 csmessage.sourceid=SomeClientSystem
@@ -31,8 +35,9 @@ csmessage.sourceid=SomeClientSystem
 		csMessageParser = CSMessageParserManager.initCSMessageParser(new DummyMessageSecurityProvider(), props)
 		
 		CredManagementPayloadParser credParser = PayloadParserRegistry.getParser(CredManagementPayloadParser.NAMESPACE)
-		
+		Credential adminCredential = CredManagementPayloadParserSpec.createCredential()
 		isApprovedRequestMessage = csMessageParser.parseMessage(csMessageParser.generateIsApprovedRequest(messageId, "someid", "someorg", "1234", null, null))
+		fetchHardTokenDataRequestMessage = csMessageParser.parseMessage(credParser.genFetchHardTokenDataRequest(messageId, "someid", "someorg", "1234","CN=Some Value", adminCredential, null, null))
 		byte[] request =credParser.genIsIssuerRequest(messageId, "someid", "someorg", "CN=SomeIssuer", null, null)
 		getApprovedRequestMessage = csMessageParser.parseMessage(csMessageParser.generateGetApprovalRequest(messageId, "someid", "someorg", request, null, null))
 	}
@@ -40,6 +45,7 @@ csmessage.sourceid=SomeClientSystem
 	def "Verify that getPayload returns the payload of a CS Message"(){
 		expect:
 		CSMessageUtils.getPayload(isApprovedRequestMessage) instanceof IsApprovedRequest
+		CSMessageUtils.getPayload(fetchHardTokenDataRequestMessage) instanceof FetchHardTokenDataRequest
 
 	}
 	

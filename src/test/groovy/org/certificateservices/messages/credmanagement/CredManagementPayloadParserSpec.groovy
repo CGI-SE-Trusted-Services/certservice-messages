@@ -840,7 +840,7 @@ class CredManagementPayloadParserSpec extends Specification {
 		return cr
 	}
 
-	private static Credential createCredential(int status = 100){
+	public static Credential createCredential(int status = 100){
 		Credential c = csMessageOf.createCredential();
 
 		c.credentialRequestId = 123
