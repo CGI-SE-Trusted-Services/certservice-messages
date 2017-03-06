@@ -182,7 +182,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 * @param currentCredentials the current credentials that exists on current computer for given type.
      * @return a new CheckStatusRequest.Type object.
      */
-	CheckStatusRequest.Type genCheckStatusRequestType(String autoEnrollmentProfile, List<Credential> currentCredentials){
+	public CheckStatusRequest.Type genCheckStatusRequestType(String autoEnrollmentProfile, List<Credential> currentCredentials){
 		CheckStatusRequest.Type retval = of.createCheckStatusRequestType();
 		retval.setAutoEnrollmentProfile(autoEnrollmentProfile);
 		CheckStatusRequest.Type.CurrentCredentials cc = of.createCheckStatusRequestTypeCurrentCredentials();
@@ -198,7 +198,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 * @param performActions perform actions that specifies all the actions the client should perform.
 	 * @return a new CheckStatusResponse.Type object.
 	 */
-	CheckStatusResponse.Type genCheckStatusResponseType(String autoEnrollmentProfile, CheckStatusResponse.Type.PerformActions performActions){
+	public CheckStatusResponse.Type genCheckStatusResponseType(String autoEnrollmentProfile, CheckStatusResponse.Type.PerformActions performActions){
 		CheckStatusResponse.Type retval = of.createCheckStatusResponseType();
 		retval.setAutoEnrollmentProfile(autoEnrollmentProfile);
 		retval.setPerformActions(performActions);
@@ -212,7 +212,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 * @param actions specifies the given actions the client what to perform.
 	 * @return a new ClientActionRequest.Type object.
 	 */
-	ClientActionRequest.Type genClientActionRequestType(String autoEnrollmentProfile, List<Credential> currentCredentials, ClientActionRequest.Type.Actions actions){
+	public ClientActionRequest.Type genClientActionRequestType(String autoEnrollmentProfile, List<Credential> currentCredentials, ClientActionRequest.Type.Actions actions){
 		ClientActionRequest.Type retval = of.createClientActionRequestType();
 		retval.setAutoEnrollmentProfile(autoEnrollmentProfile);
 		ClientActionRequest.Type.CurrentCredentials cc = of.createClientActionRequestTypeCurrentCredentials();
@@ -230,7 +230,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 *                   doesn't require any token datas.
 	 * @return a new ClientActionResponse.Type object.
 	 */
-	ClientActionResponse.Type genClientActionResponseType(String autoEnrollmentProfile,List<TokenData> tokenDatas){
+	public ClientActionResponse.Type genClientActionResponseType(String autoEnrollmentProfile,List<TokenData> tokenDatas){
 		ClientActionResponse.Type retval = of.createClientActionResponseType();
 		retval.setAutoEnrollmentProfile(autoEnrollmentProfile);
 		if(tokenDatas != null) {
@@ -348,7 +348,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 * @return newly generated TokenData
 	 * @throws MessageContentException if arguments was invalid, such as null credential.
      */
-	TokenData genTokenData(Credential credential) throws MessageContentException {
+	public TokenData genTokenData(Credential credential) throws MessageContentException {
 		return genTokenData(credential,(KeyData) null);
 	}
 
@@ -361,7 +361,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 * @return newly generated TokenData
 	 * @throws MessageContentException if arguments was invalid, such as null credential.
 	 */
-	TokenData genTokenData(Credential credential, KeyDataType keyData) throws MessageContentException {
+	public TokenData genTokenData(Credential credential, KeyDataType keyData) throws MessageContentException {
 		if(credential == null){
 			throw new MessageContentException("TokenData must have at least credential set.");
 		}
@@ -382,7 +382,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 * @return newly generated TokenData
 	 * @throws MessageContentException if arguments was invalid, such as null credential.
 	 */
-	TokenData genTokenData(Credential credential, byte[] encryptedKey) throws MessageContentException {
+	public TokenData genTokenData(Credential credential, byte[] encryptedKey) throws MessageContentException {
 		if(credential == null){
 			throw new MessageContentException("TokenData must have at least credential set.");
 		}
