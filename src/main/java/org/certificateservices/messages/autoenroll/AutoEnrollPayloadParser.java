@@ -247,7 +247,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 * Method to create a PerformFetchExistingTokensAction
 	 * @return a new PerformFetchExistingTokensAction
      */
-	PerformFetchExistingTokensAction genPerformFetchExistingTokensAction(){
+	public PerformFetchExistingTokensAction genPerformFetchExistingTokensAction(){
 		return of.createPerformFetchExistingTokensAction();
 	}
 
@@ -261,7 +261,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 * @return a new PerformGenerateCredentialRequestAction
 	 * @throws MessageContentException if invalid arguments such as set keyRecoverable to true but not supplied any wrapping credential.
 	 */
-	PerformGenerateCredentialRequestAction genPerformGenerateCredentialRequestAction(boolean keyRecoverable, Credential wrappingCredential) throws MessageContentException {
+	public PerformGenerateCredentialRequestAction genPerformGenerateCredentialRequestAction(boolean keyRecoverable, Credential wrappingCredential) throws MessageContentException {
 		if(keyRecoverable && wrappingCredential == null){
 			throw new MessageContentException("PerformGenerateCredentialRequestAction must have a wrapping credential when set as key recoverable");
 		}
@@ -278,7 +278,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 * @return a new PerformRemoveCredentialsAction
 	 * @throws MessageContentException if invalid arguments such as empty credentials list.
 	 */
-	PerformRemoveCredentialsAction genPerformRemoveCredentialsAction(List<Credential> credentials) throws MessageContentException {
+	public PerformRemoveCredentialsAction genPerformRemoveCredentialsAction(List<Credential> credentials) throws MessageContentException {
 		if(credentials == null || credentials.size() == 0){
 			throw new MessageContentException("PerformRemoveCredentialsAction must have at least one credential.");
 		}
@@ -287,7 +287,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 		return retval;
 	}
 
-	PerformedFetchExistingTokensAction genPerformedFetchExistingTokensAction(){
+	public PerformedFetchExistingTokensAction genPerformedFetchExistingTokensAction(){
 		return of.createPerformedFetchExistingTokensAction();
 	}
 
@@ -298,7 +298,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 *                           This is used in advanced use cases when the client might use TMP chip with an
 	 *                           existing wrapping key. If not set should the proxy return the keys unencrypted.
 	 */
-	PerformedFetchExistingTokensAction genPerformedFetchExistingTokensAction(Credential wrappingCredential){
+	public PerformedFetchExistingTokensAction genPerformedFetchExistingTokensAction(Credential wrappingCredential){
 		PerformedFetchExistingTokensAction retval = of.createPerformedFetchExistingTokensAction();
 		retval.setWrappingCredential(wrappingCredential);
 		return retval;
@@ -314,7 +314,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 * @return a new PerformedGenerateCredentialRequestAction
 	 * @throws MessageContentException if invalid arguments such as set keyRecoverable to true but not supplied any wrapping credential.
 	 */
-	PerformedGenerateCredentialRequestAction genPerformedGenerateCredentialRequestAction(CredentialRequest credentialRequest, byte[] encryptedKey) throws MessageContentException {
+	public PerformedGenerateCredentialRequestAction genPerformedGenerateCredentialRequestAction(CredentialRequest credentialRequest, byte[] encryptedKey) throws MessageContentException {
 		if(credentialRequest == null){
 			throw new MessageContentException("PerformedGenerateCredentialRequestAction must have a credential request.");
 		}
@@ -331,7 +331,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 * @return a new PerformedRemoveCredentialsAction
 	 * @throws MessageContentException if invalid arguments such as empty credentials list.
 	 */
-	PerformedRemoveCredentialsAction genPerformedRemoveCredentialsAction(List<Credential> credentials) throws MessageContentException {
+	public PerformedRemoveCredentialsAction genPerformedRemoveCredentialsAction(List<Credential> credentials) throws MessageContentException {
 		if(credentials == null || credentials.size() == 0){
 			throw new MessageContentException("PerformedRemoveCredentialsAction must have at least one credential.");
 		}
