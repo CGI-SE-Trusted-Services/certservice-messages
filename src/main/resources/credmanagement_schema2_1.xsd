@@ -30,7 +30,7 @@
 							<xs:complexType>
 								<xs:sequence>
 									<xs:element minOccurs="1" maxOccurs="unbounded" name="key"
-												type="tns:Key" />
+												type="tns:RecoverableKey" />
 								</xs:sequence>
 							</xs:complexType>
 						</xs:element>
@@ -53,6 +53,15 @@
 		<xs:sequence>
 			<xs:element minOccurs="1" maxOccurs="1"
 						name="relatedCredentialIssuerId" type="cs:notemptystring" />
+			<xs:element minOccurs="1" maxOccurs="1" name="encryptedData"
+						type="xs:base64Binary" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="RecoverableKey">
+		<xs:sequence>
+			<xs:element minOccurs="1" maxOccurs="1"
+						name="relatedCredentialRequestId" type="xs:int" />
 			<xs:element minOccurs="1" maxOccurs="1" name="encryptedData"
 						type="xs:base64Binary" />
 		</xs:sequence>

@@ -4,6 +4,8 @@ import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.csmessages.jaxb.GetApprovalRequest;
 
+import javax.xml.bind.JAXBElement;
+
 /**
  * Utility methods used when working with CS Messages
  * 
@@ -21,7 +23,11 @@ public class CSMessageUtils {
 		if(csMessage == null){
 			return null;
 		}
-		return csMessage.getPayload().getAny();
+		Object o = csMessage.getPayload().getAny();
+		if(o instanceof JAXBElement){
+			return ((JAXBElement) o).getValue();
+		}
+		return o;
 	}
 	
 	/**

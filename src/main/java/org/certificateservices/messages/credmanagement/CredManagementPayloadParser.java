@@ -137,7 +137,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
-	public byte[] genIssueTokenCredentialsRequest(String requestId, String destinationId, String organisation, TokenRequest tokenRequest, List<FieldValue> fieldValues, HardTokenData hardTokenData, List<Key> recoverableKeys, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
+	public byte[] genIssueTokenCredentialsRequest(String requestId, String destinationId, String organisation, TokenRequest tokenRequest, List<FieldValue> fieldValues, HardTokenData hardTokenData, List<RecoverableKey> recoverableKeys, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		IssueTokenCredentialsRequest payload = of.createIssueTokenCredentialsRequest();
 		payload.setTokenRequest(tokenRequest);
 		
@@ -837,6 +837,20 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	public Key genKey(Credential relatedCredential, byte[] encryptedKey){
 		Key retval = of.createKey();
 		retval.setRelatedCredential(relatedCredential);
+		retval.setEncryptedData(encryptedKey);
+		return retval;
+	}
+
+	/**
+	 * Help method to generate a RecoverableKey structure consisting of a relatedCredentialRequestId and an encryptedKey.
+	 *
+	 * @param relatedCredentialRequestId reference to the credential request id.
+	 * @param encryptedKey the key in xml encrypted base64binary string.
+	 * @return a newly generate key.
+	 */
+	public RecoverableKey genRecoverableKey(int relatedCredentialRequestId, byte[] encryptedKey){
+		RecoverableKey retval = of.createRecoverableKey();
+		retval.setRelatedCredentialRequestId(relatedCredentialRequestId);
 		retval.setEncryptedData(encryptedKey);
 		return retval;
 	}
