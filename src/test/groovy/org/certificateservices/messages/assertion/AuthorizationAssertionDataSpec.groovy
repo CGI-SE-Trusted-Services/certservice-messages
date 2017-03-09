@@ -42,24 +42,38 @@ class AuthorizationAssertionDataSpec extends Specification {
 	
 	def "Verify that constructor sets all fields and getters retieves correct data"(){
 		when:
-		JAXBElement<AssertionType> assertion = genAuthorizationAssertion()
+		JAXBElement<AssertionType> assertion = genAuthorizationAssertion(false)
 		AuthorizationAssertionData ad = assertionPayloadParser.parseAndDecryptAssertion(assertion)
 		then:
 		ad instanceof AuthorizationAssertionData
 		ad.getId() == assertion.value.getID()
 		ad.getRoles() == ["role1","role2"]
+		ad.getDepartments() == null
+		when:
+		assertion = genAuthorizationAssertion(true)
+		ad = assertionPayloadParser.parseAndDecryptAssertion(assertion)
+		then:
+		ad instanceof AuthorizationAssertionData
+		ad.getId() == assertion.value.getID()
+		ad.getRoles() == ["role1","role2"]
+		ad.getDepartments() == ["department 1", "department 2"]
 	}
 
 	
 	def "Verify that toString returns a string"(){
 		setup:
-		AuthorizationAssertionData ad = assertionPayloadParser.parseAndDecryptAssertion(genAuthorizationAssertion())
+		AuthorizationAssertionData ad = assertionPayloadParser.parseAndDecryptAssertion(genAuthorizationAssertion(false))
 		expect:
 		ad.toString() != null
+		assertionPayloadParser.parseAndDecryptAssertion(genAuthorizationAssertion(true)).toString() != null
 	}
 	
-	private JAXBElement<AssertionType> genAuthorizationAssertion(){
-		byte[] ticketData = assertionPayloadParser.genDistributedAuthorizationTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",["role1", "role2"], [cert])
+	private JAXBElement<AssertionType> genAuthorizationAssertion(boolean useDepartments=false){
+		List<String> deps = null;
+		if(useDepartments){
+			deps = ["department 1", "department 2"]
+		}
+		byte[] ticketData = assertionPayloadParser.genDistributedAuthorizationTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",["role1", "role2"],deps, [cert])
 		JAXBElement<AssertionType> assertion = assertionPayloadParser.getAssertionFromResponseType(assertionPayloadParser.parseAttributeQueryResponse(ticketData))
 	}
 

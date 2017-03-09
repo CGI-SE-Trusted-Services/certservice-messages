@@ -45,7 +45,7 @@ import java.security.Security
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 
-import static org.certificateservices.messages.TestUtils.setupRegisteredPayloadParser
+import static org.certificateservices.messages.TestUtils.*
 import static org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.TEST_ID
 
 class AssertionPayloadParserSpec extends Specification {
@@ -181,7 +181,7 @@ class AssertionPayloadParserSpec extends Specification {
 	
 
 	
-	def "Verify that genDistributedAuthorizationTicket() generates a valid authorization ticket"(){
+	def "Verify that genDistributedAuthorizationTicket() generates a valid authorization ticket without departments"(){
 		when:
 		byte[] ticketData = pp.genDistributedAuthorizationTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",["role1", "role2"], twoReceiptiensValidFirst)
 		//printXML(ticketData)
@@ -223,7 +223,44 @@ class AssertionPayloadParserSpec extends Specification {
 		AuthorizationAssertionData ad = pp.parseAndDecryptAssertion(pp.getAssertionFromResponseType(pp.parseAttributeQueryResponse(ticketData)))
 		then:
 		ad.getRoles() == ["role1", "role2"]
+		ad.getDepartments() == null
 		
+	}
+
+	def "Verify that genDistributedAuthorizationTicket() generates a valid authorization ticket with departments"(){
+		when:
+		byte[] ticketData = pp.genDistributedAuthorizationTicket("_123456789", "someIssuer", new Date(1436279212427), new Date(1436279312427), "SomeSubject",["role1", "role2"], ["dep1", "dep2"], twoReceiptiensValidFirst)
+		//printXML(ticketData)
+
+		def xml = new XmlSlurper().parse(new ByteArrayInputStream(ticketData))
+
+		then:
+		xml.@ID.toString().length() > 0
+		xml.@IssueInstant == "2015-07-07T16:26:53.000+02:00"
+		xml.@Version == AssertionPayloadParser.DEFAULT_ASSERTION_VERSION
+		xml.@InResponseTo == "_123456789"
+		xml.Status.StatusCode.@Value == ResponseStatusCodes.SUCCESS.getURIValue()
+		xml.@ID.toString() != xml.Assertion.@ID.toString()
+		xml.Assertion.@ID.toString().length() > 0
+		xml.Assertion.@IssueInstant == "2015-07-07T16:26:53.000+02:00"
+		xml.Assertion.@Version == AssertionPayloadParser.DEFAULT_ASSERTION_VERSION
+		xml.Assertion.Issuer == "someIssuer"
+		xml.Assertion.Signature.size() == 1
+		verifySignature(ticketData)
+		xml.Assertion.Subject.NameID == "SomeSubject"
+		xml.Assertion.Conditions.@NotBefore == "2015-07-07T16:26:52.427+02:00"
+		xml.Assertion.Conditions.@NotOnOrAfter == "2015-07-07T16:28:32.427+02:00"
+		xml.Assertion.AttributeStatement.Attribute.size() == 1
+		xml.Assertion.AttributeStatement.Attribute[0].@Name == AssertionPayloadParser.ATTRIBUTE_NAME_TYPE
+		xml.Assertion.AttributeStatement.Attribute[0].AttributeValue == AssertionTypeEnum.AUTHORIZATION_TICKET.getAttributeValue()
+		xml.Assertion.AttributeStatement.EncryptedAttribute.size() == 2
+
+		when: "Decrypt and check that roles and departments exists"
+		AuthorizationAssertionData ad = pp.parseAndDecryptAssertion(pp.getAssertionFromResponseType(pp.parseAttributeQueryResponse(ticketData)))
+		then:
+		ad.getRoles() == ["role1", "role2"]
+		ad.getDepartments() == ["dep1", "dep2"]
+
 	}
 	
 	def "Verify that genUserDataTicket() generates a valid user data ticket"(){
