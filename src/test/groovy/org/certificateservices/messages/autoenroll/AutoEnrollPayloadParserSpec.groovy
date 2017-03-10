@@ -191,20 +191,34 @@ class AutoEnrollPayloadParserSpec extends Specification {
 
     def "Verify that genPerformGenerateCredentialRequestAction generates a PerformGenerateCredentialRequestAction element"(){
         when:
-        PerformGenerateCredentialRequestAction a = pp.genPerformGenerateCredentialRequestAction(true,wrappingCredential)
+        PerformGenerateCredentialRequestAction a = pp.genPerformGenerateCredentialRequestAction(true,wrappingCredential,["x509cn_cn": "Test 1","x509cn_c": "SE"])
         then:
         a instanceof PerformGenerateCredentialRequestAction
         a.keyRecoverable == true
         a.wrappingCredential == wrappingCredential
-
+        a.tokenRequestAttributes.tokenRequestAttribute.size() == 2
+        a.tokenRequestAttributes.tokenRequestAttribute[0].key == "x509cn_cn"
+        a.tokenRequestAttributes.tokenRequestAttribute[0].value == "Test 1"
+        a.tokenRequestAttributes.tokenRequestAttribute[1].key == "x509cn_c"
+        a.tokenRequestAttributes.tokenRequestAttribute[1].value == "SE"
         when:
-        a = pp.genPerformGenerateCredentialRequestAction(false,null)
+        a = pp.genPerformGenerateCredentialRequestAction(false,null,["x509cn_cn": "Test 1"])
         then:
         a.keyRecoverable == false
         a.wrappingCredential == null
-
+        a.tokenRequestAttributes.tokenRequestAttribute.size() == 1
+        a.tokenRequestAttributes.tokenRequestAttribute[0].key == "x509cn_cn"
+        a.tokenRequestAttributes.tokenRequestAttribute[0].value == "Test 1"
         when:
-        pp.genPerformGenerateCredentialRequestAction(true,null)
+        pp.genPerformGenerateCredentialRequestAction(true,null,["x509cn_cn": "Test 1"])
+        then:
+        thrown MessageContentException
+        when:
+        pp.genPerformGenerateCredentialRequestAction(false,null,null)
+        then:
+        thrown MessageContentException
+        when:
+        pp.genPerformGenerateCredentialRequestAction(false,null,[:])
         then:
         thrown MessageContentException
     }

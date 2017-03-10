@@ -16,6 +16,13 @@
 		<xs:sequence>
 			<xs:element minOccurs="1" maxOccurs="1" name="keyRecoverable" type="xs:boolean" />
 			<xs:element minOccurs="0" maxOccurs="1" name="wrappingCredential" type="cs:Credential" />
+			<xs:element minOccurs="1" maxOccurs="1" name="tokenRequestAttributes">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="unbounded" name="tokenRequestAttribute" type="cs:Attribute" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
 
