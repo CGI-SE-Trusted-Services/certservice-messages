@@ -260,15 +260,19 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 *                       including it along with the credential request.
 	 * @param wrappingCredential the credential that should be used to encrypt the key towards the backend service.
 	 *                           required in keyRecoverable is set to true.
+	 * @param credentialSubType the related credential subtype to generate.
 	 * @param tokenRequestAttributes map of used token request attributes used to construct the pkcs10, usually values from
 	 *                               AvailableSubjectDNFields or AvailableSubjectAlternativeNames (cs-common) such as
 	 *                               x509dn_cn or x509altname_dnsname
 	 * @return a new PerformGenerateCredentialRequestAction
 	 * @throws MessageContentException if invalid arguments such as set keyRecoverable to true but not supplied any wrapping credential.
 	 */
-	public PerformGenerateCredentialRequestAction genPerformGenerateCredentialRequestAction(boolean keyRecoverable, Credential wrappingCredential, Map<String,String> tokenRequestAttributes) throws MessageContentException {
+	public PerformGenerateCredentialRequestAction genPerformGenerateCredentialRequestAction(boolean keyRecoverable, Credential wrappingCredential, String credentialSubType,  Map<String,String> tokenRequestAttributes) throws MessageContentException {
 		if(keyRecoverable && wrappingCredential == null){
 			throw new MessageContentException("PerformGenerateCredentialRequestAction must have a wrapping credential when set as key recoverable");
+		}
+		if(credentialSubType == null){
+			throw new MessageContentException("PerformGenerateCredentialRequestAction must have credentialSubType set.");
 		}
 		if(tokenRequestAttributes == null || tokenRequestAttributes.size() < 1){
 			throw new MessageContentException("Error at least on token request attribute must be specified.");
@@ -276,6 +280,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 		PerformGenerateCredentialRequestAction retval =  of.createPerformGenerateCredentialRequestAction();
 		retval.setKeyRecoverable(keyRecoverable);
 		retval.setWrappingCredential(wrappingCredential);
+		retval.setCredentialSubType(credentialSubType);
 		PerformGenerateCredentialRequestAction.TokenRequestAttributes tra = of.createPerformGenerateCredentialRequestActionTokenRequestAttributes();
 		for(String key : tokenRequestAttributes.keySet()) {
 			Attribute a = csMessageObjectFactory.createAttribute();
