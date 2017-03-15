@@ -30,6 +30,7 @@ import org.certificateservices.messages.csmessages.jaxb.Credential;
  *       &lt;sequence>
  *         &lt;element name="keyRecoverable" type="{http://www.w3.org/2001/XMLSchema}boolean"/>
  *         &lt;element name="wrappingCredential" type="{http://certificateservices.org/xsd/csmessages2_0}Credential" minOccurs="0"/>
+ *         &lt;element name="credentialSubType">
  *         &lt;element name="tokenRequestAttributes">
  *           &lt;complexType>
  *             &lt;complexContent>
@@ -53,12 +54,15 @@ import org.certificateservices.messages.csmessages.jaxb.Credential;
 @XmlType(name = "PerformGenerateCredentialRequestAction", propOrder = {
     "keyRecoverable",
     "wrappingCredential",
+    "credentialSubType",
     "tokenRequestAttributes"
 })
 public class PerformGenerateCredentialRequestAction {
 
     protected boolean keyRecoverable;
     protected Credential wrappingCredential;
+    @XmlElement(required = true)
+    protected String credentialSubType;
     @XmlElement(required = true)
     protected PerformGenerateCredentialRequestAction.TokenRequestAttributes tokenRequestAttributes;
 
@@ -100,6 +104,22 @@ public class PerformGenerateCredentialRequestAction {
      */
     public void setWrappingCredential(Credential value) {
         this.wrappingCredential = value;
+    }
+
+    /**
+     * Gets the value of the credentialSubType property.
+     *
+     */
+    public String getCredentialSubType() {
+        return credentialSubType;
+    }
+
+    /**
+     * Sets the value of the credentialSubType property.
+     *
+     */
+    public void setCredentialSubType(String value) {
+        this.credentialSubType = value;
     }
 
     /**

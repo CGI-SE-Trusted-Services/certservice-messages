@@ -191,18 +191,19 @@ class AutoEnrollPayloadParserSpec extends Specification {
 
     def "Verify that genPerformGenerateCredentialRequestAction generates a PerformGenerateCredentialRequestAction element"(){
         when:
-        PerformGenerateCredentialRequestAction a = pp.genPerformGenerateCredentialRequestAction(true,wrappingCredential,["x509cn_cn": "Test 1","x509cn_c": "SE"])
+        PerformGenerateCredentialRequestAction a = pp.genPerformGenerateCredentialRequestAction(true,wrappingCredential,"SomeSubType", ["x509cn_cn": "Test 1","x509cn_c": "SE"])
         then:
         a instanceof PerformGenerateCredentialRequestAction
         a.keyRecoverable == true
         a.wrappingCredential == wrappingCredential
+        a.credentialSubType == "SomeSubType"
         a.tokenRequestAttributes.tokenRequestAttribute.size() == 2
         a.tokenRequestAttributes.tokenRequestAttribute[0].key == "x509cn_cn"
         a.tokenRequestAttributes.tokenRequestAttribute[0].value == "Test 1"
         a.tokenRequestAttributes.tokenRequestAttribute[1].key == "x509cn_c"
         a.tokenRequestAttributes.tokenRequestAttribute[1].value == "SE"
         when:
-        a = pp.genPerformGenerateCredentialRequestAction(false,null,["x509cn_cn": "Test 1"])
+        a = pp.genPerformGenerateCredentialRequestAction(false,null,"SomeSubType",["x509cn_cn": "Test 1"])
         then:
         a.keyRecoverable == false
         a.wrappingCredential == null
@@ -210,15 +211,19 @@ class AutoEnrollPayloadParserSpec extends Specification {
         a.tokenRequestAttributes.tokenRequestAttribute[0].key == "x509cn_cn"
         a.tokenRequestAttributes.tokenRequestAttribute[0].value == "Test 1"
         when:
-        pp.genPerformGenerateCredentialRequestAction(true,null,["x509cn_cn": "Test 1"])
+        pp.genPerformGenerateCredentialRequestAction(true,null,"SomeSubType",["x509cn_cn": "Test 1"])
         then:
         thrown MessageContentException
         when:
-        pp.genPerformGenerateCredentialRequestAction(false,null,null)
+        pp.genPerformGenerateCredentialRequestAction(false,null,"SomeSubType", null)
         then:
         thrown MessageContentException
         when:
-        pp.genPerformGenerateCredentialRequestAction(false,null,[:])
+        pp.genPerformGenerateCredentialRequestAction(false,null,"SomeSubType", [:])
+        then:
+        thrown MessageContentException
+        when:
+        pp.genPerformGenerateCredentialRequestAction(false,null,null, ["x509cn_cn": "Test 1"])
         then:
         thrown MessageContentException
     }
