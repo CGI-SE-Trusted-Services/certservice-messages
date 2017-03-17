@@ -741,6 +741,8 @@ public class DefaultCSMessageParserSpec extends Specification{
 
 	}
 
+	// TODO Verify protocol 2.0 and 2.1 verification
+
 	private void verifyCSHeaderMessage(byte[] messageData, GPathResult xmlMessage, String expectedSourceId, String expectedDestinationId, String expectedOrganisation, String expectedName, Credential expectedOriginator){
 		verifyCSHeaderMessage(messageData, xmlMessage, expectedSourceId, expectedDestinationId, expectedOrganisation, expectedName, expectedOriginator, mp)
 	}
