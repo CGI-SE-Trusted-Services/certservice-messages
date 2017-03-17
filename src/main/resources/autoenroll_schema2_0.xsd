@@ -100,7 +100,7 @@
 									<xs:element minOccurs="0" maxOccurs="1" name="performActions">
 										<xs:complexType>
 											<xs:sequence>
-												<xs:element minOccurs="0" maxOccurs="1" name="generateCredentialRequest" type="tns:PerformGenerateCredentialRequestAction" />
+												<xs:element minOccurs="0" maxOccurs="unbounded" name="generateCredentialRequest" type="tns:PerformGenerateCredentialRequestAction" />
 												<xs:element minOccurs="0" maxOccurs="1" name="fetchExistingTokens" type="tns:PerformFetchExistingTokensAction" />
 												<xs:element minOccurs="0" maxOccurs="1" name="removeCredentials" type="tns:PerformRemoveCredentialsAction" />
 											</xs:sequence>
@@ -134,7 +134,7 @@
 									<xs:element minOccurs="1" maxOccurs="1" name="actions">
 										<xs:complexType>
 											<xs:sequence>
-												<xs:element minOccurs="0" maxOccurs="1" name="generateCredentialRequest" type="tns:PerformedGenerateCredentialRequestAction" />
+												<xs:element minOccurs="0" maxOccurs="unbounded" name="generateCredentialRequest" type="tns:PerformedGenerateCredentialRequestAction" />
 												<xs:element minOccurs="0" maxOccurs="1" name="fetchExistingTokens" type="tns:PerformedFetchExistingTokensAction" />
 												<xs:element minOccurs="0" maxOccurs="1" name="removeCredentials" type="tns:PerformedRemoveCredentialsAction" />
 											</xs:sequence>
