@@ -5,6 +5,9 @@ import org.apache.xml.security.utils.Base64
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.credmanagement.jaxb.FieldValue
+import org.certificateservices.messages.credmanagement.jaxb.GetTokensResponse
+import org.certificateservices.messages.credmanagement.jaxb.GetUsersRequest
+import org.certificateservices.messages.credmanagement.jaxb.GetUsersResponse
 import org.certificateservices.messages.credmanagement.jaxb.HardTokenData
 import org.certificateservices.messages.credmanagement.jaxb.Key
 import org.certificateservices.messages.credmanagement.jaxb.ObjectFactory
@@ -14,6 +17,7 @@ import org.certificateservices.messages.csmessages.CSMessageResponseData
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser
 import org.certificateservices.messages.csmessages.PayloadParserRegistry
 import org.certificateservices.messages.csmessages.jaxb.*
+import org.certificateservices.messages.utils.CSMessageUtils
 import org.certificateservices.messages.utils.MessageGenerateUtils
 import spock.lang.Specification
 
@@ -33,7 +37,7 @@ class CredManagementPayloadParserSpec extends Specification {
 	DefaultCSMessageParser csMessageParser
 	def setupSpec(){
 		Security.addProvider(new BouncyCastleProvider())
-		Init.init();
+		Init.init()
 	}
 
 
@@ -57,7 +61,7 @@ class CredManagementPayloadParserSpec extends Specification {
 		
 		when:
 		csMessageParser.sourceId = "SOMEREQUESTER"
-		byte[] requestMessage = pp.genIssueTokenCredentialsRequest(TEST_ID, "SOMESOURCEID", "someorg", createTokenRequest(), null,  null, createOriginatorCredential(), null)
+		byte[] requestMessage = pp.genIssueTokenCredentialsRequest(TEST_ID, "SOMESOURCEID", "someorg", createTokenRequest(true), null,  null, createOriginatorCredential(), null)
 		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.IssueTokenCredentialsRequest
@@ -69,6 +73,7 @@ class CredManagementPayloadParserSpec extends Specification {
 		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","IssueTokenCredentialsRequest", createOriginatorCredential(), csMessageParser)
 
 		payloadObject.tokenRequest.user == "someuser"
+		payloadObject.tokenRequest.departmentName == "SomeDepartment"
 		payloadObject.fieldValues.size() == 0
 		payloadObject.hardTokenData.size() == 0
 		
@@ -177,6 +182,13 @@ class CredManagementPayloadParserSpec extends Specification {
 
 		when: // Verify that parsing a 2.1 message with payload 2.0 version
 		pp.parseMessage(invalidVersionIssueTokenCredentials_2_0)
+		then:
+		thrown MessageContentException
+	}
+
+	def "Verify that 2.0 CS message and 2.0 payload throws MessageContentException if TokenRequest contains department."(){
+		when:
+		pp.parseMessage(ver2_0IssueTokenCredentialMessageWithDepartment)
 		then:
 		thrown MessageContentException
 	}
@@ -621,7 +633,7 @@ class CredManagementPayloadParserSpec extends Specification {
 		csMessageParser.sourceId = "SOMESOURCEID"
 		CSMessage request = pp.parseMessage(requestMessage)
 		
-		CSMessageResponseData rd = pp.genGetTokensResponse("SomeRelatedEndEntity", request, createTokens(), null)
+		CSMessageResponseData rd = pp.genGetTokensResponse("SomeRelatedEndEntity", request, createTokens(true), null)
 		//printXML(rd.responseData)
 		xml = slurpXml(rd.responseData)
 		payloadObject = xml.payload.GetTokensResponse
@@ -637,6 +649,31 @@ class CredManagementPayloadParserSpec extends Specification {
 		
 		expect:
 		pp.parseMessage(rd.responseData)
+
+		when: // Verify to generate 2.1 messages
+		csMessageParser.sourceId = "SOMEREQUESTER"
+		requestMessage = pp.genGetTokensRequest(TEST_ID, "SOMESOURCEID", "someorg", "someuniqueid", true, 5,10, createOriginatorCredential(), null)
+       // printXML(requestMessage)
+		xml = slurpXml(requestMessage)
+		payloadObject = xml.payload.GetTokensRequest
+
+		then:
+		payloadObject.serialNumber == "someuniqueid"
+		payloadObject.exactMatch == "true"
+		payloadObject.startIndex == 5
+		payloadObject.resultSize == 10
+
+		when:
+		rd =  pp.genGetTokensResponse("SomeRelatedEndEntity", request, createTokens(), 5,19,null)
+//		printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.GetTokensResponse
+
+		then:
+		payloadObject.tokens.token.size() == 2
+		payloadObject.startIndex == 5
+		payloadObject.totalMatching == 19
+
 
 	}
 		
@@ -659,9 +696,14 @@ class CredManagementPayloadParserSpec extends Specification {
 		when:
 		csMessageParser.sourceId = "SOMESOURCEID"
 		CSMessage request = pp.parseMessage(requestMessage)
-		
-		CSMessageResponseData rd = pp.genGetUsersResponse("SomeRelatedEndEntity", request, createUsers(), null)
-//		printXML(rd.responseData)
+		GetUsersRequest pl = CSMessageUtils.getPayload(request)
+		then:
+		pl.startIndex == null
+		pl.resultSize == null
+
+		when:
+		CSMessageResponseData rd = pp.genGetUsersResponse("SomeRelatedEndEntity", request, createUsers(true), null)
+
 		xml = slurpXml(rd.responseData)
 		payloadObject = xml.payload.GetUsersResponse
 		
@@ -677,7 +719,82 @@ class CredManagementPayloadParserSpec extends Specification {
 		expect:
 		pp.parseMessage(rd.responseData)
 
+		when: // Verify to generate 2.1 messages
+		csMessageParser.sourceId = "SOMEREQUESTER"
+		requestMessage = pp.genGetUsersRequest(TEST_ID, "SOMESOURCEID", "someorg", "someuniqueid", true, 5,10, createOriginatorCredential(), null)
+//        printXML(requestMessage)
+		xml = slurpXml(requestMessage)
+		payloadObject = xml.payload.GetUsersRequest
+
+		then:
+		payloadObject.uniqueId == "someuniqueid"
+		payloadObject.exactMatch == "true"
+		payloadObject.startIndex == 5
+		payloadObject.resultSize == 10
+
+		when:
+		rd = pp.genGetUsersResponse("SomeRelatedEndEntity", request, createUsers(), 5,19, null)
+//		printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.GetUsersResponse
+
+		then:
+		payloadObject.users.user.size() == 2
+		payloadObject.startIndex == 5
+		payloadObject.totalMatching == 19
+
 	}
+
+	def "Verify that 2.0 version GetUsersRequest doesn't populate startIndex and totalMatching and that users doesn't have departmentname in response"(){
+		when:
+		CSMessage request = pp.parseMessage(validGetUsersRequestV2_0)
+		CSMessageResponseData rd = pp.genGetUsersResponse("SomeRelatedEndEntity", request, createUsers(true), 5,17, null)
+		CSMessage response = pp.parseMessage(rd.responseData)
+		GetUsersResponse payload = CSMessageUtils.getPayload(response)
+
+		then:
+		response.payLoadVersion == "2.0"
+		payload.startIndex == null
+		payload.totalMatching == null
+		payload.users.user.size() == 2
+		payload.users.user.each { u ->
+			u.tokens.token.each{ t ->
+			   assert t.departmentName == null
+			}
+		}
+	}
+
+	def "Verify that 2.0 GetUsersRequest with 2.1 data throws MessageContentException"(){
+		when:
+		pp.parseMessage(getUsersRequestV2_0With2_1Data)
+		then:
+		thrown MessageContentException
+	}
+
+	def "Verify that 2.0 version GetTokensRequest doesn't populate startIndex and totalMatching that users doesn't have departmentname in response"(){
+		when:
+		CSMessage request = pp.parseMessage(validGetTokensRequestV2_0)
+		CSMessageResponseData rd =pp.genGetTokensResponse("SomeRelatedEndEntity", request, createTokens(true), 5,18, null)
+		CSMessage response = pp.parseMessage(rd.responseData)
+		GetTokensResponse payload = CSMessageUtils.getPayload(response)
+
+		then:
+		response.payLoadVersion == "2.0"
+		payload.startIndex == null
+		payload.totalMatching == null
+		payload.tokens.token.size() == 2
+		payload.tokens.token.each{ t->
+			assert t.departmentName == null
+		}
+	}
+
+	def "Verify that 2.0 GetTokensRequest with 2.1 data throws MessageContentException"(){
+		when:
+		pp.parseMessage(getTokensRequestV2_0With2_1Data)
+		then:
+		thrown MessageContentException
+	}
+
 
 	def "Verify that genRecoverKeyRequest() generates a valid xml message and genRecoverKeyResponse() generates a valid CSMessageResponseData"(){
 		when:
@@ -755,12 +872,12 @@ class CredManagementPayloadParserSpec extends Specification {
 
 	}
 
-	private List<User> createUsers(){
-		return [createUser("user1"),createUser("user2",[createToken("321")])]
+	private List<User> createUsers(boolean includeDepartment = false){
+		return [createUser("user1"),createUser("user2",[createToken("321", includeDepartment)])]
 	}
 	
 	private User createUser(String id, List<Token> tokens = createTokens()){
-		User user = csMessageOf.createUser();
+		User user = csMessageOf.createUser()
 		user.attributes = new User.Attributes()
 		user.attributes.attribute.add(createAttribute("somekey", "somevalue"))
 		
@@ -780,7 +897,7 @@ class CredManagementPayloadParserSpec extends Specification {
 	}
 
 	
-	private Token createToken(String serial){
+	private Token createToken(String serial, boolean includeDepartment = false){
 		Token t = csMessageOf.createToken()
 		
 		t.attributes = new Token.Attributes()
@@ -802,12 +919,14 @@ class CredManagementPayloadParserSpec extends Specification {
 		t.tokenClass = "SomeTokenClass"
 		t.tokenContainer = "SomeTokenContainer"
 		t.tokenType = "SomeTokenType"
+
+		t.departmentName = "SomeDepartmentName"
 		
 		return t;
 	}
 	
-	private List<Token> createTokens(){
-		return [createToken("serial123"),createToken("serial124")]
+	private List<Token> createTokens(boolean includeDepartment = false){
+		return [createToken("serial123"),createToken("serial124",includeDepartment)]
 	}
 	
 	private static Attribute createAttribute(String key, String value){
@@ -818,12 +937,15 @@ class CredManagementPayloadParserSpec extends Specification {
 	}
 	
 	
-	private TokenRequest createTokenRequest(){
-		TokenRequest retval = csMessageOf.createTokenRequest();
+	private TokenRequest createTokenRequest(boolean includeDepartment=false){
+		TokenRequest retval = csMessageOf.createTokenRequest()
 		retval.user = "someuser";
 		retval.tokenContainer = "SomeTokenContainer"
 		retval.tokenType = "SomeTokenType"
 		retval.tokenClass = "SomeTokenClass"
+		if(includeDepartment) {
+			retval.departmentName = "SomeDepartment"
+		}
 
 		retval.setCredentialRequests(new TokenRequest.CredentialRequests())
 		retval.getCredentialRequests().getCredentialRequest().add(createCredentialRequest())
@@ -1090,4 +1212,119 @@ ZLCP64EJEfE1mGxCJg==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signatu
 			"i00t39vDU+k9a2LjroUUYyRNXbb//Zv0esJ+7TdSS9hmPyNVNY0QG1vfxu2QdwMI/1PvCrK5+POO\n" +
 			"Av1oIPkxDdga7p6nxsrWyVL1rYj670FHiN+WrJt9EDgQ7lVnHuIm53l02y5qGb+6zbD9b2l2c9+Q\n" +
 			"IS0WJtrC6XSmD1xymQlQ65rRYcrxHUR7VUnN0saxL8hElSlQh2ZnuoQpDEj5DmM=</xenc:CipherValue></xenc:CipherData></xenc:EncryptedData>".getBytes("UTF-8")
+
+	byte[] getUsersRequestV2_0With2_1Data =  """<?xml version="1.0" encoding="UTF-8" standalone="no"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:ae="http://certificateservices.org/xsd/autoenroll2_x" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:key="http://certificateservices.org/xsd/sensitivekeys" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.0" timeStamp="2017-03-16T16:28:40.600+01:00" version="2.0" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd"><cs:name>GetUsersRequest</cs:name><cs:sourceId>SOMESOURCEID</cs:sourceId><cs:destinationId>SOMESOURCEID</cs:destinationId><cs:organisation>someorg</cs:organisation><cs:originator><cs:credential><cs:credentialRequestId>123</cs:credentialRequestId><cs:uniqueId>SomeOriginatorUniqueId</cs:uniqueId><cs:displayName>SomeOrignatorDisplayName</cs:displayName><cs:serialNumber>SomeSerialNumber</cs:serialNumber><cs:issuerId>SomeIssuerId</cs:issuerId><cs:status>100</cs:status><cs:credentialType>SomeCredentialType</cs:credentialType><cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType><cs:attributes><cs:attribute><cs:key>someattrkey</cs:key><cs:value>someattrvalue</cs:value></cs:attribute></cs:attributes><cs:usages><cs:usage>someusage</cs:usage></cs:usages><cs:credentialData>MTIzNDVBQkNFRg==</cs:credentialData><cs:issueDate>1970-01-01T01:00:01.234+01:00</cs:issueDate><cs:expireDate>1970-01-01T01:00:02.234+01:00</cs:expireDate><cs:validFromDate>1970-01-01T01:00:03.234+01:00</cs:validFromDate></cs:credential></cs:originator><cs:payload><credmanagement:GetUsersRequest><credmanagement:uniqueId>someuniqueid</credmanagement:uniqueId><credmanagement:exactMatch>true</credmanagement:exactMatch><credmanagement:startIndex>5</credmanagement:startIndex><credmanagement:resultSize>10</credmanagement:resultSize></credmanagement:GetUsersRequest></cs:payload><ds:Signature><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#12345678-1234-4444-8000-123456789012"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>QhfnaIPlCsD+Ly0hvO+IHTP8Jjuo+0/qjyfrPYJvg0Q=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>V2ZcsgUU2UwZDCHNMRAcvHzLnK6gzNpF02c5E2KuMQTTZG7qlEsqdcxCaW+Iew83ZvHr+tN0jAub
+etbXs+E+SXfQsxqt192JYuOszmHq1GMvE/XaINLKiBYGKHn9X3j9yRBE6kEncu2m8uBBIRemuoZi
+zldI8I/3Akfw9H+0/ByR0olW+49lJ59xFmIyCG+hfQuNpHheXH907vQMnR/8lOKnFgAUECzzhraS
+6NGQnlvQlMjnA9etZr9Nk5o4JAqIF6eqYn26snOwUeMXOcpQoAXZrlQvrEGAHxMS8PNHdL0y7YzA
+/rMLnuS3V+PX0Co51F+rqupZFqw0cHXM/UEdVw==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBD
+dXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAx
+MDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBD
+dXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/
+y3i/mT7WwtpW18/QfyUGpYPPxQ4bvPPn61y3jJg/dAbGHvnyQSHfIvrIJUN83q6evvk0bNZNVSEN
+UEP29isE4D+KjD3PFtAzQq18P8m/8mSXMva5VTooEUSDX+VJ/6el6tnyZdc85AlIJkkkvyiDKcjh
+f10yllaiVCHLunGMDXAec4DapPi5GdmSMMXyPOhRx5e+oy6b5q9XmT3C29VNVFf+tkAt3ew3BoQb
+d+VrlBI4oRYq+mfbgkXU6dSKr9DRqhsbu5rU4Jdst2KClXsxaxvC0rVeKQ8iXCDKFH5glzhSYoeW
+l7CI15CdQM6/so7EisSvAgMBAAGjgeMwgeAwHQYDVR0OBBYEFLpidyp0Pc46cUpJf1neFnq/rLJB
+MAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUgEn+Hp9+Yxe4lOhaIPmf++Wu7SYwGAYDVR0gBBEw
+DzANBgsrBgEEAYH1fgMDCTBABgNVHR8EOTA3MDWgM6Axhi9odHRwOi8vYXQtY3JsLndtLm5ldC9k
+ZW1vY3VzdG9tZXIxX3NlcnZlcmNhLmNybDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYB
+BQUHAwEwDwYDVR0RBAgwBoIEdGVzdDANBgkqhkiG9w0BAQUFAAOCAQEAZxGls/mNT4GyAf9u9lg7
+8sSA27sc3xFvHNogrT4yUCbYAOhLXO4HJ9XuKaFyz4bKz6JGdLaQDknDI1GUvpJLpiPTXk4cq1pp
+HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
+WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
+ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
+ZLCP64EJEfE1mGxCJg==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></cs:CSMessage>""".getBytes("UTF-8")
+
+byte[] validGetUsersRequestV2_0 = """<?xml version="1.0" encoding="UTF-8" standalone="no"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:ae="http://certificateservices.org/xsd/autoenroll2_x" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:key="http://certificateservices.org/xsd/sensitivekeys" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.0" timeStamp="2017-03-16T16:28:40.864+01:00" version="2.0" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd"><cs:name>GetUsersRequest</cs:name><cs:sourceId>SOMESOURCEID</cs:sourceId><cs:destinationId>SOMESOURCEID</cs:destinationId><cs:organisation>someorg</cs:organisation><cs:originator><cs:credential><cs:credentialRequestId>123</cs:credentialRequestId><cs:uniqueId>SomeOriginatorUniqueId</cs:uniqueId><cs:displayName>SomeOrignatorDisplayName</cs:displayName><cs:serialNumber>SomeSerialNumber</cs:serialNumber><cs:issuerId>SomeIssuerId</cs:issuerId><cs:status>100</cs:status><cs:credentialType>SomeCredentialType</cs:credentialType><cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType><cs:attributes><cs:attribute><cs:key>someattrkey</cs:key><cs:value>someattrvalue</cs:value></cs:attribute></cs:attributes><cs:usages><cs:usage>someusage</cs:usage></cs:usages><cs:credentialData>MTIzNDVBQkNFRg==</cs:credentialData><cs:issueDate>1970-01-01T01:00:01.234+01:00</cs:issueDate><cs:expireDate>1970-01-01T01:00:02.234+01:00</cs:expireDate><cs:validFromDate>1970-01-01T01:00:03.234+01:00</cs:validFromDate></cs:credential></cs:originator><cs:payload><credmanagement:GetUsersRequest><credmanagement:uniqueId>someuniqueid</credmanagement:uniqueId><credmanagement:exactMatch>true</credmanagement:exactMatch></credmanagement:GetUsersRequest></cs:payload><ds:Signature><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#12345678-1234-4444-8000-123456789012"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>fcZH1Wq4T9VwU5rm/KxIMl+wV7tOnKtc4NeG33rQYgg=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>c9Z2MqmvthrJ0uXsr12ct+EwSfB3qFVPTMyEjPc4Y/wgrNUDm9dB7ihbQxU1VPN6ka6MIt0P877k
+6YnebRKsNHJHoFheVzqAS9oQJJct4ytVgHA2mzWu9NLySgap+HWhlmuZUVDAkY1iYrbjmZ8EOSX6
+Z7Zs5ftR3w4/u3zXbQhEO48lQG4fGPihP/oY9dchtmYi/bY+/RdYbaIpQmibiBIUqs+74Nlu9e84
+uF6glmRQMoHYBWtdaDvu8peHbyBL5wU3KylprCzPvivZWNrVUu0ONgCswT7bBxZaHhDiSpUCck18
+3i20xeC0fwUvNwUaGlXBIEREVggbQz8p6qcNKA==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBD
+dXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAx
+MDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBD
+dXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/
+y3i/mT7WwtpW18/QfyUGpYPPxQ4bvPPn61y3jJg/dAbGHvnyQSHfIvrIJUN83q6evvk0bNZNVSEN
+UEP29isE4D+KjD3PFtAzQq18P8m/8mSXMva5VTooEUSDX+VJ/6el6tnyZdc85AlIJkkkvyiDKcjh
+f10yllaiVCHLunGMDXAec4DapPi5GdmSMMXyPOhRx5e+oy6b5q9XmT3C29VNVFf+tkAt3ew3BoQb
+d+VrlBI4oRYq+mfbgkXU6dSKr9DRqhsbu5rU4Jdst2KClXsxaxvC0rVeKQ8iXCDKFH5glzhSYoeW
+l7CI15CdQM6/so7EisSvAgMBAAGjgeMwgeAwHQYDVR0OBBYEFLpidyp0Pc46cUpJf1neFnq/rLJB
+MAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUgEn+Hp9+Yxe4lOhaIPmf++Wu7SYwGAYDVR0gBBEw
+DzANBgsrBgEEAYH1fgMDCTBABgNVHR8EOTA3MDWgM6Axhi9odHRwOi8vYXQtY3JsLndtLm5ldC9k
+ZW1vY3VzdG9tZXIxX3NlcnZlcmNhLmNybDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYB
+BQUHAwEwDwYDVR0RBAgwBoIEdGVzdDANBgkqhkiG9w0BAQUFAAOCAQEAZxGls/mNT4GyAf9u9lg7
+8sSA27sc3xFvHNogrT4yUCbYAOhLXO4HJ9XuKaFyz4bKz6JGdLaQDknDI1GUvpJLpiPTXk4cq1pp
+HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
+WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
+ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
+ZLCP64EJEfE1mGxCJg==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></cs:CSMessage>""".getBytes("UTF-8")
+
+	byte[] getTokensRequestV2_0With2_1Data =  """<?xml version="1.0" encoding="UTF-8" standalone="no"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:ae="http://certificateservices.org/xsd/autoenroll2_x" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:key="http://certificateservices.org/xsd/sensitivekeys" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.0" timeStamp="2017-03-16T16:44:37.857+01:00" version="2.0" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd"><cs:name>GetTokensRequest</cs:name><cs:sourceId>SOMESOURCEID</cs:sourceId><cs:destinationId>SOMESOURCEID</cs:destinationId><cs:organisation>someorg</cs:organisation><cs:payload><credmanagement:GetTokensRequest><credmanagement:serialNumber>someserial</credmanagement:serialNumber><credmanagement:exactMatch>true</credmanagement:exactMatch><credmanagement:startIndex>3</credmanagement:startIndex><credmanagement:resultSize>20</credmanagement:resultSize></credmanagement:GetTokensRequest></cs:payload><ds:Signature><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#12345678-1234-4444-8000-123456789012"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>Ep/sAtMZ3NSI3MTyGKlGHnGM9Man92euDWNjxY+2gNc=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>By/99teyY+z8Q1nEu8inxK4Veen0JEhNCJFGA7Nbxl0gEerwtT5RvIYy3woWXAW40SMvWkpMRzzf
+XTsdWrmz2NhG9sNme4VR3enKrkWDlOrhw/23oWjBmkka51qy/N2hjl9TGCyZacUeAwG1Hu9coUSx
+Nw4xVtq4SW80/Tgwj02FLekDM+nf4ThD6OvFLYLmRyOEkaJa0XBjDobuq+kttHq5xEF+CXCfOIhJ
+zfMrVwdWQ0RngWpmzGyNGU/DLe6XCC6JBqs7CrHHU7fiKshHaSwCmZ1F624Aax4I+skikIoVFaGc
+53UJtWkIlkWFsUrqTphQteZKr3wnQSOXiJ1tsA==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBD
+dXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAx
+MDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBD
+dXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/
+y3i/mT7WwtpW18/QfyUGpYPPxQ4bvPPn61y3jJg/dAbGHvnyQSHfIvrIJUN83q6evvk0bNZNVSEN
+UEP29isE4D+KjD3PFtAzQq18P8m/8mSXMva5VTooEUSDX+VJ/6el6tnyZdc85AlIJkkkvyiDKcjh
+f10yllaiVCHLunGMDXAec4DapPi5GdmSMMXyPOhRx5e+oy6b5q9XmT3C29VNVFf+tkAt3ew3BoQb
+d+VrlBI4oRYq+mfbgkXU6dSKr9DRqhsbu5rU4Jdst2KClXsxaxvC0rVeKQ8iXCDKFH5glzhSYoeW
+l7CI15CdQM6/so7EisSvAgMBAAGjgeMwgeAwHQYDVR0OBBYEFLpidyp0Pc46cUpJf1neFnq/rLJB
+MAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUgEn+Hp9+Yxe4lOhaIPmf++Wu7SYwGAYDVR0gBBEw
+DzANBgsrBgEEAYH1fgMDCTBABgNVHR8EOTA3MDWgM6Axhi9odHRwOi8vYXQtY3JsLndtLm5ldC9k
+ZW1vY3VzdG9tZXIxX3NlcnZlcmNhLmNybDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYB
+BQUHAwEwDwYDVR0RBAgwBoIEdGVzdDANBgkqhkiG9w0BAQUFAAOCAQEAZxGls/mNT4GyAf9u9lg7
+8sSA27sc3xFvHNogrT4yUCbYAOhLXO4HJ9XuKaFyz4bKz6JGdLaQDknDI1GUvpJLpiPTXk4cq1pp
+HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
+WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
+ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
+ZLCP64EJEfE1mGxCJg==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></cs:CSMessage>""".getBytes("UTF-8")
+
+	byte[] validGetTokensRequestV2_0 = """<?xml version="1.0" encoding="UTF-8" standalone="no"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:ae="http://certificateservices.org/xsd/autoenroll2_x" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:key="http://certificateservices.org/xsd/sensitivekeys" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.0" timeStamp="2017-03-16T16:44:37.612+01:00" version="2.0" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd"><cs:name>GetTokensRequest</cs:name><cs:sourceId>SOMESOURCEID</cs:sourceId><cs:destinationId>SOMESOURCEID</cs:destinationId><cs:organisation>someorg</cs:organisation><cs:payload><credmanagement:GetTokensRequest><credmanagement:serialNumber>someserial</credmanagement:serialNumber><credmanagement:exactMatch>true</credmanagement:exactMatch></credmanagement:GetTokensRequest></cs:payload><ds:Signature><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#12345678-1234-4444-8000-123456789012"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>xIdcTxz8NtKedoEnSEAeGhEh6c05D/YhX269OH6lArU=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>Kasg5v3BjOECEUh/LMQCymFLA2//BH6E5sJ7AHgvjJb9R2p5ttWGDfo9vOB0CPZSj0tQ6KomiEhr
+qXp8QHwCs1/qP8GCaAI/qC+uZDXFlONWhhaQsjs574wR4bFWmyTuygMUc0bUyKPcxZeThzykwCXZ
+8J5Pj+xUEEc30MyC8vRIXF/1aJ5kjR4NYl54R44QSgHmrfdtUiIMtAHqx+3coPEsyx+Ct6oRjQ4W
+JQ0QZBnvi2w9qesERDkrxbFtxuQDIIjQYnIxKRmPmMbx/lC1pAqE/nlGwj+YFyK8hVOQ8DWvPZnH
+8N30varDgj/UrAdB47SWnGIU+EXJss4iBS2Xww==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBD
+dXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAx
+MDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBD
+dXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/
+y3i/mT7WwtpW18/QfyUGpYPPxQ4bvPPn61y3jJg/dAbGHvnyQSHfIvrIJUN83q6evvk0bNZNVSEN
+UEP29isE4D+KjD3PFtAzQq18P8m/8mSXMva5VTooEUSDX+VJ/6el6tnyZdc85AlIJkkkvyiDKcjh
+f10yllaiVCHLunGMDXAec4DapPi5GdmSMMXyPOhRx5e+oy6b5q9XmT3C29VNVFf+tkAt3ew3BoQb
+d+VrlBI4oRYq+mfbgkXU6dSKr9DRqhsbu5rU4Jdst2KClXsxaxvC0rVeKQ8iXCDKFH5glzhSYoeW
+l7CI15CdQM6/so7EisSvAgMBAAGjgeMwgeAwHQYDVR0OBBYEFLpidyp0Pc46cUpJf1neFnq/rLJB
+MAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUgEn+Hp9+Yxe4lOhaIPmf++Wu7SYwGAYDVR0gBBEw
+DzANBgsrBgEEAYH1fgMDCTBABgNVHR8EOTA3MDWgM6Axhi9odHRwOi8vYXQtY3JsLndtLm5ldC9k
+ZW1vY3VzdG9tZXIxX3NlcnZlcmNhLmNybDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYB
+BQUHAwEwDwYDVR0RBAgwBoIEdGVzdDANBgkqhkiG9w0BAQUFAAOCAQEAZxGls/mNT4GyAf9u9lg7
+8sSA27sc3xFvHNogrT4yUCbYAOhLXO4HJ9XuKaFyz4bKz6JGdLaQDknDI1GUvpJLpiPTXk4cq1pp
+HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
+WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
+ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
+ZLCP64EJEfE1mGxCJg==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></cs:CSMessage>""".getBytes("UTF-8")
+
+	byte[] ver2_0IssueTokenCredentialMessageWithDepartment = """<?xml version="1.0" encoding="UTF-8" standalone="no"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:ae="http://certificateservices.org/xsd/autoenroll2_x" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:key="http://certificateservices.org/xsd/sensitivekeys" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.0" timeStamp="2017-03-17T07:48:17.525+01:00" version="2.0" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd"><cs:name>IssueTokenCredentialsRequest</cs:name><cs:sourceId>SOMEREQUESTER</cs:sourceId><cs:destinationId>SOMESOURCEID</cs:destinationId><cs:organisation>someorg</cs:organisation><cs:originator><cs:credential><cs:credentialRequestId>123</cs:credentialRequestId><cs:uniqueId>SomeOriginatorUniqueId</cs:uniqueId><cs:displayName>SomeOrignatorDisplayName</cs:displayName><cs:serialNumber>SomeSerialNumber</cs:serialNumber><cs:issuerId>SomeIssuerId</cs:issuerId><cs:status>100</cs:status><cs:credentialType>SomeCredentialType</cs:credentialType><cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType><cs:attributes><cs:attribute><cs:key>someattrkey</cs:key><cs:value>someattrvalue</cs:value></cs:attribute></cs:attributes><cs:usages><cs:usage>someusage</cs:usage></cs:usages><cs:credentialData>MTIzNDVBQkNFRg==</cs:credentialData><cs:issueDate>1970-01-01T01:00:01.234+01:00</cs:issueDate><cs:expireDate>1970-01-01T01:00:02.234+01:00</cs:expireDate><cs:validFromDate>1970-01-01T01:00:03.234+01:00</cs:validFromDate></cs:credential></cs:originator><cs:payload><credmanagement:IssueTokenCredentialsRequest><credmanagement:tokenRequest><cs:credentialRequests><cs:credentialRequest><cs:credentialRequestId>123</cs:credentialRequestId><cs:credentialType>SomeCredentialType</cs:credentialType><cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType><cs:x509RequestType>SomeX509RequestType</cs:x509RequestType><cs:credentialRequestData>MTIzNDVBQkM=</cs:credentialRequestData></cs:credentialRequest></cs:credentialRequests><cs:user>someuser</cs:user><cs:tokenContainer>SomeTokenContainer</cs:tokenContainer><cs:tokenType>SomeTokenType</cs:tokenType><cs:tokenClass>SomeTokenClass</cs:tokenClass><cs:departmentName>SomeDepartment</cs:departmentName></credmanagement:tokenRequest></credmanagement:IssueTokenCredentialsRequest></cs:payload><ds:Signature><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#12345678-1234-4444-8000-123456789012"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>iiCymH5En3BYs4MA8WKKKgM7gdiZ7JpqNAJxKQYyZXQ=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>ELcrM0+fXwENO6+1CUOzxW5EdctO/pGSCOdrodY0Jb/EtS74kasekXEjGpNPMQ4mKMtVm97H/3D7
+v5hxNvgfixXTM75sBwjLWKCTBAiTnnTaAQF0CJccZ7gohKnkLDp1fUvr8NkBw0M/ACBpsEfLYSbU
+KA1JTm8UauQ+Bzb3nsQib5NvGn/TEdCopblV/K0RDrKwQpFBr3acH4148DIUT3n30Do3Yd3wWmyZ
+Ifijdl+5hjlP4B8uKwZkwQ4oAVbIqMGu2Kg7QL8RkK4jm6VAlgddtm0F3VUGtNHfsRuouSHy+fI4
+ZOjqqtiPOdJYRpp3LDBNxhFFfO6XFWmy6SamGw==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBD
+dXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAx
+MDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBD
+dXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/
+y3i/mT7WwtpW18/QfyUGpYPPxQ4bvPPn61y3jJg/dAbGHvnyQSHfIvrIJUN83q6evvk0bNZNVSEN
+UEP29isE4D+KjD3PFtAzQq18P8m/8mSXMva5VTooEUSDX+VJ/6el6tnyZdc85AlIJkkkvyiDKcjh
+f10yllaiVCHLunGMDXAec4DapPi5GdmSMMXyPOhRx5e+oy6b5q9XmT3C29VNVFf+tkAt3ew3BoQb
+d+VrlBI4oRYq+mfbgkXU6dSKr9DRqhsbu5rU4Jdst2KClXsxaxvC0rVeKQ8iXCDKFH5glzhSYoeW
+l7CI15CdQM6/so7EisSvAgMBAAGjgeMwgeAwHQYDVR0OBBYEFLpidyp0Pc46cUpJf1neFnq/rLJB
+MAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUgEn+Hp9+Yxe4lOhaIPmf++Wu7SYwGAYDVR0gBBEw
+DzANBgsrBgEEAYH1fgMDCTBABgNVHR8EOTA3MDWgM6Axhi9odHRwOi8vYXQtY3JsLndtLm5ldC9k
+ZW1vY3VzdG9tZXIxX3NlcnZlcmNhLmNybDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYB
+BQUHAwEwDwYDVR0RBAgwBoIEdGVzdDANBgkqhkiG9w0BAQUFAAOCAQEAZxGls/mNT4GyAf9u9lg7
+8sSA27sc3xFvHNogrT4yUCbYAOhLXO4HJ9XuKaFyz4bKz6JGdLaQDknDI1GUvpJLpiPTXk4cq1pp
+HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
+WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
+ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
+ZLCP64EJEfE1mGxCJg==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></cs:CSMessage>""".getBytes("UTF-8")
 }

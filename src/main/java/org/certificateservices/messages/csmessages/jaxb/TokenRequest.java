@@ -58,6 +58,7 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="description" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="revokePreviousTokens" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/>
  *         &lt;element name="userData" type="{http://certificateservices.org/xsd/csmessages2_0}Assertions" minOccurs="0"/>
+ *         &lt;element name="departmentName" type="{http://certificateservices.org/xsd/csmessages2_0}departmentnamestring" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -80,7 +81,8 @@ import javax.xml.bind.annotation.XmlType;
     "attributes",
     "description",
     "revokePreviousTokens",
-    "userData"
+    "userData",
+    "departmentName"
 })
 public class TokenRequest {
 
@@ -102,6 +104,7 @@ public class TokenRequest {
     @XmlElement(defaultValue = "false")
     protected Boolean revokePreviousTokens;
     protected Assertions userData;
+    protected String departmentName;
 
     /**
      * Gets the value of the credentialRequests property.
@@ -415,6 +418,30 @@ public class TokenRequest {
         this.userData = value;
     }
 
+
+    /**
+     * Gets the value of the departmentName property.
+     *
+     * @return
+     *     possible object is
+     *     {@link String }
+     *
+     */
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    /**
+     * Sets the value of the departmentName property.
+     *
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *
+     */
+    public void setDepartmentNamen(String value) {
+        this.departmentName = departmentName;
+    }
 
     /**
      * <p>Java class for anonymous complex type.

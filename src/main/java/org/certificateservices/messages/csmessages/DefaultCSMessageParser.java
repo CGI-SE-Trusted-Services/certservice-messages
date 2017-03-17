@@ -96,19 +96,23 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	public static final String CSMESSAGE_NAMESPACE = "http://certificateservices.org/xsd/csmessages2_0";
 	
 	private static final String CSMESSAGE_VERSION_2_0 = "2.0";
+	private static final String CSMESSAGE_VERSION_2_1 = "2.1";
 	
 	public static final String CSMESSAGE_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/csmessages_schema2_0.xsd";
+	public static final String CSMESSAGE_XSD_SCHEMA_2_1_RESOURCE_LOCATION = "/csmessages_schema2_1.xsd";
 	
 	private static final String CSMESSAGE_XSD_SCHEMA_2_0_URI = "http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd";	
 	
 	private static final Map<String,String> csMessageSchemaMap = new HashMap<String,String>();
 	static{
 		csMessageSchemaMap.put(CSMESSAGE_VERSION_2_0, CSMESSAGE_XSD_SCHEMA_2_0_RESOURCE_LOCATION);
+		csMessageSchemaMap.put(CSMESSAGE_VERSION_2_1, CSMESSAGE_XSD_SCHEMA_2_1_RESOURCE_LOCATION);
 	}
 	
 	private static final Map<String,String> csMessageSchemaUriMap = new HashMap<String,String>();
 	static{
 		csMessageSchemaUriMap.put(CSMESSAGE_VERSION_2_0, CSMESSAGE_XSD_SCHEMA_2_0_URI);
+		csMessageSchemaUriMap.put(CSMESSAGE_VERSION_2_1, CSMESSAGE_XSD_SCHEMA_2_0_URI);
 	}
 	
 	public static final String XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION = "/xmldsig-core-schema.xsd";
@@ -117,7 +121,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	public static final String XMLDSIG_NAMESPACE = "http://www.w3.org/2000/09/xmldsig#";
 	public static final String XMLENC_NAMESPACE = "http://www.w3.org/2001/04/xmlenc#";
 	
-	private static final String[] SUPPORTED_CSMESSAGE_VERSIONS = {"2.0"};
+	private static final String[] SUPPORTED_CSMESSAGE_VERSIONS = {CSMESSAGE_VERSION_2_0,CSMESSAGE_VERSION_2_1};
 	
 	private ObjectFactory objectFactory = new ObjectFactory();
 	
@@ -130,7 +134,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	private String sourceId = null;
 	private XMLSigner xmlSigner;
 	
-	public static final String DEFAULT_CSMESSAGE_PROTOCOL = CSMESSAGE_VERSION_2_0;
+	public static final String DEFAULT_CSMESSAGE_PROTOCOL = CSMESSAGE_VERSION_2_1;
 	
 	private CSMessageSignatureLocationFinder cSMessageSignatureLocationFinder = new CSMessageSignatureLocationFinder();
 	/**

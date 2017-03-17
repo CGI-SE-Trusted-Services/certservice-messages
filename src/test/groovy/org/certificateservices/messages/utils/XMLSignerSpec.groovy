@@ -178,7 +178,7 @@ public class XMLSignerSpec extends Specification {
 		when:
 		def result = xmlSigner.marshallDoc(doc)
 		then:
-		result == validSignatureSAMLP;
+		new String(result,"UTF-8").replaceAll("\n","").replaceAll("\r","") == new String(validSignatureSAMLP,"UTF-8").replaceAll("\n","").replaceAll("\r","")
 	}
 
 	def "Verify that checkBasicCertificateValidation checks time validity of a certficate."(){

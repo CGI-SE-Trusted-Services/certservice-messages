@@ -63,6 +63,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="returnDate" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
  *         &lt;element name="dateCreated" type="{http://www.w3.org/2001/XMLSchema}dateTime"/>
  *         &lt;element name="lastUpdated" type="{http://www.w3.org/2001/XMLSchema}dateTime"/>
+ *         &lt;element name="departmentName" type="{http://certificateservices.org/xsd/csmessages2_0}departmentnamestring" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -87,7 +88,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "requestDate",
     "returnDate",
     "dateCreated",
-    "lastUpdated"
+    "lastUpdated",
+    "departmentName"
 })
 public class Token {
 
@@ -120,6 +122,7 @@ public class Token {
     @XmlElement(required = true)
     @XmlSchemaType(name = "dateTime")
     protected XMLGregorianCalendar lastUpdated;
+    protected String departmentName;
 
     /**
      * Gets the value of the serialNumber property.
@@ -465,6 +468,30 @@ public class Token {
         this.lastUpdated = value;
     }
 
+
+    /**
+     * Gets the value of the departmentName property.
+     *
+     * @return
+     *     possible object is
+     *     {@link String }
+     *
+     */
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    /**
+     * Sets the value of the departmentName property.
+     *
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *
+     */
+    public void setDepartmentName(String value) {
+        this.departmentName = value;
+    }
 
     /**
      * <p>Java class for anonymous complex type.
