@@ -95,7 +95,7 @@ public abstract class BasePayloadParser implements PayloadParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	CSMessage parseMessage(byte[] messageData, boolean performValidation, boolean requireSignature)
+	public CSMessage parseMessage(byte[] messageData, boolean performValidation, boolean requireSignature)
 			throws MessageContentException, MessageProcessingException{
 		return getCSMessageParser().parseMessage(messageData, performValidation, requireSignature);
 	}
