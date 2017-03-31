@@ -24,6 +24,7 @@ import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredential
 import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsResponse.Credentials;
 import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsResponse.RevokedCredentials;
 import org.certificateservices.messages.csmessages.BasePayloadParser;
+import org.certificateservices.messages.csmessages.CSMessageParser;
 import org.certificateservices.messages.csmessages.CSMessageResponseData;
 import org.certificateservices.messages.csmessages.PayloadParser;
 import org.certificateservices.messages.csmessages.jaxb.Credential;
@@ -47,12 +48,17 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	public static String NAMESPACE = "http://certificateservices.org/xsd/credmanagement2_0";
 	
 	public static final String CREDMANAGEMENT_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/credmanagement_schema2_0.xsd";
+	public static final String CREDMANAGEMENT_XSD_SCHEMA_2_1_RESOURCE_LOCATION = "/credmanagement_schema2_1.xsd";
 
 	private ObjectFactory of = new ObjectFactory();
-	
-	private static final String[] SUPPORTED_CREDMANAGEMENT_VERSIONS = {"2.0"};
-	
-	private static final String DEFAULT_CREDMANAGEMENT_VERSION = "2.0";
+
+
+	private static final String CREDMANAGEMENT_VERSION_2_0 = "2.0";
+	private static final String CREDMANAGEMENT_VERSION_2_1 = "2.1";
+
+	private static final String[] SUPPORTED_CREDMANAGEMENT_VERSIONS = {CREDMANAGEMENT_VERSION_2_0,CREDMANAGEMENT_VERSION_2_1};
+
+	private static final String DEFAULT_CREDMANAGEMENT_VERSION = CREDMANAGEMENT_VERSION_2_1;
 	
 	
 	/**
@@ -77,6 +83,9 @@ public class CredManagementPayloadParser extends BasePayloadParser {
     	if(payLoadVersion.equals("2.0")){
     		return getClass().getResourceAsStream(CREDMANAGEMENT_XSD_SCHEMA_2_0_RESOURCE_LOCATION);
     	}
+		if(payLoadVersion.equals("2.1")){
+			return getClass().getResourceAsStream(CREDMANAGEMENT_XSD_SCHEMA_2_1_RESOURCE_LOCATION);
+		}
     	
     	throw new MessageContentException("Error unsupported Credential Management Payload version: " + payLoadVersion);
 	}
@@ -96,12 +105,11 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	protected String getDefaultPayloadVersion() {
 		return DEFAULT_CREDMANAGEMENT_VERSION;
 	}
-	
 
 
 	/**
 	 * Method to a IssueTokenCredentialRequest message and populating it with the tokenRequest.
-	 * 
+	 *
 	 * @param requestId the id of the request
 	 * @param destinationId the destinationId used in the CSMessage.
 	 * @param organisation the related organisation
@@ -115,6 +123,26 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
 	public byte[] genIssueTokenCredentialsRequest(String requestId, String destinationId, String organisation, TokenRequest tokenRequest, List<FieldValue> fieldValues, HardTokenData hardTokenData, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
+		return genIssueTokenCredentialsRequest(requestId,destinationId,organisation,tokenRequest,fieldValues,hardTokenData,null,originator,assertions);
+	}
+
+	/**
+	 * Method to a IssueTokenCredentialRequest message and populating it with the tokenRequest.
+	 * 
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param tokenRequest the tokenRequest to add to the CSRequest.
+	 * @param fieldValues containing complementary input data to the request. Can be null if no complementary data is available.
+	 * @param hardTokenData related hard token data to be stored in encrypted storage. Null if not applicable
+	 * @param recoverableKeys a list of keys that should be stored in backed for later recovery in case token is lost.
+	 * @param originator the original requester of a message, null if not applicable
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return generated and signed CSMessage in byte[] format.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genIssueTokenCredentialsRequest(String requestId, String destinationId, String organisation, TokenRequest tokenRequest, List<FieldValue> fieldValues, HardTokenData hardTokenData, List<RecoverableKey> recoverableKeys, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		IssueTokenCredentialsRequest payload = of.createIssueTokenCredentialsRequest();
 		payload.setTokenRequest(tokenRequest);
 		
@@ -128,7 +156,12 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		if(hardTokenData != null){
 			payload.setHardTokenData(hardTokenData);
 		}
-		
+
+		if(recoverableKeys != null) {
+			IssueTokenCredentialsRequest.RecoverableKeys rks = of.createIssueTokenCredentialsRequestRecoverableKeys();
+			rks.getKey().addAll(recoverableKeys);
+			payload.setRecoverableKeys(rks);
+		}
 		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
@@ -510,10 +543,10 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		payload.setTokenSerial(tokenSerial);
 		payload.setRelatedCredentialIssuerId(relatedCredentialIssuerId);
 		payload.setAdminCredential(adminCredential);
-		
-		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), of.createFetchHardTokenDataRequest(payload), originator, assertions);
 	}
-	
+
 	/**
 	 * Method to generate a FetchHardTokenDataResponse
 	 * 
@@ -531,6 +564,54 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		response.setTokenSerial(tokenSerial);
 		response.setEncryptedData(encryptedData);
 		
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), of.createFetchHardTokenDataResponse(response));
+	}
+
+	/**
+	 * Method to generate a RecoverHardTokenDataRequest
+	 *
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param tokenSerial The unique serial number of the hard token within the organisation
+	 * @param relatedCredentialIssuerId The unique id of the issuer of the related credential, usually the subject DN name of the issuer.
+	 * @param adminCredential the credential of the requesting card administrator that need the hard token data. The response data is encrypted with this administrator as recipient.
+	 * @param originator the original requester of a message, null if not applicable.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genRecoverHardTokenRequest(String requestId, String destinationId, String organisation, String tokenSerial, String relatedCredentialIssuerId, Credential adminCredential, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		FetchHardTokenDataRequest payload = of.createFetchHardTokenDataRequest();
+		payload.setTokenSerial(tokenSerial);
+		payload.setRelatedCredentialIssuerId(relatedCredentialIssuerId);
+		payload.setAdminCredential(adminCredential);
+
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), of.createRecoverHardTokenRequest(payload), originator, assertions);
+	}
+
+	/**
+	 * Method to generate a RecoverHardTokenResponse
+	 *
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the request this message is a response to.
+	 * @param tokenSerial The unique serial number of the hard token within the organisation.
+	 * @param encryptedData The token data encrypted with the token administrators credential sent in the request.
+	 * @param keys list of encrypted keys recovered from backend syste,
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public CSMessageResponseData genRecoverHardTokenResponse(String relatedEndEntity, CSMessage request, String tokenSerial, byte[] encryptedData, List<Key> keys, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		RecoverHardTokenResponse response = of.createRecoverHardTokenResponse();
+		response.setTokenSerial(tokenSerial);
+		response.setEncryptedData(encryptedData);
+		RecoverHardTokenResponse.RecoveredKeys rk = of.createRecoverHardTokenResponseRecoveredKeys();
+		rk.getKey().addAll(keys);
+		response.setRecoveredKeys(rk);
+
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 	
@@ -577,7 +658,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	
 
 	/**
-	 * Method to generate a GetTokensRequest
+	 * Method to generate a GetTokensRequest without pagination used in 2.0 protocol
 	 * 
      * @param requestId the id of the request
 	 * @param destinationId the destinationId used in the CSMessage.
@@ -591,16 +672,39 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
 	public byte[] genGetTokensRequest(String requestId, String destinationId, String organisation, String serialNumber, boolean exactMatch,  Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		return genGetTokensRequest(requestId,destinationId,organisation,serialNumber,exactMatch,null,null,originator,assertions);
+	}
+
+	/**
+	 * Method to generate a GetTokensRequest with pagination support (2.1)
+	 *
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param serialNumber The unique serial number of the hard token within the organisation, complete or part of the serial number
+	 * @param exactMatch If only exactly matching tokens should be fetched.
+	 * @param startIndex the index to fetch the resulting user data.
+	 * @param resultSize the maximum number of entries to return, should not be larger that the maximum setting in server.
+	 * @param originator the original requester of a message, null if not applicable.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genGetTokensRequest(String requestId, String destinationId, String organisation, String serialNumber, boolean exactMatch, Integer startIndex, Integer resultSize, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
 		GetTokensRequest payload = of.createGetTokensRequest();
 		payload.setSerialNumber(serialNumber);
 		payload.setExactMatch(exactMatch);
-		
+		payload.setStartIndex(startIndex);
+		payload.setResultSize(resultSize);
+
 		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
-	
+
+
 	
 	/**
-	 * Method to generate a GetTokensResponse
+	 * Method to generate a GetTokensResponse, used for 2.0 messages.
 	 * 
 	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
 	 * @param request the request this message is a response to.
@@ -611,19 +715,48 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
 	public CSMessageResponseData genGetTokensResponse(String relatedEndEntity, CSMessage request, List<Token> tokens, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		return genGetTokensResponse(relatedEndEntity,request,tokens,null,null,assertions);
+	}
+
+
+	/**
+	 * Method to generate a GetTokensResponse used for pagination (pagination elements are only populated if request is 2.1 or above
+	 *
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the request this message is a response to.
+	 * @param tokens a list of matching tokens, never null.
+	 * @param startIndex the start index of the page in the result set. Is only set if request is 2.1 or above
+	 * @param totalMatching the total matching users in query. Is only set if request is 2.1 or above
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public CSMessageResponseData genGetTokensResponse(String relatedEndEntity, CSMessage request, List<Token> tokens, Integer startIndex, Integer totalMatching, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
 		GetTokensResponse response = of.createGetTokensResponse();
 		GetTokensResponse.Tokens tokensElement = new GetTokensResponse.Tokens();
 		for(Token t : tokens){
 			tokensElement.getToken().add(t);
 		}
-		
+
 		response.setTokens(tokensElement);
-		
+		if(!request.getPayLoadVersion().equals(CREDMANAGEMENT_VERSION_2_0)){
+			response.setStartIndex(startIndex);
+			response.setTotalMatching(totalMatching);
+		}else{
+			// if protocol is 2.0 should departmentName be removed.
+			for(Token token: tokens){
+				token.setDepartmentName(null);
+			}
+		}
+
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
+
+
 	
 	/**
-	 * Method to generate a GetUsersRequest
+	 * Method to generate a GetUsersRequest without pagination used in 2.0 protocol
 	 * 
      * @param requestId the id of the request
 	 * @param destinationId the destinationId used in the CSMessage.
@@ -637,16 +770,38 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
 	public byte[] genGetUsersRequest(String requestId, String destinationId, String organisation, String uniqueId, boolean exactMatch,  Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		return genGetUsersRequest(requestId,destinationId,organisation,uniqueId,exactMatch,null,null,originator,assertions);
+	}
+
+	/**
+	 * Method to generate a GetUsersRequest with pagination support (2.1)
+	 *
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param uniqueId The unique id of the user within the organisation, complete or part of the unique id to search for
+	 * @param exactMatch If only exactly matching tokens should be fetched.
+	 * @param startIndex the index to fetch the resulting user data.
+	 * @param resultSize the maximum number of entries to return, should not be larger that the maximum setting in server.
+	 * @param originator the original requester of a message, null if not applicable.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genGetUsersRequest(String requestId, String destinationId, String organisation, String uniqueId, boolean exactMatch, Integer startIndex, Integer resultSize, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
 		GetUsersRequest payload = of.createGetUsersRequest();
 		payload.setUniqueId(uniqueId);
 		payload.setExactMatch(exactMatch);
-		
+		payload.setStartIndex(startIndex);
+		payload.setResultSize(resultSize);
+
 		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
 	}
 	
 	
 	/**
-	 * Method to generate a GetTokensResponse
+	 * Method to generate a GetUsersResponse, used for 2.0 messages.
 	 * 
 	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
 	 * @param request the request this message is a response to.
@@ -657,15 +812,155 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
 	public CSMessageResponseData genGetUsersResponse(String relatedEndEntity, CSMessage request, List<User> users, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		return genGetUsersResponse(relatedEndEntity,request,users,null,null,assertions);
+	}
+
+	/**
+	 * Method to generate a GetUsersResponse used for pagination (pagination elements are only populated if request is 2.1 or above
+	 *
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the request this message is a response to.
+	 * @param users a list of matching users, never null.
+	 * @param startIndex the start index of the page in the result set. Is only set if request is 2.1 or above
+	 * @param totalMatching the total matching users in query. Is only set if request is 2.1 or above
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public CSMessageResponseData genGetUsersResponse(String relatedEndEntity, CSMessage request, List<User> users, Integer startIndex, Integer totalMatching, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
 		GetUsersResponse response = of.createGetUsersResponse();
 		GetUsersResponse.Users usersElement = new GetUsersResponse.Users();
 		for(User u : users){
 			usersElement.getUser().add(u);
 		}
-		
+
 		response.setUsers(usersElement);
-		
+		if(!request.getPayLoadVersion().equals(CREDMANAGEMENT_VERSION_2_0)){
+			response.setStartIndex(startIndex);
+			response.setTotalMatching(totalMatching);
+		}else{
+			// if protocol is 2.0 should departmentName be removed.
+			for(User u : users){
+				if(u.getTokens() != null) {
+					for (Token t : u.getTokens().getToken()) {
+						t.setDepartmentName(null);
+					}
+				}
+			}
+		}
+
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}
 
+	/**
+	 * Method to generate a RecoverKeyRequest
+	 *
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param adminCredential the admin credential to encrypt the key store data to.
+	 * @param relatedCredentials the credentials pointing out which keys should be recovered from backend store.
+	 * @param originator the original requester of a message, null if not applicable.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genRecoverKeyRequest(String requestId, String destinationId, String organisation, Credential adminCredential, List<Credential> relatedCredentials,  Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		RecoverKeyRequest payload = of.createRecoverKeyRequest();
+		payload.setAdminCredential(adminCredential);
+		RecoverKeyRequest.RelatedCredentials rc = of.createRecoverKeyRequestRelatedCredentials();
+		rc.getCredential().addAll(relatedCredentials);
+		payload.setRelatedCredentials(rc);
+
+
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+	}
+
+	/**
+	 * Method to generate a RecoverKeyResponse
+	 *
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the request this message is a response to.
+	 * @param keys a list of recovered keys, never null.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public CSMessageResponseData genRecoverKeyResponse(String relatedEndEntity, CSMessage request, List<Key> keys, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		RecoverKeyResponse response = of.createRecoverKeyResponse();
+		RecoverKeyResponse.RecoveredKeys rk = of.createRecoverKeyResponseRecoveredKeys();
+		rk.getKey().addAll(keys);
+		response.setRecoveredKeys(rk);
+
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+	}
+
+	/**
+	 * Method to generate a StoreKeyRequest
+	 *
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param keys a list en encrypted keys to store in backend system.
+	 * @param originator the original requester of a message, null if not applicable.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genStoreKeyRequest(String requestId, String destinationId, String organisation, List<Key> keys,  Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		StoreKeyRequest payload = of.createStoreKeyRequest();
+		StoreKeyRequest.RecoverableKeys rk = of.createStoreKeyRequestRecoverableKeys();
+		rk.getKey().addAll(keys);
+		payload.setRecoverableKeys(rk);
+
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+	}
+
+	/**
+	 * Method to generate a StoreKeyResponse
+	 *
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the request this message is a response to.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public CSMessageResponseData genStoreKeyResponse(String relatedEndEntity, CSMessage request, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		StoreKeyResponse response = of.createStoreKeyResponse();
+
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+	}
+
+	/**
+	 * Help method to generate a Key structure consisting of a relatedCredential and an encryptedKey.
+	 *
+	 * @param relatedCredential the related credential to the key.
+	 * @param encryptedKey the key in xml encrypted base64binary string.
+     * @return a newly generate key.
+     */
+	public Key genKey(Credential relatedCredential, byte[] encryptedKey){
+		Key retval = of.createKey();
+		retval.setRelatedCredential(relatedCredential);
+		retval.setEncryptedData(encryptedKey);
+		return retval;
+	}
+
+	/**
+	 * Help method to generate a RecoverableKey structure consisting of a relatedCredentialRequestId and an encryptedKey.
+	 *
+	 * @param relatedCredentialRequestId reference to the credential request id.
+	 * @param encryptedKey the key in xml encrypted base64binary string.
+	 * @return a newly generate key.
+	 */
+	public RecoverableKey genRecoverableKey(int relatedCredentialRequestId, byte[] encryptedKey){
+		RecoverableKey retval = of.createRecoverableKey();
+		retval.setRelatedCredentialRequestId(relatedCredentialRequestId);
+		retval.setEncryptedData(encryptedKey);
+		return retval;
+	}
 }

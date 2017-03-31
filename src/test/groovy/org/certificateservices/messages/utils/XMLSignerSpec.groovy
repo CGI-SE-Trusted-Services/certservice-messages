@@ -2,7 +2,9 @@ package org.certificateservices.messages.utils
 
 import org.apache.xml.security.Init
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.ContextMessageSecurityProvider
 import org.certificateservices.messages.MessageContentException
+import org.certificateservices.messages.MessageSecurityProvider
 import org.certificateservices.messages.SigningAlgorithmScheme
 import org.certificateservices.messages.TestUtils
 import org.certificateservices.messages.assertion.AssertionPayloadParser
@@ -35,7 +37,7 @@ public class XMLSignerSpec extends Specification {
 	def setup(){
 		setupRegisteredPayloadParser();
 		assertionPayloadParser = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE);
-		
+
 		xmlSigner = assertionPayloadParser.xmlSigner
 		csXMLSigner = new XMLSigner(CSMessageParserManager.getCSMessageParser().messageSecurityProvider,
 			assertionPayloadParser.getDocumentBuilder(), true,
@@ -176,7 +178,7 @@ public class XMLSignerSpec extends Specification {
 		when:
 		def result = xmlSigner.marshallDoc(doc)
 		then:
-		result == validSignatureSAMLP;
+		new String(result,"UTF-8").replaceAll("\n","").replaceAll("\r","") == new String(validSignatureSAMLP,"UTF-8").replaceAll("\n","").replaceAll("\r","")
 	}
 
 	def "Verify that checkBasicCertificateValidation checks time validity of a certficate."(){
@@ -194,6 +196,51 @@ public class XMLSignerSpec extends Specification {
 		XMLSigner.systemTime = TestUtils.mockSystemTime("2001-10-01")
 		then:
 		XMLSigner.checkBasicCertificateValidation(cert) == false
+
+	}
+
+	def "Verify that correct method is used if message security provider is ContextMessageSecurityProvider"(){
+		setup:
+		ContextMessageSecurityProvider.Context c = new ContextMessageSecurityProvider.Context("SomeUsage")
+		ContextMessageSecurityProvider securityProvider = Mock(ContextMessageSecurityProvider)
+		when:
+
+		XMLSigner x = new XMLSigner(c, securityProvider, assertionPayloadParser.getDocumentBuilder(), true,
+				xmlSigner.defaultSignatureLocationFinder,
+				xmlSigner.defaultOrganisationLookup)
+		x.verifyEnvelopedSignature(validSignatureSAMLP)
+		then:
+		1 * securityProvider.isValidAndAuthorized(c,!null,_) >> true
+
+		when:
+		Document doc = xmlSigner.documentBuilder.parse(new ByteArrayInputStream(sAMLPWithNoSignature))
+		x.sign(doc, xmlSigner.defaultSignatureLocationFinder)
+		then:
+		1 * securityProvider.getSigningAlgorithmScheme(c) >> SigningAlgorithmScheme.RSAWithSHA256
+		1 * securityProvider.getSigningCertificate(c) >> xmlSigner.messageSecurityProvider.getSigningCertificate()
+		1 * securityProvider.getSigningKey(c) >> xmlSigner.messageSecurityProvider.getSigningKey()
+
+	}
+
+	def "Verify that correct method is used if message security provider is MessageSecurityProvider"(){
+		setup:
+		MessageSecurityProvider securityProvider = Mock(MessageSecurityProvider)
+		when:
+
+		XMLSigner x = new XMLSigner(securityProvider, assertionPayloadParser.getDocumentBuilder(), true,
+				xmlSigner.defaultSignatureLocationFinder,
+				xmlSigner.defaultOrganisationLookup)
+		x.verifyEnvelopedSignature(validSignatureSAMLP)
+		then:
+		1 * securityProvider.isValidAndAuthorized(!null,_) >> true
+
+		when:
+		Document doc = xmlSigner.documentBuilder.parse(new ByteArrayInputStream(sAMLPWithNoSignature))
+		x.sign(doc, xmlSigner.defaultSignatureLocationFinder)
+		then:
+		1 * securityProvider.getSigningAlgorithmScheme() >> SigningAlgorithmScheme.RSAWithSHA256
+		1 * securityProvider.getSigningCertificate() >> xmlSigner.messageSecurityProvider.getSigningCertificate()
+		1 * securityProvider.getSigningKey() >> xmlSigner.messageSecurityProvider.getSigningKey()
 
 	}
 	

@@ -1,41 +1,16 @@
-/**
- * 
- */
+/************************************************************************
+ *                                                                       *
+ *  Certificate Service - Messages                                       *
+ *                                                                       *
+ *  This software is free software; you can redistribute it and/or       *
+ *  modify it under the terms of the GNU Affero General Public License   *
+ *  License as published by the Free Software Foundation; either         *
+ *  version 3   of the License, or any later version.                    *
+ *                                                                       *
+ *  See terms of license at gnu.org.                                     *
+ *                                                                       *
+ *************************************************************************/
 package org.certificateservices.messages.utils;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.Key;
-import java.security.MessageDigest;
-import java.security.PublicKey;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.HashSet;
-import java.util.InvalidPropertiesFormatException;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-
-import javax.crypto.KeyGenerator;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 import org.apache.xml.security.encryption.EncryptedData;
 import org.apache.xml.security.encryption.EncryptedKey;
@@ -46,11 +21,8 @@ import org.apache.xml.security.keys.content.KeyName;
 import org.apache.xml.security.keys.content.X509Data;
 import org.apache.xml.security.utils.Base64;
 import org.apache.xml.security.utils.EncryptionConstants;
-import org.certificateservices.messages.EncryptionAlgorithmScheme;
-import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.MessageSecurityProvider;
-import org.certificateservices.messages.NoDecryptionKeyFoundException;
+import org.certificateservices.messages.*;
+import org.certificateservices.messages.ContextMessageSecurityProvider.Context;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -58,6 +30,31 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import javax.crypto.KeyGenerator;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.Key;
+import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+
 
 /**
  * Helper methods to perform XML Encryption and Decryption tasks on JAXB Elements.
@@ -82,7 +79,64 @@ public class XMLEncrypter {
 	private KeyGenerator dataKeyGenerator;
 	
 	private Set<String> supportedEncryptionChipers = new HashSet<String>();
-	
+
+	private Context context = ContextMessageSecurityProvider.DEFAULT_CONTEXT;
+
+	/**
+	 * Contructor of a xml XML Encrypter when used with context specific message security providers.
+	 * @param context the message security context to use with the security provider.
+	 * @param securityProvider the used context message security provider
+	 * @param documentBuilder the DOM Document Builder used for related messages.
+	 * @param marshaller the JAXB Marshaller used for related messages.
+	 * @param unmarshaller the JAXB Unmarshaller used for related messages.
+	 * @throws MessageProcessingException if problems occurred initializing this helper class.
+	 */
+	public XMLEncrypter(Context context,
+						MessageSecurityProvider securityProvider,
+						DocumentBuilder documentBuilder,
+						Marshaller marshaller,
+						Unmarshaller unmarshaller) throws MessageProcessingException{
+		this.context = context;
+		this.securityProvider = securityProvider;
+		this.documentBuilder = documentBuilder;
+		this.marshaller = marshaller;
+		this.unmarshaller = unmarshaller;
+
+		try {
+
+			EncryptionAlgorithmScheme scheme;
+			if(securityProvider instanceof ContextMessageSecurityProvider){
+				scheme = ((ContextMessageSecurityProvider) securityProvider).getEncryptionAlgorithmScheme(context);
+			}else{
+				scheme = securityProvider.getEncryptionAlgorithmScheme();
+			}
+			this.encKeyXMLCipher = XMLCipher.getInstance(scheme.getKeyEncryptionAlgorithmURI());
+			this.encDataXMLCipher = XMLCipher.getInstance(scheme.getDataEncryptionAlgorithmURI());
+			this.decChiper = XMLCipher.getInstance();
+
+			cf = CertificateFactory.getInstance("X.509");
+
+			switch(scheme){
+				case RSA_OAEP_WITH_AES256:
+				case RSA_PKCS1_5_WITH_AES256:
+					dataKeyGenerator = KeyGenerator.getInstance("AES");
+					dataKeyGenerator.init(256);
+					break;
+				default:
+					throw new MessageProcessingException("Unsupported Encryption scheme " + scheme);
+			}
+
+			for(EncryptionAlgorithmScheme s : EncryptionAlgorithmScheme.values()){
+				supportedEncryptionChipers.add(s.getDataEncryptionAlgorithmURI());
+				supportedEncryptionChipers.add(s.getKeyEncryptionAlgorithmURI());
+			}
+
+		} catch (Exception e) {
+			throw new MessageProcessingException("Error instanciating XML chipers: " + e.getMessage(),e);
+		}
+
+	}
+
 	/**
 	 * Contructor of a xml XML Encrypter
 	 * @param securityProvider the used message security provider
@@ -95,37 +149,7 @@ public class XMLEncrypter {
 			            DocumentBuilder documentBuilder, 
 			            Marshaller marshaller,
 			            Unmarshaller unmarshaller) throws MessageProcessingException{
-		this.securityProvider = securityProvider;
-		this.documentBuilder = documentBuilder;
-		this.marshaller = marshaller;
-		this.unmarshaller = unmarshaller;
-		
-		try {
-			this.encKeyXMLCipher = XMLCipher.getInstance(securityProvider.getEncryptionAlgorithmScheme().getKeyEncryptionAlgorithmURI());
-			this.encDataXMLCipher = XMLCipher.getInstance(securityProvider.getEncryptionAlgorithmScheme().getDataEncryptionAlgorithmURI());
-			this.decChiper = XMLCipher.getInstance();
-
-			cf = CertificateFactory.getInstance("X.509");
-			
-			switch(securityProvider.getEncryptionAlgorithmScheme()){
-			case RSA_OAEP_WITH_AES256:
-			case RSA_PKCS1_5_WITH_AES256:
-				dataKeyGenerator = KeyGenerator.getInstance("AES");
-				dataKeyGenerator.init(256);
-				break;
-				default:
-					throw new MessageProcessingException("Unsupported Encryption scheme " + securityProvider.getEncryptionAlgorithmScheme());
-			}
-			
-			for(EncryptionAlgorithmScheme scheme : EncryptionAlgorithmScheme.values()){
-				supportedEncryptionChipers.add(scheme.getDataEncryptionAlgorithmURI());
-				supportedEncryptionChipers.add(scheme.getKeyEncryptionAlgorithmURI());
-			}
-			
-		} catch (Exception e) {
-			throw new MessageProcessingException("Error instanciating XML chipers: " + e.getMessage(),e);
-		}
-
+		this(ContextMessageSecurityProvider.DEFAULT_CONTEXT,securityProvider,documentBuilder,marshaller,unmarshaller);
 	}
 	
 	/**
@@ -374,7 +398,12 @@ public class XMLEncrypter {
 	 */
 	private Key findKEK(Element encryptedElement) throws NoDecryptionKeyFoundException {
 		try{
-			Set<String> availableKeyIds = securityProvider.getDecryptionKeyIds();
+			Set<String> availableKeyIds;
+			if(securityProvider instanceof ContextMessageSecurityProvider){
+				availableKeyIds = ((ContextMessageSecurityProvider) securityProvider).getDecryptionKeyIds(context);
+			}else{
+				availableKeyIds = securityProvider.getDecryptionKeyIds();
+			}
 			
 			NodeList keyNameList = encryptedElement.getElementsByTagNameNS(XMLDSIG_NAMESPACE, "KeyName");
 			for(int i=0; i<keyNameList.getLength();i++){
@@ -383,7 +412,7 @@ public class XMLEncrypter {
 				if(keyId != null){
 					keyId = keyId.trim();
 					if(availableKeyIds.contains(keyId)){
-						return securityProvider.getDecryptionKey(keyId);
+						return getDecryptionKey(keyId);
 					}
 				}			
 			}
@@ -396,7 +425,7 @@ public class XMLEncrypter {
 					X509Certificate cert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(Base64.decode(certData)));
 					String keyId = generateKeyId(cert.getPublicKey());
 					if(availableKeyIds.contains(keyId)){
-						return securityProvider.getDecryptionKey(keyId);
+						return getDecryptionKey(keyId);
 					}			
 				}
 			}
@@ -409,6 +438,14 @@ public class XMLEncrypter {
 
 	}
 
+
+	private PrivateKey getDecryptionKey(String keyId) throws MessageProcessingException {
+		if(securityProvider instanceof ContextMessageSecurityProvider){
+			return ((ContextMessageSecurityProvider) securityProvider).getDecryptionKey(context,keyId);
+		}else{
+			return securityProvider.getDecryptionKey(keyId);
+		}
+	}
 
 	private static MessageDigest generateKeyDigest;
 	/**

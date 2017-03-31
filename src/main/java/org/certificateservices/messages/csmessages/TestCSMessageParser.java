@@ -135,6 +135,12 @@ public class TestCSMessageParser implements CSMessageParser {
 		return null;
 	}
 
+	public byte[] marshallCSMessage(CSMessage csMessage)
+			throws MessageProcessingException, MessageContentException {
+
+		return null;
+	}
+
 	
 	public void validatePayloadObject(CSMessageVersion version,
 			Object payLoadObject) throws MessageContentException {

@@ -12,10 +12,7 @@
 *************************************************************************/
 package org.certificateservices.messages.assertion;
 
-import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.MessageSecurityProvider;
-import org.certificateservices.messages.NoDecryptionKeyFoundException;
+import org.certificateservices.messages.*;
 import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
 import org.certificateservices.messages.credmanagement.jaxb.FieldValue;
 import org.certificateservices.messages.csmessages.BasePayloadParser;
@@ -93,12 +90,15 @@ public class AssertionPayloadParser extends BasePayloadParser {
     public static final String ATTRIBUTE_NAME_TYPE = "Type";
 	public static final String ATTRIBUTE_NAME_DISPLAYNAME = "DisplayName";
 	public static final String ATTRIBUTE_NAME_ROLES = "Roles";
+	public static final String ATTRIBUTE_NAME_DEPARTMENTS = "Departments";
 	public static final String ATTRIBUTE_NAME_USERDATA = "UserData";
 	public static final String ATTRIBUTE_NAME_TOKENTYPE = "TokenType";
 	public static final String ATTRIBUTE_NAME_DESTINATIONID = "DestinationId";
 	public static final String ATTRIBUTE_NAME_APPROVALID = "ApprovalId";
 	public static final String ATTRIBUTE_NAME_APPROVEDREQUESTS = "ApprovedRequests";
 	public static final String ATTRIBUTE_NAME_APPROVERS = "Approvers";
+
+	public static final String ALL_DEPARTMENTS_ATTRIBUTE_VALUE = "ALL_DEPARTMENTS";
 	
 
 	private SystemTime systemTime = new DefaultSystemTime();
@@ -124,7 +124,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 			cf = CertificateFactory.getInstance("X.509");
 			
 			assertionSchemaValidator = generateUserDataSchema().newValidator();
-			samlAssertionMessageParser.init(secProv, null);
+			samlAssertionMessageParser.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv, null);
 		} catch (Exception e) {
 			throw new MessageProcessingException("Error initializing JAXB in AssertionPayloadParser: " + e.getMessage(),e);
 		}
@@ -205,7 +205,10 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	public byte[] genUserDataRequest(String subjectId, String tokenType) throws MessageContentException, MessageProcessingException{
 		return genAttributeQuery(subjectId, ATTRIBUTE_NAME_USERDATA, tokenType);
 	}
-	
+
+	public byte[] genDistributedAuthorizationTicket(String inResponseTo, String issuer, Date notBefore, Date notOnOrAfter, String subjectId, List<String> roles, List<X509Certificate> receipients) throws MessageContentException, MessageProcessingException{
+		return  genDistributedAuthorizationTicket(inResponseTo,issuer,notBefore,notOnOrAfter,subjectId,roles,null, receipients);
+	}
 	
 	/**
 	 * Method to generate a Distributed Authorization Ticket with an signed assertion containing the 
@@ -217,33 +220,24 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	 * @param notOnOrAfter end validity of the ticket.
 	 * @param subjectId the subject id string having the roles.
 	 * @param roles a list of roles the user has.
+	 * @param departments a list of departments the user belongs to, null for no departments attribute.
 	 * @param receipients list of certificates the roles will be encrypted for.
 	 * @return a generated and signed SAMLP message.
 	 * @throws MessageContentException if parameters where invalid.
 	 * @throws MessageProcessingException if internal problems occurred generated the message.
 	 */
-	public byte[] genDistributedAuthorizationTicket(String inResponseTo, String issuer, Date notBefore, Date notOnOrAfter, String subjectId, List<String> roles, List<X509Certificate> receipients) throws MessageContentException, MessageProcessingException{
+	public byte[] genDistributedAuthorizationTicket(String inResponseTo, String issuer, Date notBefore, Date notOnOrAfter, String subjectId, List<String> roles, List<String> departments,List<X509Certificate> receipients) throws MessageContentException, MessageProcessingException{
 		try{
 			List<Object> attributes = new ArrayList<Object>();
 			AttributeType typeAttributeType = of.createAttributeType();
 			typeAttributeType.setName(ATTRIBUTE_NAME_TYPE);
 			typeAttributeType.getAttributeValue().add(AssertionTypeEnum.AUTHORIZATION_TICKET.getAttributeValue());
 			attributes.add(typeAttributeType);
-			
-			AttributeType roleAttributeType = of.createAttributeType();			
-			roleAttributeType.setName(ATTRIBUTE_NAME_ROLES);
-			for(String role : roles){		
-				roleAttributeType.getAttributeValue().add(role);
+
+			attributes.add(createEncryptedAttribute(ATTRIBUTE_NAME_ROLES, roles, receipients));
+			if(departments != null) {
+				attributes.add(createEncryptedAttribute(ATTRIBUTE_NAME_DEPARTMENTS, departments, receipients));
 			}
-			JAXBElement<AttributeType> roleAttribute = of.createAttribute(roleAttributeType);
-			
-			@SuppressWarnings("unchecked")
-			JAXBElement<EncryptedDataType> encryptedData = (JAXBElement<EncryptedDataType>) getAssertionUnmarshaller().unmarshal(xmlEncrypter.encryptElement(roleAttribute, receipients, true));
-		    EncryptedElementType encryptedElementType1 = of.createEncryptedElementType();
-		    
-			encryptedElementType1.setEncryptedData(encryptedData.getValue());
-			attributes.add(encryptedElementType1);
-			
 			return marshallAndSignAssertion(genSuccessfulSAMLPResponse(inResponseTo, generateAssertion(issuer, notBefore, notOnOrAfter, subjectId, attributes)));
 
 		}catch(Exception e){
@@ -931,6 +925,22 @@ public class AssertionPayloadParser extends BasePayloadParser {
         
         return schema;
     }
+
+	private EncryptedElementType createEncryptedAttribute(String attributeName, List<String> attributeValues, List<X509Certificate> receipients) throws JAXBException, SAXException, MessageProcessingException {
+		AttributeType roleAttributeType = of.createAttributeType();
+		roleAttributeType.setName(attributeName);
+		for(String value : attributeValues){
+			roleAttributeType.getAttributeValue().add(value);
+		}
+		JAXBElement<AttributeType> roleAttribute = of.createAttribute(roleAttributeType);
+
+		@SuppressWarnings("unchecked")
+		JAXBElement<EncryptedDataType> encryptedData = (JAXBElement<EncryptedDataType>) getAssertionUnmarshaller().unmarshal(xmlEncrypter.encryptElement(roleAttribute, receipients, true));
+		EncryptedElementType encryptedElementType1 = of.createEncryptedElementType();
+
+		encryptedElementType1.setEncryptedData(encryptedData.getValue());
+		return encryptedElementType1;
+	}
 
 	public static class AssertionLSResourceResolver implements LSResourceResolver {
 

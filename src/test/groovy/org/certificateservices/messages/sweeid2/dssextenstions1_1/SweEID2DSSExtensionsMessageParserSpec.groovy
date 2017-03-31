@@ -1,6 +1,7 @@
 package org.certificateservices.messages.sweeid2.dssextenstions1_1
 
 import org.bouncycastle.util.encoders.Base64
+import org.certificateservices.messages.ContextMessageSecurityProvider
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser
 import org.certificateservices.messages.dss1.core.DSS1CoreMessageParser
 import org.certificateservices.messages.dss1.core.ResultMajorValues
@@ -32,7 +33,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 	def currentDate
 
 	def setup() {
-		emp.init(secProv);
+		emp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv);
 		emp.systemTime = mockedSystemTime
 
 		currentDate = emp.systemTime.systemTime

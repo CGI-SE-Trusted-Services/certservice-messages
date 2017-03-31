@@ -1,6 +1,7 @@
 package org.certificateservices.messages.utils
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.ContextMessageSecurityProvider
 import org.certificateservices.messages.MessageSecurityProvider
 import org.certificateservices.messages.csmessages.CSMessageParserManager
 
@@ -276,6 +277,53 @@ public class XMLEncrypterSpec extends Specification {
 		xmlEncrypter.verifyCiphers(encryptedElement)
 		then:
 		thrown MessageContentException
+	}
+
+	def "Verify that correct method is used if message security provider is ContextMessageSecurityProvider"(){
+		setup:
+		ContextMessageSecurityProvider.Context c = new ContextMessageSecurityProvider.Context("SomeUsage")
+		ContextMessageSecurityProvider securityProvider = Mock(ContextMessageSecurityProvider)
+
+		xmlEncrypter.encKeyXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
+		xmlEncrypter.encDataXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
+		def encDoc = genComplexSAMLWithToEncryptedData()
+
+		when:
+		XMLEncrypter x = new XMLEncrypter(c,securityProvider, assertionPayloadParser.getDocumentBuilder(),
+				assertionPayloadParser.getAssertionMarshaller(),
+				assertionPayloadParser.getAssertionUnmarshaller())
+		then:
+		1 * securityProvider.getEncryptionAlgorithmScheme(c) >> EncryptionAlgorithmScheme.RSA_PKCS1_5_WITH_AES256
+
+		when:
+		x.decryptDoc(encDoc,new EncryptedAssertionXMLConverter())
+		then:
+		2 * securityProvider.getDecryptionKeyIds(c) >> xmlEncrypter.securityProvider.getDecryptionKeyIds()
+		2 * securityProvider.getDecryptionKey(c,!null) >> xmlEncrypter.securityProvider.getDecryptionKey(null)
+
+	}
+
+	def "Verify that correct method is used if message security provider is MessageSecurityProvider"(){
+		setup:
+		MessageSecurityProvider	 securityProvider = Mock(MessageSecurityProvider)
+
+		xmlEncrypter.encKeyXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
+		xmlEncrypter.encDataXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
+		def encDoc = genComplexSAMLWithToEncryptedData()
+
+		when:
+		XMLEncrypter x = new XMLEncrypter(securityProvider, assertionPayloadParser.getDocumentBuilder(),
+				assertionPayloadParser.getAssertionMarshaller(),
+				assertionPayloadParser.getAssertionUnmarshaller())
+		then:
+		1 * securityProvider.getEncryptionAlgorithmScheme() >> EncryptionAlgorithmScheme.RSA_PKCS1_5_WITH_AES256
+
+		when:
+		x.decryptDoc(encDoc,new EncryptedAssertionXMLConverter())
+		then:
+		2 * securityProvider.getDecryptionKeyIds() >> xmlEncrypter.securityProvider.getDecryptionKeyIds()
+		2 * securityProvider.getDecryptionKey(!null) >> xmlEncrypter.securityProvider.getDecryptionKey(null)
+
 	}
 	
 	private def genSAMLAttribute(String name, String value){

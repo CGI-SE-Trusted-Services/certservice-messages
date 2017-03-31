@@ -63,6 +63,7 @@ import org.certificateservices.messages.csmessages.jaxb.ObjectFactory;
 import org.certificateservices.messages.csmessages.jaxb.Originator;
 import org.certificateservices.messages.csmessages.jaxb.Payload;
 import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
+import org.certificateservices.messages.sensitivekeys.SensitiveKeysParser;
 import org.certificateservices.messages.utils.*;
 import org.certificateservices.messages.utils.XMLSigner.SignatureLocationFinder;
 import org.w3c.dom.Document;
@@ -95,19 +96,23 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	public static final String CSMESSAGE_NAMESPACE = "http://certificateservices.org/xsd/csmessages2_0";
 	
 	private static final String CSMESSAGE_VERSION_2_0 = "2.0";
+	private static final String CSMESSAGE_VERSION_2_1 = "2.1";
 	
 	public static final String CSMESSAGE_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/csmessages_schema2_0.xsd";
+	public static final String CSMESSAGE_XSD_SCHEMA_2_1_RESOURCE_LOCATION = "/csmessages_schema2_1.xsd";
 	
 	private static final String CSMESSAGE_XSD_SCHEMA_2_0_URI = "http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd";	
 	
 	private static final Map<String,String> csMessageSchemaMap = new HashMap<String,String>();
 	static{
 		csMessageSchemaMap.put(CSMESSAGE_VERSION_2_0, CSMESSAGE_XSD_SCHEMA_2_0_RESOURCE_LOCATION);
+		csMessageSchemaMap.put(CSMESSAGE_VERSION_2_1, CSMESSAGE_XSD_SCHEMA_2_1_RESOURCE_LOCATION);
 	}
 	
 	private static final Map<String,String> csMessageSchemaUriMap = new HashMap<String,String>();
 	static{
 		csMessageSchemaUriMap.put(CSMESSAGE_VERSION_2_0, CSMESSAGE_XSD_SCHEMA_2_0_URI);
+		csMessageSchemaUriMap.put(CSMESSAGE_VERSION_2_1, CSMESSAGE_XSD_SCHEMA_2_0_URI);
 	}
 	
 	public static final String XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION = "/xmldsig-core-schema.xsd";
@@ -116,7 +121,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	public static final String XMLDSIG_NAMESPACE = "http://www.w3.org/2000/09/xmldsig#";
 	public static final String XMLENC_NAMESPACE = "http://www.w3.org/2001/04/xmlenc#";
 	
-	private static final String[] SUPPORTED_CSMESSAGE_VERSIONS = {"2.0"};
+	private static final String[] SUPPORTED_CSMESSAGE_VERSIONS = {CSMESSAGE_VERSION_2_0,CSMESSAGE_VERSION_2_1};
 	
 	private ObjectFactory objectFactory = new ObjectFactory();
 	
@@ -129,7 +134,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	private String sourceId = null;
 	private XMLSigner xmlSigner;
 	
-	private final String defaultVersion = CSMESSAGE_VERSION_2_0;
+	public static final String DEFAULT_CSMESSAGE_PROTOCOL = CSMESSAGE_VERSION_2_1;
 	
 	private CSMessageSignatureLocationFinder cSMessageSignatureLocationFinder = new CSMessageSignatureLocationFinder();
 	/**
@@ -287,7 +292,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * 
 	 */
 	public byte[] generateCSRequestMessage(String requestId, String destinationId, String organisation, String payLoadVersion, Object payload, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
-		CSMessage message = genCSMessage(defaultVersion, payLoadVersion,null, requestId, destinationId, organisation, originator, payload,  assertions);
+		CSMessage message = genCSMessage(DEFAULT_CSMESSAGE_PROTOCOL, payLoadVersion,null, requestId, destinationId, organisation, originator, payload,  assertions);
 		return marshallAndSignCSMessage( message);
 	}
 
@@ -339,7 +344,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		IsApprovedRequest payload = objectFactory.createIsApprovedRequest();
 		payload.setApprovalId(approvalId);
 		
-		return generateCSRequestMessage(requestId, destinationId, organisation, defaultVersion, payload, originator, assertions);
+		return generateCSRequestMessage(requestId, destinationId, organisation, DEFAULT_CSMESSAGE_PROTOCOL, payload, originator, assertions);
 	}
 	
 	/**
@@ -584,8 +589,34 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		
 		
 	}
-		
-    /**
+
+
+	/**
+	 * Method that marshalls the message to byte array in UTF-8 format without adding any signature.
+	 * @param csMessage the CSMessage to marshall, never null.
+	 * @return a marshalled message.
+	 * @throws MessageProcessingException if problems occurred when processing the message.
+	 */
+	public byte[] marshallCSMessage(CSMessage csMessage) throws MessageProcessingException, MessageContentException{
+		if(csMessage == null){
+			throw new MessageProcessingException("Error marshalling CS Message, message cannot be null.");
+		}
+
+		try {
+			Document doc = getDocumentBuilder().newDocument();
+			String version = csMessage.getVersion();
+
+			jaxbData.getCSMessageMarshaller(version).marshal(csMessage, doc);
+
+			return xmlSigner.marshallDoc(doc);
+		} catch (JAXBException e) {
+			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
+		} catch (ParserConfigurationException e) {
+			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
+		}
+	}
+
+	/**
      * Method that tries to parse the xml version from a message
      * @param messageData the messageData to extract version from.
      * @return the version in the version and payLoadVersion attributes of the message.
@@ -876,7 +907,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	     */
 	    JAXBContext getJAXBContext() throws JAXBException, MessageProcessingException{
 	    	if(jaxbContext== null){
-	    		jaxbClassPath = "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.xmldsig.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.csexport.data.jaxb";
+	    		jaxbClassPath = "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.xmldsig.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.csexport.data.jaxb:org.certificateservices.messages.sensitivekeys.jaxb";
 	    			    		
 	    		for(String namespace : PayloadParserRegistry.getRegistredNamespaces()){
 	    			String jaxbPackage = PayloadParserRegistry.getParser(namespace).getJAXBPackage();
@@ -900,11 +931,12 @@ public class DefaultCSMessageParser implements CSMessageParser {
 				InputStream payLoadSchemaStream = pp.getSchemaAsInputStream(payLoadVersion);
 		    	String csMessageSchemaLocation = csMessageSchemaMap.get(version);
 				
-		        Source[] sources = new Source[(payLoadSchemaStream == null ? 2: 3)];
+		        Source[] sources = new Source[(payLoadSchemaStream == null ? 3: 4)];
 		        sources[0] = new StreamSource(getClass().getResourceAsStream(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION));
-		        sources[1] = new StreamSource(getClass().getResourceAsStream(csMessageSchemaLocation));
+				sources[1] = new StreamSource(getClass().getResourceAsStream(SensitiveKeysParser.SENSITIVE_KEYS_XSD_SCHEMA_RESOURCE_LOCATION));
+		        sources[2] = new StreamSource(getClass().getResourceAsStream(csMessageSchemaLocation));
 		        if(payLoadSchemaStream != null){
-		          sources[2] = new StreamSource(payLoadSchemaStream);
+		          sources[3] = new StreamSource(payLoadSchemaStream);
 		        }
 				try {
 					Schema s = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema(sources);

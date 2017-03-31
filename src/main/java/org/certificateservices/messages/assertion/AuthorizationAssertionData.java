@@ -23,6 +23,7 @@ import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType;
 public class AuthorizationAssertionData extends AssertionData {
 
 	private List<String> roles;
+	private List<String> departments;
 
 	/**
 	 * Main Constructor
@@ -53,6 +54,14 @@ public class AuthorizationAssertionData extends AssertionData {
 									}
 								}						
 							}
+							if(((AttributeType) attr).getName().equals(AssertionPayloadParser.ATTRIBUTE_NAME_DEPARTMENTS)){
+								departments = new ArrayList<String>();
+								for(Object next : ((AttributeType) attr).getAttributeValue()){
+									if(next instanceof String){
+										departments.add((String) next);
+									}
+								}
+							}
 						}
 					}
 				}
@@ -69,9 +78,17 @@ public class AuthorizationAssertionData extends AssertionData {
 		return roles;
 	}
 
+	/**
+	 * @return roles a list of departments the user has.
+	 */
+	public List<String> getDepartments() {
+		return departments;
+	}
+
 	@Override
 	public String toString() {
 		return "AuthorizationAssertionData [roles=" + roles
+				+ ", departments=" + departments
 				+ ", id="
 				+ getId() + ", notBefore=" + getNotBefore()
 				+ ", notOnOrAfter=" + getNotOnOrAfter()

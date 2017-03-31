@@ -3,6 +3,7 @@ package org.certificateservices.messages.saml2
 import org.apache.xml.security.Init
 import org.apache.xml.security.utils.Base64
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.certificateservices.messages.ContextMessageSecurityProvider
 import org.certificateservices.messages.DummyMessageSecurityProvider
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.MessageSecurityProvider
@@ -71,7 +72,7 @@ class CommonSAMLMessageParserSpecification extends Specification {
 		mockedSystemTime.getSystemTime() >> new Date(1436279213000)
 
 		samp = new SAMLAssertionMessageParser();
-		samp.init(secProv, null);
+		samp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv, null);
 		samp.systemTime  = mockedSystemTime
 
 		cf = CertificateFactory.getInstance("X.509")

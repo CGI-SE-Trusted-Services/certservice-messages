@@ -1,6 +1,7 @@
 package org.certificateservices.messages.saml2
 
 import org.bouncycastle.util.encoders.Base64
+import org.certificateservices.messages.ContextMessageSecurityProvider
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.assertion.AssertionPayloadParser
 import org.certificateservices.messages.assertion.ResponseStatusCodes
@@ -33,7 +34,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
 	def setup(){
 		spmp = new SAMLProtocolMessageParser();
-		spmp.init(secProv, null);
+		spmp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv, null);
 		spmp.systemTime = mockedSystemTime
 
 		bsmp = spmp;
@@ -54,7 +55,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		customMock.getCustomJAXBClasspath() >> "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.credmanagement.jaxb:org.certificateservices.messages.authorization.jaxb"
 		customMock.getCustomSchemaLocations() >> [DefaultCSMessageParser.CSMESSAGE_XSD_SCHEMA_2_0_RESOURCE_LOCATION , CredManagementPayloadParser.CREDMANAGEMENT_XSD_SCHEMA_2_0_RESOURCE_LOCATION , AuthorizationPayloadParser.AUTHORIZATION_XSD_SCHEMA_2_0_RESOURCE_LOCATION]
 		when:
-		p.init(secProv, customMock);
+		p.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv, customMock);
 		then:
 		p.customJAXBClasspath == "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.credmanagement.jaxb:org.certificateservices.messages.authorization.jaxb"
 		p.customSchemaLocations.length == 3
