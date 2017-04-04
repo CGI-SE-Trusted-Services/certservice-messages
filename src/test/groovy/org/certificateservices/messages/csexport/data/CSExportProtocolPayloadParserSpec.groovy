@@ -3,6 +3,7 @@ package org.certificateservices.messages.csexport.data
 import org.apache.xml.security.Init
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.MessageContentException
+import org.certificateservices.messages.MessageProcessingException
 import org.certificateservices.messages.csexport.data.jaxb.CSExport
 import org.certificateservices.messages.csexport.protocol.jaxb.*
 import org.certificateservices.messages.csexport.protocol.CSExportProtocolPayloadParser
@@ -11,6 +12,7 @@ import org.certificateservices.messages.csmessages.CSMessageResponseData
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser
 import org.certificateservices.messages.csmessages.PayloadParserRegistry
 import org.certificateservices.messages.csmessages.jaxb.CSMessage
+import org.certificateservices.messages.csmessages.jaxb.RequestStatus
 import spock.lang.Specification
 
 import java.security.Security
@@ -24,7 +26,7 @@ class CSExportProtocolPayloadParserSpec extends Specification {
 	CSExportDataParser csExportDataParser;
 	ObjectFactory of = new ObjectFactory()
 	org.certificateservices.messages.csmessages.jaxb.ObjectFactory csMessageOf = new org.certificateservices.messages.csmessages.jaxb.ObjectFactory()
-	
+
 	def setupSpec(){
 		Security.addProvider(new BouncyCastleProvider())
 		Init.init();
@@ -47,6 +49,7 @@ class CSExportProtocolPayloadParserSpec extends Specification {
 		pp.getDefaultPayloadVersion() == "2.0"
 		pp.getSupportedVersions() == ["2.0"] as String[]
 	}
+
 
 	def "Verify that genGetCSExportRequest() generates a valid xml message and genGetCSExportResponse() generates a valid CSMessageResponseData without any query paramters"(){
 		when:
@@ -87,7 +90,42 @@ class CSExportProtocolPayloadParserSpec extends Specification {
 		csExport.organisations.organisation.size() == 1
 		csExport.tokenTypes.tokenType.size() == 1
 		csExport.signature.keyInfo.content.size() == 1
-		
+
+		when:
+		CSMessageResponseData  unAuthFailureResponse = csMessageParser.genCSFailureResponse("UNKNOWN", requestMessage , RequestStatus.NOTAUTHORIZED, "Not authorized to process request.", "SOMESOURCEID", null)
+		CSMessage failureResponse = (CSMessage) pp.parseMessage(unAuthFailureResponse.responseData, false, false)
+		pp.getCSExportDataFromResponse(failureResponse)
+
+		then:
+		def e = thrown(MessageProcessingException)
+		assert e.message.equals("Failure CSExport response; status: " + RequestStatus.NOTAUTHORIZED.toString() + ", message: Not authorized to process request.")
+
+		when:
+		unAuthFailureResponse = csMessageParser.genCSFailureResponse("UNKNOWN", requestMessage , RequestStatus.APPROVALREQUIRED, "Approval is required to process request.", "SOMESOURCEID", null)
+		failureResponse = (CSMessage) pp.parseMessage(unAuthFailureResponse.responseData, false, false)
+		pp.getCSExportDataFromResponse(failureResponse)
+
+		then:
+		e = thrown(MessageProcessingException)
+		assert e.message.equals("Failure CSExport response; status: " + RequestStatus.APPROVALREQUIRED.toString() + ", message: Approval is required to process request.")
+
+		when:
+		unAuthFailureResponse = csMessageParser.genCSFailureResponse("UNKNOWN", requestMessage , RequestStatus.ERROR, "Error occurred to process request.", "SOMESOURCEID", null)
+		failureResponse = (CSMessage) pp.parseMessage(unAuthFailureResponse.responseData, false, false)
+		pp.getCSExportDataFromResponse(failureResponse)
+
+		then:
+		e = thrown(MessageProcessingException)
+		assert e.message.equals("Failure CSExport response; status: " + RequestStatus.ERROR.toString() + ", message: Error occurred to process request.")
+
+		when:
+		unAuthFailureResponse = csMessageParser.genCSFailureResponse("UNKNOWN", requestMessage , RequestStatus.ILLEGALARGUMENT, "Wrong argument found in the request.", "SOMESOURCEID", null)
+		failureResponse = (CSMessage) pp.parseMessage(unAuthFailureResponse.responseData, false, false)
+		pp.getCSExportDataFromResponse(failureResponse)
+
+		then:
+		e = thrown(MessageContentException)
+		assert e.message.equals("Failure CSExport response; status: " + RequestStatus.ILLEGALARGUMENT.toString() + ", message: Wrong argument found in the request.")
 	}
 
 	def "Verify that generation using query parameters generates valid XML"(){
