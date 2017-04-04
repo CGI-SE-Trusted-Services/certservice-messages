@@ -24,8 +24,11 @@ import org.certificateservices.messages.csmessages.BasePayloadParser;
 import org.certificateservices.messages.csmessages.CSMessageResponseData;
 import org.certificateservices.messages.csmessages.PayloadParser;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
+import org.certificateservices.messages.csmessages.jaxb.CSResponse;
 import org.certificateservices.messages.csmessages.jaxb.Credential;
+import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
 
+import javax.xml.bind.JAXBElement;
 import java.io.InputStream;
 import java.util.List;
 
@@ -145,11 +148,38 @@ public class CSExportProtocolPayloadParser extends BasePayloadParser {
 
 	/**
 	 * Help method to extract the CSExport data form a GetCSExportResponse CSMessage.
+	 *
 	 * @param resp the CSMessage, never null
-	 * @return the internal CSExport object.
-     */
-	public CSExport getCSExportDataFromResponse(CSMessage resp){
-		GetCSExportResponse pl = (GetCSExportResponse) resp.getPayload().getAny();
-		return (CSExport) pl.getResult().getAny();
+	 * @return he internal CSExport object.
+	 * @throws MessageContentException when failure illegal argument message response is received.
+	 * @throws MessageProcessingException when no CS export data can be parsed from response.
+	 */
+	public CSExport getCSExportDataFromResponse(CSMessage resp) throws MessageContentException, MessageProcessingException {
+		try {
+			Object responsePayload = resp.getPayload().getAny();
+			if (responsePayload instanceof JAXBElement<?> && ((JAXBElement<?>) responsePayload).getValue() instanceof CSResponse) {
+				CSResponse csResponse = (CSResponse) ((JAXBElement<?>) responsePayload).getValue();
+				RequestStatus requestStatus = csResponse.getStatus();
+				if (requestStatus.equals(RequestStatus.ILLEGALARGUMENT)) {
+					throw new MessageContentException("Failure CSExport response; status: " + requestStatus.toString() + ", message: " + csResponse.getFailureMessage());
+				} else if (requestStatus.equals(RequestStatus.ERROR) || requestStatus.equals(RequestStatus.APPROVALREQUIRED) || requestStatus.equals(RequestStatus.NOTAUTHORIZED)) {
+					throw new MessageProcessingException("Failure CSExport response; status: " + requestStatus.toString() + ", message: " + csResponse.getFailureMessage());
+				}
+			}
+
+			if (responsePayload instanceof GetCSExportResponse) {
+				return (CSExport) (((GetCSExportResponse) responsePayload).getResult().getAny());
+			}
+
+		} catch (MessageContentException e) {
+			throw e;
+		} catch (MessageProcessingException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new MessageProcessingException("Error parsing CSExport response from message: " + e.getMessage(), e);
+		}
+
+		throw new MessageProcessingException("Error parsing CSExport response from message, make sure it is a CSResponse object.");
+
 	}
 }
