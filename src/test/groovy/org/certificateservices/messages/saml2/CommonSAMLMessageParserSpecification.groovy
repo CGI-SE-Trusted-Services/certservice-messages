@@ -72,7 +72,7 @@ class CommonSAMLMessageParserSpecification extends Specification {
 		mockedSystemTime.getSystemTime() >> new Date(1436279213000)
 
 		samp = new SAMLAssertionMessageParser();
-		samp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv, null);
+		samp.init(secProv, null);
 		samp.systemTime  = mockedSystemTime
 
 		cf = CertificateFactory.getInstance("X.509")

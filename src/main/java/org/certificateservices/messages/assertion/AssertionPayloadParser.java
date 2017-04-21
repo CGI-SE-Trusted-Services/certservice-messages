@@ -124,7 +124,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 			cf = CertificateFactory.getInstance("X.509");
 			
 			assertionSchemaValidator = generateUserDataSchema().newValidator();
-			samlAssertionMessageParser.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv, null);
+			samlAssertionMessageParser.init(secProv, null);
 		} catch (Exception e) {
 			throw new MessageProcessingException("Error initializing JAXB in AssertionPayloadParser: " + e.getMessage(),e);
 		}
@@ -800,16 +800,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 			throw new MessageProcessingException("Error marshalling message " + e.getMessage(), e);
 		}
 
-		List<QName> beforeSiblings = new ArrayList<QName>();
-		beforeSiblings.add(new QName(NAMESPACE, "Subject"));
-		beforeSiblings.add(new QName(NAMESPACE, "Conditions"));
-		beforeSiblings.add(new QName(NAMESPACE, "Advice"));
-		beforeSiblings.add(new QName(NAMESPACE, "Statement"));
-		beforeSiblings.add(new QName(NAMESPACE, "AuthnStatement"));
-		beforeSiblings.add(new QName(NAMESPACE, "AuthzDecisionStatement"));
-		beforeSiblings.add(new QName(NAMESPACE, "AttributeStatement"));
-
-		return xmlSigner.marshallAndSign(doc,  assertionSignatureLocationFinder, beforeSiblings);
+		return xmlSigner.marshallAndSign(ContextMessageSecurityProvider.DEFAULT_CONTEXT,doc,  assertionSignatureLocationFinder);
 	}
 
 	

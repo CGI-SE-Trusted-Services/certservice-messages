@@ -12,6 +12,7 @@
 *************************************************************************/
 package org.certificateservices.messages.csexport.data;
 
+import org.certificateservices.messages.ContextMessageSecurityProvider;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
@@ -254,7 +255,7 @@ public class CSExportDataParser {
 			throw new MessageProcessingException("Error marshalling message " + e.getMessage(), e);
 		}
 
-		return xmlSigner.marshallAndSign(doc, csExportDataSignatureLocationFinder, null);
+		return xmlSigner.marshallAndSign(ContextMessageSecurityProvider.DEFAULT_CONTEXT,doc, csExportDataSignatureLocationFinder);
 	}
 	
 

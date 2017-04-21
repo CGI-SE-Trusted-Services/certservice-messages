@@ -22,6 +22,7 @@ import javax.xml.namespace.QName
 
 import static org.certificateservices.messages.TestUtils.printXML
 import static org.certificateservices.messages.TestUtils.slurpXml
+import static org.certificateservices.messages.ContextMessageSecurityProvider.DEFAULT_CONTEXT
 
 class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
@@ -33,7 +34,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 	def currentDate
 
 	def setup() {
-		emp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv);
+		emp.init(secProv);
 		emp.systemTime = mockedSystemTime
 
 		currentDate = emp.systemTime.systemTime
@@ -64,7 +65,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 				"tobesigned1".bytes, null, null,null, null),emp.genSignTaskData(null,SigType.CMS, null,null,
 				"tobesigned2".bytes, null, null,null, null)])
 		when:
-		byte[] data = emp.genSignRequest("SomeRequestId","SomeProfile", signRequestExtension,signTasks, true);
+		byte[] data = emp.genSignRequest(DEFAULT_CONTEXT,"SomeRequestId","SomeProfile", signRequestExtension,signTasks, true);
 		Document xmlDoc = emp.getDocumentBuilder().parse(new ByteArrayInputStream(data))
 		Element signRequestElement = xmlDoc.getDocumentElement()
 		Element signRequestExtensionElement = xmlDoc.getElementsByTagNameNS(SweEID2DSSExtensionsMessageParser.NAMESPACE,"SignRequestExtension").item(0)
@@ -92,13 +93,13 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.InputDocuments.Other.SignTasks.SignTaskData.size() == 2
 
 		when:
-		SignRequest sr = emp.parseMessage(data, true)
+		SignRequest sr = emp.parseMessage(DEFAULT_CONTEXT,data, true)
 		then:
 		sr.requestID == "SomeRequestId"
 		sr.optionalInputs.any.get(0) instanceof JAXBElement<SignRequestExtensionType>
 
 		when: "Try unsigned"
-		data = emp.genSignRequest("SomeRequestId","SomeProfile", signRequestExtension,signTasks, false);
+		data = emp.genSignRequest(DEFAULT_CONTEXT,"SomeRequestId","SomeProfile", signRequestExtension,signTasks, false);
 		//printXML(data)
 		xml = slurpXml(data)
 		then:
@@ -109,7 +110,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.InputDocuments.Other.SignTasks.SignTaskData.size() == 2
 
 		when:
-		sr = emp.parseMessage(data, false)
+		sr = emp.parseMessage(DEFAULT_CONTEXT,data, false)
 		then:
 		sr.requestID == "SomeRequestId"
 	}
@@ -123,7 +124,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		JAXBElement<SignTasksType> signTasks = emp.genSignTasks([emp.genSignTaskData(null,SigType.ASiC, null,null,
 				"tobesigned1".bytes, null, null,null, null),emp.genSignTaskData(null,SigType.CMS, null,null,
 				"tobesigned2".bytes, null, null,null, null)])
-		byte[] signRequestData = emp.genSignRequest("SomeRequestId","SomeProfile", signRequestExtension,signTasks, true);
+		byte[] signRequestData = emp.genSignRequest(DEFAULT_CONTEXT,"SomeRequestId","SomeProfile", signRequestExtension,signTasks, true);
 
 		JAXBElement<SignTasksType> responseSignTasks = emp.genSignTasks([emp.genSignTaskData(null,SigType.ASiC, null,null,
 				"tobesigned3".bytes, null, null,null, null),emp.genSignTaskData(null,SigType.CMS, null,null,
@@ -132,7 +133,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		when:
 		JAXBElement<SignResponseExtensionType> resp = emp.genSignResponseExtension("1.5",currentDate,signRequestData,emp.genSignerAssertionInfo(createContextInfo(), createAttributeStatement(), null),
 				twoReceiptiensValidFirst, createOtherResponseInfo());
-		byte[] data = emp.genSignResponse("SomeRequestId","SomeProfile", emp.genResult(ResultMajorValues.Success,null,null,null),resp,responseSignTasks,true)
+		byte[] data = emp.genSignResponse(DEFAULT_CONTEXT,"SomeRequestId","SomeProfile", emp.genResult(ResultMajorValues.Success,null,null,null),resp,responseSignTasks,true)
 		Document xmlDoc = emp.getDocumentBuilder().parse(new ByteArrayInputStream(data))
 		Element signRequestElement = xmlDoc.getDocumentElement()
 		Element signResponseExtensionElement = xmlDoc.getElementsByTagNameNS(SweEID2DSSExtensionsMessageParser.NAMESPACE,"SignResponseExtension").item(0)
@@ -161,13 +162,13 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.SignatureObject.Other.SignTasks.SignTaskData.size() == 2
 
 		when:
-		SignResponse sr = emp.parseMessage(data, true)
+		SignResponse sr = emp.parseMessage(DEFAULT_CONTEXT,data, true)
 		then:
 		sr.requestID == "SomeRequestId"
 		sr.optionalOutputs.any.get(0) instanceof JAXBElement<SignResponseExtensionType>
 
 		when: "Try unsigned"
-		data = emp.genSignResponse("SomeRequestId","SomeProfile", emp.genResult(ResultMajorValues.Success,null,null,null),resp,responseSignTasks,false)
+		data = emp.genSignResponse(DEFAULT_CONTEXT,"SomeRequestId","SomeProfile", emp.genResult(ResultMajorValues.Success,null,null,null),resp,responseSignTasks,false)
 		//printXML(data)
 		xml = slurpXml(data)
 		then:
@@ -178,7 +179,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.SignatureObject.Other.SignTasks.SignTaskData.size() == 2
 
 		when:
-		sr = emp.parseMessage(data, false)
+		sr = emp.parseMessage(DEFAULT_CONTEXT,data, false)
 		then:
 		sr.requestID == "SomeRequestId"
 	}
@@ -207,7 +208,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.OtherRequestInfo.KeyName[0] == "SomeKeyName7"
 
 		when:
-		SignRequestExtensionType t2 = emp.parseMessage(d, false)
+		SignRequestExtensionType t2 = emp.parseMessage(DEFAULT_CONTEXT,d, false)
 		then:
 		t2.version == "1.5"
 
@@ -224,7 +225,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 
 
 		when:
-		t2 = emp.parseMessage(d, false)
+		t2 = emp.parseMessage(DEFAULT_CONTEXT,d, false)
 		then:
 		t2.version == "1.1"
 	}
@@ -256,7 +257,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.OtherProperties.KeyName.size() == 2
 
 		when:
-		t = emp.parseMessage(d, false)
+		t = emp.parseMessage(DEFAULT_CONTEXT,d, false)
 		then:
 		t.certType ==  "QC"
 
@@ -269,7 +270,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.@CertType.size() == 0
 
 		when:
-		t = emp.parseMessage(d, false)
+		t = emp.parseMessage(DEFAULT_CONTEXT,d, false)
 		then:
 		t.certType ==  "PKC"
 
@@ -313,7 +314,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.Message == "U29tZU1lc3NhZ2U="
 
 		when:
-		t = emp.parseMessage(d, false)
+		t = emp.parseMessage(DEFAULT_CONTEXT,d, false)
 		then:
 		t.mustShow == true
 
@@ -328,7 +329,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.Message == "U29tZU1lc3NhZ2U="
 
 		when:
-		t = emp.parseMessage(d, false)
+		t = emp.parseMessage(DEFAULT_CONTEXT,d, false)
 		then:
 		t.mustShow == false
 
@@ -346,12 +347,12 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.EncryptedMessage.size() == 1
 
 		when:
-		t = emp.parseMessage(d, false)
+		t = emp.parseMessage(DEFAULT_CONTEXT,d, false)
 		then:
 		t.encryptedMessage != null
 
 		when: "Test to decrypt the message"
-		t = emp.decryptSignMessageData(t)
+		t = emp.decryptSignMessageData(DEFAULT_CONTEXT,t)
 
 		then:
 		new String(t.message,"UTF-8") == "SomeMessage"
@@ -376,7 +377,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.OtherResponseInfo.KeyName[0] == "SomeKeyName3"
 
 		when:
-		SignResponseExtensionType t2 = emp.parseMessage(d, false)
+		SignResponseExtensionType t2 = emp.parseMessage(DEFAULT_CONTEXT,d, false)
 		then:
 		t2.version == "1.5"
 
@@ -390,7 +391,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.ResponseTime == "2015-07-07T16:26:53.000+02:00"
 
 		when:
-		t2 = emp.parseMessage(d, false)
+		t2 = emp.parseMessage(DEFAULT_CONTEXT,d, false)
 		then:
 		t2.version == "1.1"
 	}
@@ -407,7 +408,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.SamlAssertions.size() == 1
 
 		when:
-		t = emp.parseMessage(d, false)
+		t = emp.parseMessage(DEFAULT_CONTEXT,d, false)
 		then:
 		t.contextInfo != null
 
@@ -423,7 +424,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.SamlAssertions.size() == 0
 
 		when:
-		t = emp.parseMessage(d, false)
+		t = emp.parseMessage(DEFAULT_CONTEXT,d, false)
 		then:
 		t.contextInfo != null
 	}
@@ -444,7 +445,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.AssertionRef == "SomeAssertionRef"
 
 		when:
-		t = emp.parseMessage(d,false)
+		t = emp.parseMessage(DEFAULT_CONTEXT,d,false)
 		then:
 		t.serviceID == "SomeServiceID"
 
@@ -459,7 +460,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.AuthnContextClassRef == "SomeAuthnContextClassRef"
 
 		when:
-		t = emp.parseMessage(d,false)
+		t = emp.parseMessage(DEFAULT_CONTEXT,d,false)
 		then:
 		t.authnContextClassRef == "SomeAuthnContextClassRef"
 
@@ -484,7 +485,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.OtherSignTaskData.KeyName.size() == 2
 
 		when: "try to parse"
-		t = emp.parseMessage(d,false)
+		t = emp.parseMessage(DEFAULT_CONTEXT,d,false)
 		then:
 		t.signTaskId == "SomeSignTaskId"
 
@@ -499,7 +500,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.ToBeSignedBytes == new String(Base64.encode("tobesigned".bytes))
 
 		when: "try to parse"
-		t = emp.parseMessage(d,false)
+		t = emp.parseMessage(DEFAULT_CONTEXT,d,false)
 		then:
 		t.sigType == "ASiC"
 
@@ -519,7 +520,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		xml.SignTaskData[1].@SigType == "CMS"
 
 		when: "try to parse"
-		SignTasksType t2 = emp.parseMessage(d,false)
+		SignTasksType t2 = emp.parseMessage(DEFAULT_CONTEXT,d,false)
 		then:
 		t2.signTaskData.size() == 2
 
