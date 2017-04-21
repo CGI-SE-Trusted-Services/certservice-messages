@@ -32,7 +32,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<build.version>1.0.22</build.version>
+		<build.version>1.0.34</build.version>
 	</properties>
 
 	<dependencies>

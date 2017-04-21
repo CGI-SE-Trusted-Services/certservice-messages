@@ -5,6 +5,7 @@ import org.certificateservices.messages.ContextMessageSecurityProvider
 import org.certificateservices.messages.MessageSecurityProvider
 import org.certificateservices.messages.csmessages.CSMessageParserManager
 
+import javax.crypto.KeyGenerator
 import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate
@@ -93,8 +94,8 @@ public class XMLEncrypterSpec extends Specification {
 	@Unroll
 	def "Verify that encryptElement generates encrypted XML document with included certificate using encryption scheme: #encScheme"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipher = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipher = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
 		
 		AttributeType attributeType1 = of.createAttributeType()
 		attributeType1.getAttributeValue().add("Hej Svejs")
@@ -125,8 +126,8 @@ public class XMLEncrypterSpec extends Specification {
 	@Unroll
 	def "Verify that encryptElement generates encrypted XML document with included keyid using encryption scheme: #encScheme"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipher = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipher = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());		
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
 		
 		when:
 		Document encDoc = xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute","Hej Svejs" ), threeReceipients, true);
@@ -151,8 +152,8 @@ public class XMLEncrypterSpec extends Specification {
 	@Unroll
 	def "Verify that decryptDocument decrypts document encrypted with certificate as keyinfo using encryption scheme: #encScheme"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipher = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipher = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
 		def encDoc = docToStringToDoc(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute","Hej Svejs" ), twoReceiptiensValidFirst, false))
 		when:
         JAXBElement<AttributeType> decryptedAttribute = xmlEncrypter.decryptDocument(encDoc)
@@ -168,8 +169,8 @@ public class XMLEncrypterSpec extends Specification {
 	@Unroll
 	def "Verify that decryptDocument decrypts document encrypted with keyname as keyinfo using encryption scheme: #encScheme"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipher = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipher = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
 		def encDoc = docToStringToDoc(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute","Hej Svejs" ), twoReceiptiensValidFirst, true))
 		when:
 		JAXBElement<AttributeType> decryptedAttribute = xmlEncrypter.decryptDocument(encDoc)
@@ -184,8 +185,8 @@ public class XMLEncrypterSpec extends Specification {
 	@Unroll
 	def "Verify that decryptDocument decrypts document even if valid key info isn't the first one using : #encScheme"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipher = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipher = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
 		def encDoc = docToStringToDoc(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute","Hej Svejs" ), twoReceiptiensValidLast, true))
 		when:
 		JAXBElement<AttributeType> decryptedAttribute = xmlEncrypter.decryptDocument(encDoc)
@@ -200,8 +201,8 @@ public class XMLEncrypterSpec extends Specification {
 
 	def "Verify that decryptDocument throws NoDecryptionKeyFoundException if no valid key info could be found"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT] = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT] = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
 		def encDoc = docToStringToDoc(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute","Hej Svejs" ), noValidReceiptients, true))
 		when:
 		xmlEncrypter.decryptDocument(encDoc)
@@ -220,8 +221,8 @@ public class XMLEncrypterSpec extends Specification {
 	
 	def "Verify that decryptDocument can decrypt Assertion containing multiple encrypted SAMLAttributes with the same reciepients"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
 		def encDoc = genComplexSAMLWithToEncryptedData()
 		when:
 		JAXBElement<AttributeType> assertion = xmlEncrypter.decryptDocument(encDoc, new EncryptedAssertionXMLConverter())
@@ -284,19 +285,35 @@ public class XMLEncrypterSpec extends Specification {
 		ContextMessageSecurityProvider.Context c = new ContextMessageSecurityProvider.Context("SomeUsage")
 		ContextMessageSecurityProvider securityProvider = Mock(ContextMessageSecurityProvider)
 
-		xmlEncrypter.encKeyXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
 		def encDoc = genComplexSAMLWithToEncryptedData()
 
 		when:
-		XMLEncrypter x = new XMLEncrypter(c,securityProvider, assertionPayloadParser.getDocumentBuilder(),
+		XMLEncrypter x = new XMLEncrypter(securityProvider, assertionPayloadParser.getDocumentBuilder(),
 				assertionPayloadParser.getAssertionMarshaller(),
 				assertionPayloadParser.getAssertionUnmarshaller())
+		x.decryptDoc(c, encDoc,new EncryptedAssertionXMLConverter())
 		then:
-		1 * securityProvider.getEncryptionAlgorithmScheme(c) >> EncryptionAlgorithmScheme.RSA_PKCS1_5_WITH_AES256
+		2 * securityProvider.getDecryptionKeyIds(c) >> xmlEncrypter.securityProvider.getDecryptionKeyIds()
+		2 * securityProvider.getDecryptionKey(c,!null) >> xmlEncrypter.securityProvider.getDecryptionKey(null)
+
+	}
+
+	def "Verify that correct method is used if message security provider is ContextMessageSecurityProvider with default context"(){
+		setup:
+		ContextMessageSecurityProvider.Context c = ContextMessageSecurityProvider.DEFAULT_CONTEXT
+		ContextMessageSecurityProvider securityProvider = Mock(ContextMessageSecurityProvider)
+
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
+		def encDoc = genComplexSAMLWithToEncryptedData()
 
 		when:
-		x.decryptDoc(encDoc,new EncryptedAssertionXMLConverter())
+		XMLEncrypter x = new XMLEncrypter(securityProvider, assertionPayloadParser.getDocumentBuilder(),
+				assertionPayloadParser.getAssertionMarshaller(),
+				assertionPayloadParser.getAssertionUnmarshaller())
+		x.decryptDoc(c, encDoc,new EncryptedAssertionXMLConverter())
 		then:
 		2 * securityProvider.getDecryptionKeyIds(c) >> xmlEncrypter.securityProvider.getDecryptionKeyIds()
 		2 * securityProvider.getDecryptionKey(c,!null) >> xmlEncrypter.securityProvider.getDecryptionKey(null)
@@ -307,23 +324,98 @@ public class XMLEncrypterSpec extends Specification {
 		setup:
 		MessageSecurityProvider	 securityProvider = Mock(MessageSecurityProvider)
 
-		xmlEncrypter.encKeyXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipher = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
 		def encDoc = genComplexSAMLWithToEncryptedData()
 
 		when:
 		XMLEncrypter x = new XMLEncrypter(securityProvider, assertionPayloadParser.getDocumentBuilder(),
 				assertionPayloadParser.getAssertionMarshaller(),
 				assertionPayloadParser.getAssertionUnmarshaller())
-		then:
-		1 * securityProvider.getEncryptionAlgorithmScheme() >> EncryptionAlgorithmScheme.RSA_PKCS1_5_WITH_AES256
 
-		when:
 		x.decryptDoc(encDoc,new EncryptedAssertionXMLConverter())
 		then:
 		2 * securityProvider.getDecryptionKeyIds() >> xmlEncrypter.securityProvider.getDecryptionKeyIds()
 		2 * securityProvider.getDecryptionKey(!null) >> xmlEncrypter.securityProvider.getDecryptionKey(null)
 
+	}
+
+	def "Verify getScheme() calls correct method in message security provider"(){
+		setup:
+		ContextMessageSecurityProvider.Context c = new ContextMessageSecurityProvider.Context("SomeUsage")
+		MessageSecurityProvider	securityProvider = Mock(MessageSecurityProvider)
+		when:
+		XMLEncrypter x = new XMLEncrypter(securityProvider, assertionPayloadParser.getDocumentBuilder(),
+				assertionPayloadParser.getAssertionMarshaller(),
+				assertionPayloadParser.getAssertionUnmarshaller())
+		x.getScheme(c)
+		then:
+		1 * securityProvider.getEncryptionAlgorithmScheme()
+
+	}
+
+	def "Verify getScheme() calls correct method in context message security provider"(){
+		setup:
+		ContextMessageSecurityProvider.Context c = new ContextMessageSecurityProvider.Context("SomeUsage")
+		MessageSecurityProvider	securityProvider = Mock(ContextMessageSecurityProvider)
+		when:
+		XMLEncrypter x = new XMLEncrypter(securityProvider, assertionPayloadParser.getDocumentBuilder(),
+				assertionPayloadParser.getAssertionMarshaller(),
+				assertionPayloadParser.getAssertionUnmarshaller())
+		x.getScheme(c)
+		then:
+		1 * securityProvider.getEncryptionAlgorithmScheme(c)
+	}
+
+	def "Verify that getEncDataXMLCipher generates correct XMLChipher and stores it in cache"(){
+		setup:
+		ContextMessageSecurityProvider.Context c = new ContextMessageSecurityProvider.Context("SomeUsage")
+		MessageSecurityProvider	securityProvider = Mock(ContextMessageSecurityProvider)
+		XMLEncrypter x = new XMLEncrypter(securityProvider, assertionPayloadParser.getDocumentBuilder(),
+				assertionPayloadParser.getAssertionMarshaller(),
+				assertionPayloadParser.getAssertionUnmarshaller())
+		expect:
+		x.encDataXMLCipherMap[c] == null
+		when:
+		XMLCipher xc= x.getEncDataXMLCipher(c)
+		then:
+		xc != null
+		1 * securityProvider.getEncryptionAlgorithmScheme(c) >> EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256
+		x.encDataXMLCipherMap[c] != null
+	}
+
+	def "Verify that getEncKeyXMLCipher generates correct key generator and stores it in cache"(){
+		setup:
+		ContextMessageSecurityProvider.Context c = new ContextMessageSecurityProvider.Context("SomeUsage")
+		MessageSecurityProvider	securityProvider = Mock(ContextMessageSecurityProvider)
+		XMLEncrypter x = new XMLEncrypter(securityProvider, assertionPayloadParser.getDocumentBuilder(),
+				assertionPayloadParser.getAssertionMarshaller(),
+				assertionPayloadParser.getAssertionUnmarshaller())
+		expect:
+		x.encKeyXMLCipherMap[c] == null
+		when:
+		XMLCipher xc= x.getEncKeyXMLCipher(c)
+		then:
+		xc != null
+		1 * securityProvider.getEncryptionAlgorithmScheme(c) >> EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256
+		x.encKeyXMLCipherMap[c] != null
+	}
+
+	def "Verify that getDataKeyGenerator generates correct key generator and stores it in cache"(){
+		setup:
+		ContextMessageSecurityProvider.Context c = new ContextMessageSecurityProvider.Context("SomeUsage")
+		MessageSecurityProvider	securityProvider = Mock(ContextMessageSecurityProvider)
+		XMLEncrypter x = new XMLEncrypter(securityProvider, assertionPayloadParser.getDocumentBuilder(),
+				assertionPayloadParser.getAssertionMarshaller(),
+				assertionPayloadParser.getAssertionUnmarshaller())
+		expect:
+		x.dataKeyGeneratorMap[c] == null
+		when:
+		KeyGenerator kg = x.getDataKeyGenerator(c)
+		then:
+		kg != null
+		1 * securityProvider.getEncryptionAlgorithmScheme(c) >> EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256
+		x.dataKeyGeneratorMap[c] != null
 	}
 	
 	private def genSAMLAttribute(String name, String value){

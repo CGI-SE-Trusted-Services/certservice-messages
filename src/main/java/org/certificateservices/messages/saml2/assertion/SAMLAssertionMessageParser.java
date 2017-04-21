@@ -1,5 +1,6 @@
 package org.certificateservices.messages.saml2.assertion;
 
+import org.certificateservices.messages.ContextMessageSecurityProvider;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
@@ -122,11 +123,12 @@ public class SAMLAssertionMessageParser extends BaseSAMLMessageParser{
 
     /**
      * Method to verify a signature of an assertion in a parsed SAML message.
+     * @param context message security related context.
      * @param assertion the assertion to verify.
-     * @throws MessageContentException
-     * @throws MessageProcessingException
+     * @throws MessageContentException if assertion contained invalid data.
+     * @throws MessageProcessingException  if internal error occurred processing the assertion.
      */
-    public  void verifyAssertionSignature(JAXBElement<AssertionType> assertion) throws MessageContentException, MessageProcessingException {
+    public  void verifyAssertionSignature(ContextMessageSecurityProvider.Context context,JAXBElement<AssertionType> assertion) throws MessageContentException, MessageProcessingException {
         DOMResult res = new DOMResult();
         try {
             getMarshaller().marshal(assertion, res);
@@ -134,16 +136,17 @@ public class SAMLAssertionMessageParser extends BaseSAMLMessageParser{
             throw new MessageContentException("Error marshalling assertion: " + e.getMessage(),e);
         }
 
-        xmlSigner.verifyEnvelopedSignature((Document) res.getNode(),getSignatureLocationFinder(),getOrganisationLookup());
+        xmlSigner.verifyEnvelopedSignature(context, (Document) res.getNode(),getSignatureLocationFinder(),getOrganisationLookup());
     }
 
     /**
      * Method to verify a signature of an assertion in a parsed SAML message.
+     * @param context message security related context.
      * @param assertion the assertion to verify.
-     * @throws MessageContentException
-     * @throws MessageProcessingException
+     * @throws MessageContentException if assertion contained invalid data.
+     * @throws MessageProcessingException  if internal error occurred processing the assertion.
      */
-    public  void verifyAssertionSignature(AssertionType assertion) throws MessageContentException, MessageProcessingException {
+    public  void verifyAssertionSignature(ContextMessageSecurityProvider.Context context,AssertionType assertion) throws MessageContentException, MessageProcessingException {
         DOMResult res = new DOMResult();
         try {
             getMarshaller().marshal(of.createAssertion(assertion), res);
@@ -151,7 +154,7 @@ public class SAMLAssertionMessageParser extends BaseSAMLMessageParser{
             throw new MessageContentException("Error marshalling assertion: " + e.getMessage(),e);
         }
 
-        xmlSigner.verifyEnvelopedSignature((Document) res.getNode(),getSignatureLocationFinder(),getOrganisationLookup());
+        xmlSigner.verifyEnvelopedSignature(context,(Document) res.getNode(),getSignatureLocationFinder(),getOrganisationLookup());
     }
 
 

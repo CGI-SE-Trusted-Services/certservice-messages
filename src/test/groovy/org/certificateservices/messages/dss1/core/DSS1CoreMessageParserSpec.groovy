@@ -9,6 +9,7 @@ import org.certificateservices.messages.saml2.CommonSAMLMessageParserSpecificati
 import javax.xml.bind.JAXBElement
 
 import static org.certificateservices.messages.TestUtils.slurpXml
+import static org.certificateservices.messages.ContextMessageSecurityProvider.DEFAULT_CONTEXT
 
 class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
@@ -17,7 +18,7 @@ class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 	protected org.certificateservices.messages.dss1.core.jaxb.ObjectFactory dssOf = new org.certificateservices.messages.dss1.core.jaxb.ObjectFactory();
 
 	def setup() {
-		dmp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv);
+		dmp.init(secProv);
 		dmp.systemTime = mockedSystemTime
 
 	}
@@ -35,7 +36,7 @@ class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
 	def "Verify that genSignRequest generates a valid data structure"(){
 		when: "Generate full message"
-		byte[] srd  = dmp.genSignRequest("SomeRequestId","SomeProfile", createOptionalData(),createInputDocuments(), false)
+		byte[] srd  = dmp.genSignRequest(DEFAULT_CONTEXT,"SomeRequestId","SomeProfile", createOptionalData(),createInputDocuments(), false)
 		//printXML(srd)
 		def xml = slurpXml(srd)
 		then:
@@ -47,7 +48,7 @@ class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		xml.InputDocuments.Other[0].KeyName == "SomeKeyName3"
 
 		when: "Try to parse"
-		SignRequest sr = dmp.parseMessage(srd,false)
+		SignRequest sr = dmp.parseMessage(DEFAULT_CONTEXT,srd,false)
 		then:
 		sr.requestID == "SomeRequestId"
 
@@ -59,14 +60,14 @@ class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		srd != null
 
 		when: "Try to parse"
-		sr = dmp.parseMessage(srd,false)
+		sr = dmp.parseMessage(DEFAULT_CONTEXT,srd,false)
 		then:
 		sr.requestID == null
 	}
 
 	def "Verify that genSignResponse generates a valid data structure"() {
 		when: "Generate full message"
-		byte[] srd = dmp.genSignResponse("SomeRequestId", "SomeProfile",
+		byte[] srd = dmp.genSignResponse(DEFAULT_CONTEXT,"SomeRequestId", "SomeProfile",
 				dmp.genResult(ResultMajorValues.Success,ResultMajorValues.SuccessResultMinorValues.OnAllDocuments,"SomeDetail","en"),
 				createOptionalData(), createSignatureObject(), false)
 		//printXML(srd)
@@ -84,7 +85,7 @@ class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		xml.SignatureObject.Other.KeyName[0] == "SomeKeyName5"
 
 		when: "Try to parse"
-		SignResponse sr = dmp.parseMessage(srd, false)
+		SignResponse sr = dmp.parseMessage(DEFAULT_CONTEXT,srd, false)
 		then:
 		sr.requestID == "SomeRequestId"
 
@@ -98,14 +99,14 @@ class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		xml.Result.ResultMajor == "urn:oasis:names:tc:dss:1.0:resultmajor:Success"
 
 		when: "Try to parse"
-		sr = dmp.parseMessage(srd,false)
+		sr = dmp.parseMessage(DEFAULT_CONTEXT,srd,false)
 		then:
 		sr.requestID == null
 	}
 
 	def "Verify that genVerifyRequest generates a valid data structure"(){
 		when: "Generate full message"
-		byte[] vrd   = dmp.genVerifyRequest("SomeRequestId","SomeProfile", createOptionalData(),createInputDocuments(), createSignatureObject(), false)
+		byte[] vrd   = dmp.genVerifyRequest(DEFAULT_CONTEXT,"SomeRequestId","SomeProfile", createOptionalData(),createInputDocuments(), createSignatureObject(), false)
 		//printXML(vrd)
 		def xml = slurpXml(vrd)
 		then:
@@ -119,7 +120,7 @@ class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		xml.SignatureObject.Other.KeyName[0] == "SomeKeyName5"
 
 		when: "Try to parse"
-		VerifyRequest vr = dmp.parseMessage(vrd,false)
+		VerifyRequest vr = dmp.parseMessage(DEFAULT_CONTEXT,vrd,false)
 		then:
 		vr.requestID == "SomeRequestId"
 
@@ -131,14 +132,14 @@ class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		vrd != null
 
 		when: "Try to parse"
-		vr = dmp.parseMessage(vrd,false)
+		vr = dmp.parseMessage(DEFAULT_CONTEXT,vrd,false)
 		then:
 		vr.requestID == null
 	}
 
 	def "Verify that genVerifyResponse generates a valid data structure"() {
 		when: "Generate full message"
-		byte[] vrd = dmp.genVerifyResponse("SomeRequestId", "SomeProfile",
+		byte[] vrd = dmp.genVerifyResponse(DEFAULT_CONTEXT,"SomeRequestId", "SomeProfile",
 				dmp.genResult(ResultMajorValues.Success,ResultMajorValues.SuccessResultMinorValues.OnAllDocuments,"SomeDetail","en"),
 				createOptionalData(), false)
 		//printXML(vrd)
@@ -154,7 +155,7 @@ class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		xml.OptionalOutputs.KeyName[0] == "SomeKeyName1"
 
 		when: "Try to parse"
-		ResponseBaseType rbt = dmp.parseMessage(vrd, false)
+		ResponseBaseType rbt = dmp.parseMessage(DEFAULT_CONTEXT,vrd, false)
 		then:
 		rbt.requestID == "SomeRequestId"
 
@@ -168,65 +169,65 @@ class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		xml.Result.ResultMajor == "urn:oasis:names:tc:dss:1.0:resultmajor:Success"
 
 		when: "Try to parse"
-		rbt = dmp.parseMessage(vrd,false)
+		rbt = dmp.parseMessage(DEFAULT_CONTEXT,vrd,false)
 		then:
 		rbt.requestID == null
 	}
 
 	def "Verify Signed SignRequest places the signature under OptionalInput and is targeted for the entire document"(){
 		when:
-		byte[] data = dmp.genSignRequest("SomeRequestId","SomeProfile", createOptionalData(),createInputDocuments(), true)
+		byte[] data = dmp.genSignRequest(DEFAULT_CONTEXT,"SomeRequestId","SomeProfile", createOptionalData(),createInputDocuments(), true)
 		//printXML(data)
 		def xml = slurpXml(data)
 		then:
 		xml.OptionalInputs.Signature.size() == 1
-		dmp.parseMessage(data,true) != null
+		dmp.parseMessage(DEFAULT_CONTEXT,data,true) != null
 
 		when: "Verify the signature applies for the entire document"
 		data = new String(data,"UTF-8").replace("SomeKeyName4","SomeKeyName5").getBytes("UTF-8")
-		dmp.parseMessage(data,true)
+		dmp.parseMessage(DEFAULT_CONTEXT,data,true)
 		then:
 		thrown MessageContentException
 
 		when: "Verify that message content exception is thrown if no OptionalInputs element exists"
-		dmp.genSignRequest("SomeRequestId","SomeProfile", null,createInputDocuments(), true)
+		dmp.genSignRequest(DEFAULT_CONTEXT,"SomeRequestId","SomeProfile", null,createInputDocuments(), true)
 		then:
 		thrown MessageContentException
 	}
 
 	def "Verify Signed SignResponse places the signature under OptionalInput and is targeted for the entire document"(){
 		when:
-		byte[] data = dmp.genSignResponse("SomeRequestId","SomeProfile",  dmp.genResult(ResultMajorValues.Success,null,null,null),createOptionalData(),createSignatureObject(), true)
+		byte[] data = dmp.genSignResponse(DEFAULT_CONTEXT,"SomeRequestId","SomeProfile",  dmp.genResult(ResultMajorValues.Success,null,null,null),createOptionalData(),createSignatureObject(), true)
 		//printXML(data)
 		def xml = slurpXml(data)
 		then:
 		xml.OptionalOutputs.Signature.size() == 1
-		dmp.parseMessage(data,true) != null
+		dmp.parseMessage(DEFAULT_CONTEXT,data,true) != null
 
 		when: "Verify the signature applies for the entire document"
 		data = new String(data,"UTF-8").replace("SomeKeyName5","SomeKeyName6").getBytes("UTF-8")
-		dmp.parseMessage(data,true)
+		dmp.parseMessage(DEFAULT_CONTEXT,data,true)
 		then:
 		thrown MessageContentException
 
 		when: "Verify that message content exception is thrown if no OptionalOutputs element exists"
-		dmp.genSignResponse("SomeRequestId","SomeProfile",  dmp.genResult(ResultMajorValues.Success,null,null,null),null,createSignatureObject(), true)
+		dmp.genSignResponse(DEFAULT_CONTEXT,"SomeRequestId","SomeProfile",  dmp.genResult(ResultMajorValues.Success,null,null,null),null,createSignatureObject(), true)
 		then:
 		thrown MessageContentException
 	}
 
 	def "Verify Signed VerifyRequest places the signature under OptionalInput and is targeted for the entire document"(){
 		when:
-		byte[] data = dmp.genVerifyRequest("SomeRequestId","SomeProfile", createOptionalData(),createInputDocuments(), createSignatureObject(),true)
+		byte[] data = dmp.genVerifyRequest(DEFAULT_CONTEXT,"SomeRequestId","SomeProfile", createOptionalData(),createInputDocuments(), createSignatureObject(),true)
 		//printXML(data)
 		def xml = slurpXml(data)
 		then:
 		xml.OptionalInputs.Signature.size() == 1
-		dmp.parseMessage(data,true) != null
+		dmp.parseMessage(DEFAULT_CONTEXT,data,true) != null
 
 		when: "Verify the signature applies for the entire document"
 		data = new String(data,"UTF-8").replace("SomeKeyName4","SomeKeyName5").getBytes("UTF-8")
-		dmp.parseMessage(data,true)
+		dmp.parseMessage(DEFAULT_CONTEXT,data,true)
 		then:
 		thrown MessageContentException
 
@@ -234,16 +235,16 @@ class DSS1CoreMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
 	def "Verify Signed VerifyResponse places the signature under OptionalInput and is targeted for the entire document"(){
 		when:
-		byte[] data = dmp.genVerifyResponse("SomeRequestId","SomeProfile",  dmp.genResult(ResultMajorValues.Success,null,null,null),createOptionalData(), true)
+		byte[] data = dmp.genVerifyResponse(DEFAULT_CONTEXT,"SomeRequestId","SomeProfile",  dmp.genResult(ResultMajorValues.Success,null,null,null),createOptionalData(), true)
 		//printXML(data)
 		def xml = slurpXml(data)
 		then:
 		xml.OptionalOutputs.Signature.size() == 1
-		dmp.parseMessage(data,true) != null
+		dmp.parseMessage(DEFAULT_CONTEXT,data,true) != null
 
 		when: "Verify the signature applies for the entire document"
 		data = new String(data,"UTF-8").replace("SomeKeyName1","SomeKeyName2").getBytes("UTF-8")
-		dmp.parseMessage(data,true)
+		dmp.parseMessage(DEFAULT_CONTEXT,data,true)
 		then:
 		thrown MessageContentException
 

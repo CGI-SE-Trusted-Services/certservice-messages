@@ -12,11 +12,13 @@ import org.certificateservices.messages.saml2.assertion.jaxb.NameIDType
 import org.certificateservices.messages.saml2.assertion.jaxb.SubjectType
 import org.certificateservices.messages.saml2.protocol.jaxb.*
 import org.certificateservices.messages.utils.MessageGenerateUtils
+import spock.lang.IgnoreRest
 
 import javax.xml.bind.JAXBElement
 
 import static org.certificateservices.messages.TestUtils.printXML
 import static org.certificateservices.messages.TestUtils.slurpXml
+import static org.certificateservices.messages.ContextMessageSecurityProvider.DEFAULT_CONTEXT
 
 class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
@@ -26,11 +28,11 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 
 	def setup(){
 		spmp = new SAMLProtocolMessageParser();
-		spmp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv);
+		spmp.init(secProv);
 		spmp.systemTime = mockedSystemTime
 
 		samp = new SAMLAssertionMessageParser()
-		samp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT, secProv)
+		samp.init(secProv)
 		samp.systemTime = mockedSystemTime;
 	}
 
@@ -73,7 +75,7 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 		ScopingType scoping = samlpOf.createScopingType()
 		scoping.setProxyCount(new BigInteger("123"))
 
-		byte[] authNRequest = spmp.genAuthNRequest(true,false,"SomeProtocolBinding", 1,"http://assertionConsumerServiceURL",2,"SomeProviderName","SomeDestination","SomeConsent", issuer, extensions, subject, nameIdPolicy, conditions, requestedAuthnContext, scoping, true)
+		byte[] authNRequest = spmp.genAuthNRequest(DEFAULT_CONTEXT,true,false,"SomeProtocolBinding", 1,"http://assertionConsumerServiceURL",2,"SomeProviderName","SomeDestination","SomeConsent", issuer, extensions, subject, nameIdPolicy, conditions, requestedAuthnContext, scoping, true)
 
 		def xml = slurpXml(authNRequest)
 		//printXML(authNRequest)
@@ -102,13 +104,13 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.RequestedAuthnContext.AuthnContextClassRef == "SomeContextClassRef"
 		xml.Scoping.@ProxyCount == "123"
 		when:
-		AuthnRequestType art = spmp.parseMessage(authNRequest, true)
+		AuthnRequestType art = spmp.parseMessage(DEFAULT_CONTEXT,authNRequest, true)
 
 		then:
 		art.getIssuer().value == "SomeIssuer"
 
 		when:
-		authNRequest = spmp.genAuthNRequest(true,false,"SomeProtocolBinding", 1,"http://assertionConsumerServiceURL",2,"SomeProviderName","SomeDestination","SomeConsent", issuer, extensions, subject, nameIdPolicy, conditions, requestedAuthnContext, scoping, false)
+		authNRequest = spmp.genAuthNRequest(DEFAULT_CONTEXT,true,false,"SomeProtocolBinding", 1,"http://assertionConsumerServiceURL",2,"SomeProviderName","SomeDestination","SomeConsent", issuer, extensions, subject, nameIdPolicy, conditions, requestedAuthnContext, scoping, false)
 
 		xml = slurpXml(authNRequest)
 		//printXML(authNRequest)
@@ -117,23 +119,25 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.Signature.SignedInfo.size() == 0
 
 		when:
-		art = spmp.parseMessage(authNRequest, false)
+		art = spmp.parseMessage(DEFAULT_CONTEXT,authNRequest, false)
 		then:
 		art.getIssuer().value == "SomeIssuer"
 
 		when: "Verify that unsigned message throws exception if signature is required"
-		spmp.parseMessage(authNRequest, true)
+		spmp.parseMessage(DEFAULT_CONTEXT,authNRequest, true)
 		then:
 		thrown MessageContentException
 
 	}
 
+
 	def "Generate minimal AuthNRequest and verify that it is populated correctly"(){
 		when:
-		byte[] authNRequest = spmp.genAuthNRequest(null,null,null, null,null,null,null,null,null, null, null, null, null, null, null, null, true)
+		byte[] authNRequest = spmp.genAuthNRequest(DEFAULT_CONTEXT,null,null,null, null,null,null,null,null,null, null, null, null, null, null, null, null, true)
 
 		def xml = slurpXml(authNRequest)
 		//printXML(authNRequest)
+		AuthnRequestType art = spmp.parseMessage(DEFAULT_CONTEXT,authNRequest, true)
 
 		then:
 		xml.@ID.toString().startsWith("_")
@@ -142,18 +146,14 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 
 		xml.Signature.SignedInfo.size() == 1
 
-		when:
-		AuthnRequestType art = spmp.parseMessage(authNRequest, true)
-
-		then:
 		art.getID().startsWith("_")
 
 	}
 
 	def "Generate a full Response and verify all fields are populated correctly"(){
 		when:
-		NameIDType issuer = of.createNameIDType();
-		issuer.setValue("SomeIssuer");
+		NameIDType issuer = of.createNameIDType()
+		issuer.setValue("SomeIssuer")
 
 		ExtensionsType extensions = samlpOf.createExtensionsType()
 		extensions.any.add(dsignObj.createKeyName("SomeKeyName"))
@@ -171,7 +171,7 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 		JAXBElement<AssertionType> assertion1 = samp.generateSimpleAssertion("someIssuer", new Date(1436279212000), new Date(1436279412000), "SomeSubject1",null)
 		JAXBElement<AssertionType> assertion2 = samp.generateSimpleAssertion("someIssuer2", new Date(1436279212000), new Date(1436279412000), "SomeSubject2",null)
 
-		byte[] response = spmp.genResponse("SomeResponseTo",issuer,"SomeDestination","SomeConsent", extensions,ResponseStatusCodes.RESPONDER,"SomeStatusMessage", statusDetailType,[assertion1,assertion2], true, true);
+		byte[] response = spmp.genResponse(DEFAULT_CONTEXT,"SomeResponseTo",issuer,"SomeDestination","SomeConsent", extensions,ResponseStatusCodes.RESPONDER,"SomeStatusMessage", statusDetailType,[assertion1,assertion2], true, true);
 
 		//printXML(response)
 		def xml = slurpXml(response)
@@ -194,14 +194,14 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.Assertion[1].Signature.SignedInfo.size() == 1
 
 		when: "Verify that is is parsable"
-		ResponseType r = spmp.parseMessage(response,true)
+		ResponseType r = spmp.parseMessage(DEFAULT_CONTEXT,response,true)
 
 		then:
 		r.signature != null
 
 
 		when: "Verify that it is possible to generate SAMLP signed only messages"
-		response = spmp.genResponse("SomeResponseTo",issuer,"SomeDestination","SomeConsent", extensions,ResponseStatusCodes.RESPONDER,"SomeStatusMessage", statusDetailType,[assertion1,assertion2], false, true);
+		response = spmp.genResponse(DEFAULT_CONTEXT,"SomeResponseTo",issuer,"SomeDestination","SomeConsent", extensions,ResponseStatusCodes.RESPONDER,"SomeStatusMessage", statusDetailType,[assertion1,assertion2], false, true);
 
 		//printXML(response)
 		xml = slurpXml(response)
@@ -213,13 +213,13 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.Assertion[1].Signature.size() == 0
 
 		when: "Verify that is is parsable"
-		r = spmp.parseMessage(response,true)
+		r = spmp.parseMessage(DEFAULT_CONTEXT,response,true)
 
 		then:
 		r.signature != null
 
 		when: "Verify that it is possible to generate Assertion signed only messages"
-		response = spmp.genResponse("SomeResponseTo",issuer,"SomeDestination","SomeConsent", extensions,ResponseStatusCodes.RESPONDER,"SomeStatusMessage", statusDetailType,[assertion1,assertion2], true, false);
+		response = spmp.genResponse(DEFAULT_CONTEXT,"SomeResponseTo",issuer,"SomeDestination","SomeConsent", extensions,ResponseStatusCodes.RESPONDER,"SomeStatusMessage", statusDetailType,[assertion1,assertion2], true, false);
 
 		//printXML(response)
 		xml = slurpXml(response)
@@ -231,16 +231,16 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.Assertion[1].Signature.size() == 1
 
 		when: "Verify that is is parsable"
-		r = spmp.parseMessage(response,false)
+		r = spmp.parseMessage(DEFAULT_CONTEXT,response,false)
 
 		then:
 		r.signature == null
-		samp.verifyAssertionSignature(r.getAssertionOrEncryptedAssertion()[0])
-		samp.verifyAssertionSignature(r.getAssertionOrEncryptedAssertion()[1])
+		samp.verifyAssertionSignature(DEFAULT_CONTEXT,r.getAssertionOrEncryptedAssertion()[0])
+		samp.verifyAssertionSignature(DEFAULT_CONTEXT,r.getAssertionOrEncryptedAssertion()[1])
 
 		when:
 		((AssertionType) r.getAssertionOrEncryptedAssertion()[0]).issuer.value = "SomeChanged"
-		samp.verifyAssertionSignature(r.getAssertionOrEncryptedAssertion()[0])
+		samp.verifyAssertionSignature(DEFAULT_CONTEXT,r.getAssertionOrEncryptedAssertion()[0])
 		then:
 		thrown MessageContentException
 

@@ -43,17 +43,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.Key;
-import java.security.MessageDigest;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 
 /**
@@ -63,139 +57,117 @@ import java.util.Set;
  *
  */
 public class XMLEncrypter {
-	
+
 	private static String XMLDSIG_NAMESPACE = XMLSigner.XMLDSIG_NAMESPACE;
-	
+
 	private MessageSecurityProvider securityProvider;
 	private DocumentBuilder documentBuilder;
 	private Marshaller marshaller;
 	private Unmarshaller unmarshaller;
-	
-	private XMLCipher encKeyXMLCipher;
-	private XMLCipher encDataXMLCipher;
+
+	private Map<Context, XMLCipher> encKeyXMLCipherMap = new HashMap<Context, XMLCipher>();
+	private Map<Context, XMLCipher> encDataXMLCipherMap = new HashMap<Context, XMLCipher>();
 	private XMLCipher decChiper;
-	
+
 	private CertificateFactory cf;
-	private KeyGenerator dataKeyGenerator;
-	
+	private Map<Context, KeyGenerator> dataKeyGeneratorMap = new HashMap<Context, KeyGenerator>();
+
 	private Set<String> supportedEncryptionChipers = new HashSet<String>();
 
-	private Context context = ContextMessageSecurityProvider.DEFAULT_CONTEXT;
 
 	/**
-	 * Contructor of a xml XML Encrypter when used with context specific message security providers.
-	 * @param context the message security context to use with the security provider.
+	 * Contsructor of a xml XML Encrypter.
+	 *
 	 * @param securityProvider the used context message security provider
-	 * @param documentBuilder the DOM Document Builder used for related messages.
-	 * @param marshaller the JAXB Marshaller used for related messages.
-	 * @param unmarshaller the JAXB Unmarshaller used for related messages.
+	 * @param documentBuilder  the DOM Document Builder used for related messages.
+	 * @param marshaller       the JAXB Marshaller used for related messages.
+	 * @param unmarshaller     the JAXB Unmarshaller used for related messages.
 	 * @throws MessageProcessingException if problems occurred initializing this helper class.
 	 */
-	public XMLEncrypter(Context context,
-						MessageSecurityProvider securityProvider,
+	public XMLEncrypter(MessageSecurityProvider securityProvider,
 						DocumentBuilder documentBuilder,
 						Marshaller marshaller,
-						Unmarshaller unmarshaller) throws MessageProcessingException{
-		this.context = context;
+						Unmarshaller unmarshaller) throws MessageProcessingException {
 		this.securityProvider = securityProvider;
 		this.documentBuilder = documentBuilder;
 		this.marshaller = marshaller;
 		this.unmarshaller = unmarshaller;
 
 		try {
-
-			EncryptionAlgorithmScheme scheme;
-			if(securityProvider instanceof ContextMessageSecurityProvider){
-				scheme = ((ContextMessageSecurityProvider) securityProvider).getEncryptionAlgorithmScheme(context);
-			}else{
-				scheme = securityProvider.getEncryptionAlgorithmScheme();
-			}
-			this.encKeyXMLCipher = XMLCipher.getInstance(scheme.getKeyEncryptionAlgorithmURI());
-			this.encDataXMLCipher = XMLCipher.getInstance(scheme.getDataEncryptionAlgorithmURI());
 			this.decChiper = XMLCipher.getInstance();
-
 			cf = CertificateFactory.getInstance("X.509");
 
-			switch(scheme){
-				case RSA_OAEP_WITH_AES256:
-				case RSA_PKCS1_5_WITH_AES256:
-					dataKeyGenerator = KeyGenerator.getInstance("AES");
-					dataKeyGenerator.init(256);
-					break;
-				default:
-					throw new MessageProcessingException("Unsupported Encryption scheme " + scheme);
-			}
-
-			for(EncryptionAlgorithmScheme s : EncryptionAlgorithmScheme.values()){
+			for (EncryptionAlgorithmScheme s : EncryptionAlgorithmScheme.values()) {
 				supportedEncryptionChipers.add(s.getDataEncryptionAlgorithmURI());
 				supportedEncryptionChipers.add(s.getKeyEncryptionAlgorithmURI());
 			}
 
 		} catch (Exception e) {
-			throw new MessageProcessingException("Error instanciating XML chipers: " + e.getMessage(),e);
+			throw new MessageProcessingException("Error instanciating XML chipers: " + e.getMessage(), e);
 		}
 
 	}
 
-	/**
-	 * Contructor of a xml XML Encrypter
-	 * @param securityProvider the used message security provider
-	 * @param documentBuilder the DOM Document Builder used for related messages.
-	 * @param marshaller the JAXB Marshaller used for related messages.
-	 * @param unmarshaller the JAXB Unmarshaller used for related messages.
-	 * @throws MessageProcessingException if problems occurred initializing this helper class.
-	 */
-	public XMLEncrypter(MessageSecurityProvider securityProvider, 
-			            DocumentBuilder documentBuilder, 
-			            Marshaller marshaller,
-			            Unmarshaller unmarshaller) throws MessageProcessingException{
-		this(ContextMessageSecurityProvider.DEFAULT_CONTEXT,securityProvider,documentBuilder,marshaller,unmarshaller);
-	}
-	
+
 	/**
 	 * Method to create a encrypted DOM structure containing a EncryptedData element of the related JAXB Element.
-	 * 
-	 * @param element the JAXB element to decrypt.
+	 *
+	 * @param element     the JAXB element to decrypt.
 	 * @param receipients a list of reciepiets of the message.
-	 * @param useKeyId if in key info should be included the shorter KeyName tag instead of X509Certificate
+	 * @param useKeyId    if in key info should be included the shorter KeyName tag instead of X509Certificate
 	 * @return a new DOM Document the encrypted data.
 	 * @throws MessageProcessingException if internal problems occurred generating the data.
 	 */
-	public  Document encryptElement(JAXBElement<?> element, List<X509Certificate> receipients, boolean useKeyId) throws MessageProcessingException{
-		try{
+	public Document encryptElement(JAXBElement<?> element, List<X509Certificate> receipients, boolean useKeyId) throws MessageProcessingException {
+		try {
 			Document doc = documentBuilder.newDocument();
 
 			marshaller.marshal(element, doc);
 
 			return encryptElement(doc, receipients, useKeyId);
 
-		}catch(Exception e){
-			if(e instanceof MessageProcessingException){
+		} catch (Exception e) {
+			if (e instanceof MessageProcessingException) {
 				throw (MessageProcessingException) e;
 			}
-			throw new MessageProcessingException("Internal error occurred when encrypting XML: " + e.getMessage(),e);
+			throw new MessageProcessingException("Internal error occurred when encrypting XML: " + e.getMessage(), e);
 		}
 	}
-	
+
+	/**
+	 * Method to create a encrypted DOM structure containing a EncryptedData element of the related JAXB Element. Uning default context
+	 *
+	 * @param doc         the document to encrypt.
+	 * @param receipients a list of reciepiets of the message.
+	 * @param useKeyId    if in key info should be included the shorter KeyName tag instead of X509Certificate
+	 * @return a new DOM Document the encrypted data.
+	 * @throws MessageProcessingException if internal problems occurred generating the data.
+	 */
+	@Deprecated
+	public Document encryptElement(Document doc, List<X509Certificate> receipients, boolean useKeyId) throws MessageProcessingException{
+		return encryptElement(ContextMessageSecurityProvider.DEFAULT_CONTEXT, doc,receipients,useKeyId);
+    }
 	/**
 	 * Method to create a encrypted DOM structure containing a EncryptedData element of the related JAXB Element.
-	 * 
+	 *
+	 * @param context related security context.
 	 * @param doc the document to encrypt.
 	 * @param receipients a list of reciepiets of the message.
 	 * @param useKeyId if in key info should be included the shorter KeyName tag instead of X509Certificate
 	 * @return a new DOM Document the encrypted data.
 	 * @throws MessageProcessingException if internal problems occurred generating the data.
 	 */
-	public  Document encryptElement(Document doc, List<X509Certificate> receipients, boolean useKeyId) throws MessageProcessingException{
+	public  Document encryptElement(Context context, Document doc, List<X509Certificate> receipients, boolean useKeyId) throws MessageProcessingException{
 		try{
 			
-			Key dataKey = dataKeyGenerator.generateKey();
+			Key dataKey = getDataKeyGenerator(context).generateKey();
 
+			XMLCipher encDataXMLCipher = getEncDataXMLCipher(context);
 			encDataXMLCipher.init(XMLCipher.ENCRYPT_MODE, dataKey);
 			EncryptedData encData = encDataXMLCipher.getEncryptedData();
 			KeyInfo keyInfo = new KeyInfo(doc);
 			for(X509Certificate receipient: receipients){
-				keyInfo.add(addReceipient(doc, dataKey, receipient, useKeyId));
+				keyInfo.add(addReceipient(context, doc, dataKey, receipient, useKeyId));
 			}
 			encData.setKeyInfo(keyInfo);
 			Element documentElement = doc.getDocumentElement();
@@ -211,7 +183,7 @@ public class XMLEncrypter {
 	}
 	
 	/**
-	 * Method to decrypt all encrypted structures in the related message.
+	 * Method to decrypt all encrypted structures in the related message. Using default context.
 	 * 
 	 * <b>Important: If multiple EncryptedData exists it must be encrypted with the same data key and receipients.</b>
 	 * @param doc the document containing encrypted data.
@@ -220,14 +192,31 @@ public class XMLEncrypter {
 	 * @throws MessageContentException if content of message was invalid
 	 * @throws NoDecryptionKeyFoundException if no related decryption key could be found with the message.
 	 */
+	@Deprecated
 	public Object decryptDocument(Document doc) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
-		return decryptDocument(doc, null);
+		return decryptDocument(ContextMessageSecurityProvider.DEFAULT_CONTEXT, doc, null);
 	}
-	
+
 	/**
 	 * Method to decrypt all encrypted structures in the related message.
-	 * 
+	 *
 	 * <b>Important: If multiple EncryptedData exists it must be encrypted with the same data key and receipients.</b>
+	 * @param context the message security context to use.
+	 * @param doc the document containing encrypted data.
+	 * @return a JAXB version of the document where all encrypted attributes are decrypted.
+	 * @throws MessageProcessingException if internal problems occurred decrypting the message.
+	 * @throws MessageContentException if content of message was invalid
+	 * @throws NoDecryptionKeyFoundException if no related decryption key could be found with the message.
+	 */
+	public Object decryptDocument(Context context, Document doc) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
+		return decryptDocument(context, doc, null);
+	}
+
+	/**
+	 * Method to decrypt all encrypted structures in the related message. Using default context.
+	 *
+	 * <b>Important: If multiple EncryptedData exists it must be encrypted with the same data key and receipients.</b>
+	 *
 	 * @param doc the document containing encrypted data.
 	 * @param converter the post decryption xml converter to manipulate the result to fullfill schema, null to disable manipulation.
 	 * @return a JAXB version of the document where all encrypted attributes are decrypted.
@@ -235,7 +224,23 @@ public class XMLEncrypter {
 	 * @throws MessageContentException if content of message was invalid
 	 * @throws NoDecryptionKeyFoundException if no related decryption key could be found with the message.
 	 */
+	@Deprecated
 	public Object decryptDocument(Document doc, DecryptedXMLConverter converter) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
+		return decryptDocument(ContextMessageSecurityProvider.DEFAULT_CONTEXT,doc,converter);
+	}
+	/**
+	 * Method to decrypt all encrypted structures in the related message.
+	 * 
+	 * <b>Important: If multiple EncryptedData exists it must be encrypted with the same data key and receipients.</b>
+	 * @param context the message security context to use.
+	 * @param doc the document containing encrypted data.
+	 * @param converter the post decryption xml converter to manipulate the result to fullfill schema, null to disable manipulation.
+	 * @return a JAXB version of the document where all encrypted attributes are decrypted.
+	 * @throws MessageProcessingException if internal problems occurred decrypting the message.
+	 * @throws MessageContentException if content of message was invalid
+	 * @throws NoDecryptionKeyFoundException if no related decryption key could be found with the message.
+	 */
+	public Object decryptDocument(Context context, Document doc, DecryptedXMLConverter converter) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
 		try{			
 			return unmarshaller.unmarshal(decryptDoc(doc,converter));
 		}catch(Exception e){
@@ -251,10 +256,10 @@ public class XMLEncrypter {
 			throw new MessageProcessingException("Internal error occurred when decrypting XML: " + e.getMessage(),e);
 		}
 	}
-	
+
 	/**
-	 * Method to decrypt all encrypted structures in the related message.
-	 * 
+	 * Method to decrypt all encrypted structures in the related message, using default context.
+	 *
 	 * <b>Important: If multiple EncryptedData exists it must be encrypted with the same data key and receipients.</b>
 	 * @param doc the document containing encrypted data.
 	 * @param converter the post decryption xml converter to manipulate the result to fullfill schema, null to disable manipulation.
@@ -264,13 +269,28 @@ public class XMLEncrypter {
 	 * @throws NoDecryptionKeyFoundException if no related decryption key could be found with the message.
 	 */
 	public Document decryptDoc(Document doc, DecryptedXMLConverter converter) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
+		return decryptDoc(ContextMessageSecurityProvider.DEFAULT_CONTEXT, doc, converter);
+	}
+	/**
+	 * Method to decrypt all encrypted structures in the related message.
+	 * 
+	 * <b>Important: If multiple EncryptedData exists it must be encrypted with the same data key and receipients.</b>
+	 * @param context the message security context to use with the security provider.
+	 * @param doc the document containing encrypted data.
+	 * @param converter the post decryption xml converter to manipulate the result to fullfill schema, null to disable manipulation.
+	 * @return a new Document with decrypted content.
+	 * @throws MessageProcessingException if internal problems occurred decrypting the message.
+	 * @throws MessageContentException if content of message was invalid
+	 * @throws NoDecryptionKeyFoundException if no related decryption key could be found with the message.
+	 */
+	public Document decryptDoc(Context context, Document doc, DecryptedXMLConverter converter) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
 		try{
 			NodeList nodeList = doc.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_ENCRYPTEDDATA);
 			while(nodeList.getLength() > 0){
 				Element encryptedElement = (Element) nodeList.item(0);
 				verifyCiphers(encryptedElement);
 				decChiper.init(XMLCipher.DECRYPT_MODE,null);
-				decChiper.setKEK(findKEK(encryptedElement));
+				decChiper.setKEK(findKEK(context,encryptedElement));
 				doc = decChiper.doFinal(doc, encryptedElement);
 				nodeList = doc.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_ENCRYPTEDDATA);
 			}
@@ -387,16 +407,19 @@ public class XMLEncrypter {
 		}
 		
 	}
-	
+
+
+
 	/**
 	 * Help method that looks through all key info and tries to find all Key Info elements of type KeyName or X509Certificate
 	 * that is used to check if message security provider has relevant decryption key.
-	 * 
+	 *
+	 * @param context the message security context to use with the security provider.
 	 * @param encryptedElement the encrypted element to extract key info from
 	 * @return a related Private Key used to decrypt the data key with.
 	 * @throws MessageContentException if no valid decryption key could be found in the key info.
 	 */
-	private Key findKEK(Element encryptedElement) throws NoDecryptionKeyFoundException {
+	private Key findKEK(Context context, Element encryptedElement) throws NoDecryptionKeyFoundException {
 		try{
 			Set<String> availableKeyIds;
 			if(securityProvider instanceof ContextMessageSecurityProvider){
@@ -412,7 +435,7 @@ public class XMLEncrypter {
 				if(keyId != null){
 					keyId = keyId.trim();
 					if(availableKeyIds.contains(keyId)){
-						return getDecryptionKey(keyId);
+						return getDecryptionKey(context,keyId);
 					}
 				}			
 			}
@@ -425,7 +448,7 @@ public class XMLEncrypter {
 					X509Certificate cert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(Base64.decode(certData)));
 					String keyId = generateKeyId(cert.getPublicKey());
 					if(availableKeyIds.contains(keyId)){
-						return getDecryptionKey(keyId);
+						return getDecryptionKey(context,keyId);
 					}			
 				}
 			}
@@ -439,7 +462,7 @@ public class XMLEncrypter {
 	}
 
 
-	private PrivateKey getDecryptionKey(String keyId) throws MessageProcessingException {
+	private PrivateKey getDecryptionKey(Context context, String keyId) throws MessageProcessingException {
 		if(securityProvider instanceof ContextMessageSecurityProvider){
 			return ((ContextMessageSecurityProvider) securityProvider).getDecryptionKey(context,keyId);
 		}else{
@@ -466,7 +489,8 @@ public class XMLEncrypter {
 	/**
 	 * Help method to add a receipient to a message.
 	 */
-	private EncryptedKey addReceipient(Document doc, Key dataKey, X509Certificate receipient, boolean useKeyId) throws XMLEncryptionException, CertificateEncodingException, MessageProcessingException{
+	private EncryptedKey addReceipient(Context context, Document doc, Key dataKey, X509Certificate receipient, boolean useKeyId) throws XMLEncryptionException, CertificateEncodingException, MessageProcessingException{
+		XMLCipher encKeyXMLCipher = getEncKeyXMLCipher(context);
 		encKeyXMLCipher.init(XMLCipher.WRAP_MODE,receipient.getPublicKey());
 		KeyInfo keyInfo = new KeyInfo(doc);
 		EncryptedKey retval = encKeyXMLCipher.encryptKey(doc, dataKey);
@@ -481,6 +505,67 @@ public class XMLEncrypter {
 		retval.setKeyInfo(keyInfo);
 		return retval;
 	}
+
+	private XMLCipher getEncKeyXMLCipher(Context context) throws MessageProcessingException{
+		XMLCipher retval = encKeyXMLCipherMap.get(context);
+		if(retval == null){
+			try {
+				retval = XMLCipher.getInstance(getScheme(context).getKeyEncryptionAlgorithmURI());
+				encKeyXMLCipherMap.put(context,retval);
+			}catch(XMLEncryptionException e){
+				throw new MessageProcessingException("Error creating Enc Key Alg Scheme: " + e.getMessage(),e);
+			}
+		}
+
+		return retval;
+	}
+
+	private XMLCipher getEncDataXMLCipher(Context context) throws MessageProcessingException{
+		XMLCipher retval = encDataXMLCipherMap.get(context);
+		if(retval == null){
+			try {
+				retval = XMLCipher.getInstance(getScheme(context).getDataEncryptionAlgorithmURI());
+				encDataXMLCipherMap.put(context,retval);
+			}catch(XMLEncryptionException e){
+				throw new MessageProcessingException("Error creating Enc Data Alg Scheme: " + e.getMessage(),e);
+			}
+		}
+
+		return retval;
+	}
+
+	private KeyGenerator getDataKeyGenerator(Context context) throws MessageProcessingException {
+		KeyGenerator retval = dataKeyGeneratorMap.get(context);
+		if(retval == null){
+			try {
+				EncryptionAlgorithmScheme scheme = getScheme(context);
+				switch(scheme){
+					case RSA_OAEP_WITH_AES256:
+					case RSA_PKCS1_5_WITH_AES256:
+						retval = KeyGenerator.getInstance("AES");
+						retval.init(256);
+						break;
+					default:
+						throw new MessageProcessingException("Unsupported Encryption scheme " + scheme);
+				}
+				dataKeyGeneratorMap.put(context,retval);
+			} catch (NoSuchAlgorithmException e) {
+				throw new MessageProcessingException("Error creating Encryption key generator: " + e.getMessage(),e);
+			}
+		}
+
+		return retval;
+	}
+
+	private EncryptionAlgorithmScheme getScheme(Context context) throws MessageProcessingException {
+		if(securityProvider instanceof ContextMessageSecurityProvider){
+			return ((ContextMessageSecurityProvider) securityProvider).getEncryptionAlgorithmScheme(context);
+		}else{
+			return securityProvider.getEncryptionAlgorithmScheme();
+		}
+	}
+
+
 	
 	/**
 	 * Interface to do post decryption manipulation to the DOM to have the decrypted document to fullfill it schema.

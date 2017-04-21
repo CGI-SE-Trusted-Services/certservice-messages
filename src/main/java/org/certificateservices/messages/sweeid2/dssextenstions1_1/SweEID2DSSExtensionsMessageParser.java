@@ -1,5 +1,6 @@
 package org.certificateservices.messages.sweeid2.dssextenstions1_1;
 
+import org.certificateservices.messages.ContextMessageSecurityProvider;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.NoDecryptionKeyFoundException;
@@ -104,6 +105,7 @@ public class SweEID2DSSExtensionsMessageParser extends DSS1CoreMessageParser{
      * Special metod for generating a DSS 1.0 SignRequest with correct saml: prefix namespacing. This due to
      * DSS 1.0 specification uses SAML 1 and Swedish EID Extensions use SAML 2.
      *
+     * @param context message security related context. Use null if no signature should be used.
      * @param requestID This attribute is used to correlate requests with responses.
      *                  When present in a request, the server MUST return it in the response.
      *                  (Optional, use null to not set).
@@ -116,7 +118,7 @@ public class SweEID2DSSExtensionsMessageParser extends DSS1CoreMessageParser{
      * @throws MessageProcessingException if internal error occurred generating the message.
      * @throws MessageContentException if bad message format was detected.
      */
-    public byte[] genSignRequest(String requestID, String profile, JAXBElement<SignRequestExtensionType> signRequestExtension, JAXBElement<SignTasksType> signTasks, boolean sign) throws MessageProcessingException, MessageContentException {
+    public byte[] genSignRequest(ContextMessageSecurityProvider.Context context,String requestID, String profile, JAXBElement<SignRequestExtensionType> signRequestExtension, JAXBElement<SignTasksType> signTasks, boolean sign) throws MessageProcessingException, MessageContentException {
 
         Document optionalInputContent = marshallToSweEID2ExtensionDoc(signRequestExtension);
         Document inputDocumentContent = marshallToSweEID2ExtensionDoc(signTasks);
@@ -130,12 +132,30 @@ public class SweEID2DSSExtensionsMessageParser extends DSS1CoreMessageParser{
         Element OtherElement = (Element) doc.getElementsByTagNameNS(DSS1CoreMessageParser.NAMESPACE,"Other").item(0);
         OtherElement.appendChild(doc.importNode(inputDocumentContent.getDocumentElement(),true));
         if(sign){
-            return xmlSigner.marshallAndSign(doc,getSignatureLocationFinder(),null);
+            return xmlSigner.marshallAndSign(context,doc,getSignatureLocationFinder());
         }
         return xmlSigner.marshallDoc(doc);
     }
 
-    public byte[] genSignResponse(String requestID, String profile, Result result, JAXBElement<SignResponseExtensionType> signResponseExtension, JAXBElement<SignTasksType> signTasks, boolean sign)
+    /**
+     * Special metod for generating a DSS 1.0 SignRequest with correct saml: prefix namespacing. This due to
+     * DSS 1.0 specification uses SAML 1 and Swedish EID Extensions use SAML 2.
+     *
+     * @param context message security related context. Use null if no signature should be used.
+     * @param requestID This attribute is used to correlate requests with responses.
+     *                  When present in a request, the server MUST return it in the response.
+     *                  (Optional, use null to not set).
+     * @param profile This attribute indicates a particular DSS profile.  It may be used to select a profile
+     *                if a server supports multiple profiles, or as a sanity-check to.
+     * @param result the result to insert in the response
+     * @param signResponseExtension the SignResponseExtension that will be added to OptionalInputs element.
+     * @param signTasks the SignTasks Elemenet that will be added to the InputDocuments element.
+     * @param sign if the message should be signed.
+     * @return a marshalled sign request.
+     * @throws MessageProcessingException if internal error occurred generating the message.
+     * @throws MessageContentException if bad message format was detected.
+     */
+    public byte[] genSignResponse(ContextMessageSecurityProvider.Context context,String requestID, String profile, Result result, JAXBElement<SignResponseExtensionType> signResponseExtension, JAXBElement<SignTasksType> signTasks, boolean sign)
             throws MessageProcessingException, MessageContentException {
         Document optionalInputContent = marshallToSweEID2ExtensionDoc(signResponseExtension);
         Document signatureObjectContent = marshallToSweEID2ExtensionDoc(signTasks);
@@ -149,7 +169,7 @@ public class SweEID2DSSExtensionsMessageParser extends DSS1CoreMessageParser{
         Element OtherElement = (Element) doc.getElementsByTagNameNS(DSS1CoreMessageParser.NAMESPACE,"Other").item(0);
         OtherElement.appendChild(doc.importNode(signatureObjectContent.getDocumentElement(),true));
         if(sign){
-            return xmlSigner.marshallAndSign(doc,getSignatureLocationFinder(),null);
+            return xmlSigner.marshallAndSign(context,doc,getSignatureLocationFinder());
         }
         return xmlSigner.marshallDoc(doc);
     }
@@ -492,19 +512,20 @@ public class SweEID2DSSExtensionsMessageParser extends DSS1CoreMessageParser{
     /**
      * Method to decrypt a signed message.
      *
+     * @param context message security related context. Use null if no signature should be used.
      * @param signMessage  with encrypted message that should be encrypted.
      * @return a decrypted signed message.
      * @throws MessageProcessingException if internal problems occurred generating message.
      * @throws MessageContentException if bad message format was detected.
      * @throws NoDecryptionKeyFoundException if decryption key couldn't be found.
      */
-    public SignMessageType decryptSignMessageData(SignMessageType signMessage) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException {
+    public SignMessageType decryptSignMessageData(ContextMessageSecurityProvider.Context context,SignMessageType signMessage) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException {
         try {
             Document doc = getDocumentBuilder().newDocument();
             getMarshaller().marshal(eid2Of.createSignMessage(signMessage), doc);
 
             @SuppressWarnings("unchecked")
-            JAXBElement<SignMessageType> decryptedSignMessage = (JAXBElement<SignMessageType>) xmlEncrypter.decryptDocument(doc, signMessageXMLConverter);
+            JAXBElement<SignMessageType> decryptedSignMessage = (JAXBElement<SignMessageType>) xmlEncrypter.decryptDocument(context,doc, signMessageXMLConverter);
 
             schemaValidate(decryptedSignMessage);
 
