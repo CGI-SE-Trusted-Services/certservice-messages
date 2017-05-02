@@ -37,7 +37,6 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLOutputFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -94,7 +93,8 @@ public abstract class BaseSAMLMessageParser {
 	protected org.certificateservices.messages.xmldsig.jaxb.ObjectFactory dsigOf = new org.certificateservices.messages.xmldsig.jaxb.ObjectFactory();
 	protected SystemTime systemTime = new DefaultSystemTime();
 	protected XMLEncrypter xmlEncrypter;
-	EncryptedAssertionXMLConverter encryptedAssertionXMLConverter = new EncryptedAssertionXMLConverter();
+	EncryptedAttributeXMLConverter encryptedAttributeXMLConverter = new EncryptedAttributeXMLConverter();
+
 	protected XMLSigner xmlSigner;
 	protected CertificateFactory cf;
 	protected SAMLParserCustomisations customisations;
@@ -385,7 +385,7 @@ public abstract class BaseSAMLMessageParser {
 	}
 
 	/**
-	 * Method to decrypt an assertion of any type.
+	 * Method to decrypt an assertion containing encrypted attributes.
 	 *
 	 * @param context message security related context.
 	 * @param assertion the assertion to decrypt and parse
@@ -400,7 +400,7 @@ public abstract class BaseSAMLMessageParser {
 			getMarshaller().marshal(assertion, doc);
 			
 			@SuppressWarnings("unchecked")
-			JAXBElement<AssertionType> decryptedAssertion = (JAXBElement<AssertionType>) xmlEncrypter.decryptDocument(context, doc, encryptedAssertionXMLConverter);
+			JAXBElement<AssertionType> decryptedAssertion = (JAXBElement<AssertionType>) xmlEncrypter.decryptDocument(context, doc, encryptedAttributeXMLConverter);
 			
 			schemaValidate(decryptedAssertion);
 
@@ -654,9 +654,9 @@ public abstract class BaseSAMLMessageParser {
 
     
     /**
-     * Converter that replaces all decrypted EncryptedAssertions with Assertions
+     * Converter that replaces all decrypted EncryptedAttributes with Attributes
      */
-    public static class EncryptedAssertionXMLConverter implements DecryptedXMLConverter{
+    public static class EncryptedAttributeXMLConverter implements DecryptedXMLConverter{
 
 
 		public Document convert(Document doc) throws MessageContentException {

@@ -37,7 +37,6 @@ import org.xml.sax.SAXException;
 import javax.xml.XMLConstants;
 import javax.xml.bind.*;
 import javax.xml.bind.util.JAXBSource;
-import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -104,7 +103,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	private SystemTime systemTime = new DefaultSystemTime();
 	private XMLEncrypter xmlEncrypter;
 	private XMLEncrypter userDataXmlEncrypter;
-	BaseSAMLMessageParser.EncryptedAssertionXMLConverter encryptedAssertionXMLConverter = new BaseSAMLMessageParser.EncryptedAssertionXMLConverter();
+	BaseSAMLMessageParser.EncryptedAttributeXMLConverter encryptedAssertionXMLConverter = new BaseSAMLMessageParser.EncryptedAttributeXMLConverter();
 	private XMLSigner xmlSigner;
 	private CertificateFactory cf;
 	
