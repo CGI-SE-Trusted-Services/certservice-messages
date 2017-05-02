@@ -201,7 +201,28 @@ public class SAMLAssertionMessageParser extends BaseSAMLMessageParser{
         }
     }
 
-    
+
+
+
+    /**
+     * Method to verify a signature of an assertion in a parsed SAML message.
+     * @param context message security related context.
+     * @param assertion the assertion to verify.
+     * @throws MessageContentException if assertion contained invalid data.
+     * @throws MessageProcessingException  if internal error occurred processing the assertion.
+     */
+    public  void verifyAssertionSignature(ContextMessageSecurityProvider.Context context,AssertionType assertion) throws MessageContentException, MessageProcessingException {
+        Document doc = getDocumentBuilder().newDocument();
+        try {
+            getMarshaller().marshal(of.createAssertion(assertion), doc);
+        } catch (JAXBException e) {
+            throw new MessageContentException("Error marshalling assertion: " + e.getMessage(),e);
+        }
+
+        xmlSigner.verifyEnvelopedSignature(context,doc,getSignatureLocationFinder(),getOrganisationLookup());
+    }
+
+
     /**
      * Converter that replaces all decrypted EncryptedAssertion with Assertion
      */
