@@ -6,41 +6,42 @@ import org.certificateservices.messages.MessageSecurityProvider
 import org.certificateservices.messages.csmessages.CSMessageParserManager
 
 import javax.crypto.KeyGenerator
-import java.security.Security;
-import java.security.cert.CertificateFactory;
+import java.security.Security
+import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
-import javax.xml.bind.JAXBElement;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
+import javax.xml.bind.JAXBElement
+import javax.xml.transform.OutputKeys
+import javax.xml.transform.Transformer
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
 
-import org.apache.xml.security.Init;
-import org.apache.xml.security.encryption.XMLCipher;
-import org.apache.xml.security.utils.Base64;
-import org.apache.xml.security.utils.EncryptionConstants;
-import org.certificateservices.messages.EncryptionAlgorithmScheme;
-import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.NoDecryptionKeyFoundException;
-import org.certificateservices.messages.assertion.AssertionPayloadParser;
-import org.certificateservices.messages.saml2.BaseSAMLMessageParser.EncryptedAssertionXMLConverter;
-import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType;
-import org.certificateservices.messages.saml2.assertion.jaxb.AttributeStatementType;
-import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType;
-import org.certificateservices.messages.saml2.assertion.jaxb.EncryptedElementType;
-import org.certificateservices.messages.saml2.assertion.jaxb.NameIDType;
-import org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory;
+import org.apache.xml.security.Init
+import org.apache.xml.security.encryption.XMLCipher
+import org.apache.xml.security.utils.Base64
+import org.apache.xml.security.utils.EncryptionConstants
+import org.certificateservices.messages.EncryptionAlgorithmScheme
+import org.certificateservices.messages.MessageContentException
+import org.certificateservices.messages.MessageProcessingException
+import org.certificateservices.messages.NoDecryptionKeyFoundException
+import org.certificateservices.messages.assertion.AssertionPayloadParser
+import org.certificateservices.messages.saml2.BaseSAMLMessageParser.EncryptedAttributeXMLConverter
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType
+import org.certificateservices.messages.saml2.assertion.jaxb.AttributeStatementType
+import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType
+import org.certificateservices.messages.saml2.assertion.jaxb.EncryptedElementType
+import org.certificateservices.messages.saml2.assertion.jaxb.NameIDType
+import org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory
 import org.certificateservices.messages.csmessages.PayloadParserRegistry
-import org.certificateservices.messages.xenc.jaxb.EncryptedDataType;
-import org.w3c.dom.Document;
+import org.certificateservices.messages.xenc.jaxb.EncryptedDataType
+import org.w3c.dom.Document
 import org.w3c.dom.Element
-import spock.lang.Specification;
-import spock.lang.Unroll;
+import spock.lang.Specification
+import spock.lang.Unroll
 import static org.certificateservices.messages.TestUtils.*
+import static org.certificateservices.messages.ContextMessageSecurityProvider.DEFAULT_CONTEXT
 
-public class XMLEncrypterSpec extends Specification {
+class XMLEncrypterSpec extends Specification {
 	
 	ObjectFactory of = new ObjectFactory()
 	X509Certificate testCert
@@ -58,8 +59,8 @@ public class XMLEncrypterSpec extends Specification {
 
 
 	def setup(){
-		setupRegisteredPayloadParser();
-		assertionPayloadParser = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE);
+		setupRegisteredPayloadParser()
+		assertionPayloadParser = PayloadParserRegistry.getParser(AssertionPayloadParser.NAMESPACE)
 
 
 		MessageSecurityProvider messageSecurityProvider = CSMessageParserManager.getCSMessageParser().messageSecurityProvider
@@ -71,22 +72,22 @@ public class XMLEncrypterSpec extends Specification {
 			 assertionPayloadParser.getAssertionMarshaller(),
 			 assertionPayloadParser.getAssertionUnmarshaller())
 		
-		threeReceipients = new ArrayList<X509Certificate>();
+		threeReceipients = new ArrayList<X509Certificate>()
 		for(String keyId : messageSecurityProvider.decryptionKeyIds){
 			threeReceipients.add(messageSecurityProvider.getDecryptionCertificate(keyId))
 		}
 		
 		X509Certificate validCert = messageSecurityProvider.getDecryptionCertificate(messageSecurityProvider.decryptionKeyIds.iterator().next())
 		
-		twoReceiptiensValidFirst = new ArrayList<X509Certificate>();
+		twoReceiptiensValidFirst = new ArrayList<X509Certificate>()
 		twoReceiptiensValidFirst.add(validCert)
 		twoReceiptiensValidFirst.add(testCert)
 		
-		twoReceiptiensValidLast = new ArrayList<X509Certificate>();
+		twoReceiptiensValidLast = new ArrayList<X509Certificate>()
 		twoReceiptiensValidLast.add(testCert)
 		twoReceiptiensValidLast.add(validCert)
 		
-		noValidReceiptients = new ArrayList<X509Certificate>();
+		noValidReceiptients = new ArrayList<X509Certificate>()
 		noValidReceiptients.add(testCert)
 		
 	}
@@ -94,9 +95,9 @@ public class XMLEncrypterSpec extends Specification {
 	@Unroll
 	def "Verify that encryptElement generates encrypted XML document with included certificate using encryption scheme: #encScheme"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
-		
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI())
+
 		AttributeType attributeType1 = of.createAttributeType()
 		attributeType1.getAttributeValue().add("Hej Svejs")
 		attributeType1.setName("SomeAttribute")
@@ -104,11 +105,11 @@ public class XMLEncrypterSpec extends Specification {
 		
 		
 		when:
-		Document encDoc = xmlEncrypter.encryptElement(attribute1, threeReceipients, false);
+		Document encDoc = xmlEncrypter.encryptElement(attribute1, threeReceipients, false)
 		String encXML = docToString(encDoc)
 		//println encXML
 		
-		def xml = new XmlSlurper().parse(new StringReader(encXML)); 
+		def xml = new XmlSlurper().parse(new StringReader(encXML))
 		then:
 		xml.@Type == "http://www.w3.org/2001/04/xmlenc#Element"
 		xml.EncryptionMethod.@Algorithm == encScheme.getDataEncryptionAlgorithmURI()
@@ -126,15 +127,15 @@ public class XMLEncrypterSpec extends Specification {
 	@Unroll
 	def "Verify that encryptElement generates encrypted XML document with included keyid using encryption scheme: #encScheme"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
-		
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI())
+
 		when:
-		Document encDoc = xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute","Hej Svejs" ), threeReceipients, true);
+		Document encDoc = xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute","Hej Svejs" ), threeReceipients, true)
 		String encXML = docToString(encDoc)
 //		println encXML
 		
-		def xml = new XmlSlurper().parse(new StringReader(encXML));
+		def xml = new XmlSlurper().parse(new StringReader(encXML))
 		then:
 		xml.@Type == "http://www.w3.org/2001/04/xmlenc#Element"
 		xml.EncryptionMethod.@Algorithm == encScheme.getDataEncryptionAlgorithmURI()
@@ -152,12 +153,12 @@ public class XMLEncrypterSpec extends Specification {
 	@Unroll
 	def "Verify that decryptDocument decrypts document encrypted with certificate as keyinfo using encryption scheme: #encScheme"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI())
 		def encDoc = docToStringToDoc(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute","Hej Svejs" ), twoReceiptiensValidFirst, false))
 		when:
-        JAXBElement<AttributeType> decryptedAttribute = xmlEncrypter.decryptDocument(encDoc)
-		AttributeType attributeType = decryptedAttribute.getValue();
+        JAXBElement<AttributeType> decryptedAttribute = xmlEncrypter.decryptDocument(DEFAULT_CONTEXT,encDoc)
+		AttributeType attributeType = decryptedAttribute.getValue()
 		then:
 		attributeType.getName() == "SomeAttribute"
 		attributeType.getAttributeValue().get(0) == "Hej Svejs"
@@ -169,12 +170,12 @@ public class XMLEncrypterSpec extends Specification {
 	@Unroll
 	def "Verify that decryptDocument decrypts document encrypted with keyname as keyinfo using encryption scheme: #encScheme"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI())
 		def encDoc = docToStringToDoc(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute","Hej Svejs" ), twoReceiptiensValidFirst, true))
 		when:
-		JAXBElement<AttributeType> decryptedAttribute = xmlEncrypter.decryptDocument(encDoc)
-		AttributeType attributeType = decryptedAttribute.getValue();
+		JAXBElement<AttributeType> decryptedAttribute = xmlEncrypter.decryptDocument(DEFAULT_CONTEXT, encDoc)
+		AttributeType attributeType = decryptedAttribute.getValue()
 		then:
 		attributeType.getName() == "SomeAttribute"
 		attributeType.getAttributeValue().get(0) == "Hej Svejs"
@@ -185,15 +186,17 @@ public class XMLEncrypterSpec extends Specification {
 	@Unroll
 	def "Verify that decryptDocument decrypts document even if valid key info isn't the first one using : #encScheme"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI())
 		def encDoc = docToStringToDoc(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute","Hej Svejs" ), twoReceiptiensValidLast, true))
 		when:
-		JAXBElement<AttributeType> decryptedAttribute = xmlEncrypter.decryptDocument(encDoc)
-		AttributeType attributeType = decryptedAttribute.getValue();
+		JAXBElement<AttributeType> decryptedAttribute = xmlEncrypter.decryptDocument(DEFAULT_CONTEXT,encDoc)
+		AttributeType attributeType = decryptedAttribute.getValue()
 		then:
 		attributeType.getName() == "SomeAttribute"
 		attributeType.getAttributeValue().get(0) == "Hej Svejs"
+
+
 		where:
 		encScheme << EncryptionAlgorithmScheme.values()
 	}
@@ -201,18 +204,18 @@ public class XMLEncrypterSpec extends Specification {
 
 	def "Verify that decryptDocument throws NoDecryptionKeyFoundException if no valid key info could be found"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT] = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT] = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT] = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT] = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI())
 		def encDoc = docToStringToDoc(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute","Hej Svejs" ), noValidReceiptients, true))
 		when:
-		xmlEncrypter.decryptDocument(encDoc)
+		xmlEncrypter.decryptDocument(DEFAULT_CONTEXT,encDoc)
 		
 		then:
 		thrown NoDecryptionKeyFoundException
 		
 		when:
 		def encDoc2 = docToStringToDoc(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute","Hej Svejs" ), new ArrayList(), true))
-		xmlEncrypter.decryptDocument(encDoc2)
+		xmlEncrypter.decryptDocument(DEFAULT_CONTEXT,encDoc2)
 		then:
 		thrown NoDecryptionKeyFoundException
 		
@@ -221,13 +224,13 @@ public class XMLEncrypterSpec extends Specification {
 	
 	def "Verify that decryptDocument can decrypt Assertion containing multiple encrypted SAMLAttributes with the same reciepients"(){
 		setup:
-		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI())
 		def encDoc = genComplexSAMLWithToEncryptedData()
 		when:
-		JAXBElement<AttributeType> assertion = xmlEncrypter.decryptDocument(encDoc, new EncryptedAssertionXMLConverter())
+		JAXBElement<AttributeType> assertion = xmlEncrypter.decryptDocument(DEFAULT_CONTEXT, encDoc, new EncryptedAttributeXMLConverter())
 		AssertionType assertionType = assertion.getValue()
-		AttributeStatementType attributeStatement = assertionType.getStatementOrAuthnStatementOrAuthzDecisionStatement().get(0);
+		AttributeStatementType attributeStatement = assertionType.getStatementOrAuthnStatementOrAuthzDecisionStatement().get(0)
 		AttributeType attr1 = attributeStatement.getAttributeOrEncryptedAttribute().get(0)
 		AttributeType attr2 = attributeStatement.getAttributeOrEncryptedAttribute().get(1)
 		then:
@@ -235,17 +238,39 @@ public class XMLEncrypterSpec extends Specification {
 		attr1.getName() == "SomeAttribute1"
 		attr2.getName() == "SomeAttribute2"
 	}
+
+	def "Verify that decryptDocument doesn't break signature of encrypted element"(){
+		setup:
+		byte[] signedAssertionData = createSimpleSignedAssertion()
+		when:
+		def signedAssertionJaxb = assertionPayloadParser.parseApprovalTicket(signedAssertionData)
+		then: // verify that signature works
+		signedAssertionJaxb != null
+		when:
+		Document doc = xmlEncrypter.documentBuilder.parse(new ByteArrayInputStream(signedAssertionData))
+		assertionPayloadParser.xmlSigner.verifyEnvelopedSignature(DEFAULT_CONTEXT,doc,false)
+		then: // verify that Document parse didn't break signature
+		true
+
+		when:
+		Document encryptedDoc = xmlEncrypter.encryptElement(doc,twoReceiptiensValidLast, false)
+		Document decryptedDoc = xmlEncrypter.decryptDoc(DEFAULT_CONTEXT,encryptedDoc,null)
+		then: // Verify that decrypted element still verifies
+		assertionPayloadParser.xmlSigner.verifyEnvelopedSignature(DEFAULT_CONTEXT,decryptedDoc,false)
+
+
+	}
 	
 	def "Verify encryption and decryption of properties"() {
 		setup:
-		Properties properties = new Properties();
-		properties.setProperty("prop1", "somevalue11");
-		properties.setProperty("prop2", "somevalue22");
-		properties.setProperty("prop3", "somevalue33");
-		properties.setProperty("prop4", "somevalue44");
+		Properties properties = new Properties()
+		properties.setProperty("prop1", "somevalue11")
+		properties.setProperty("prop2", "somevalue22")
+		properties.setProperty("prop3", "somevalue33")
+		properties.setProperty("prop4", "somevalue44")
 		when:
 		Document encDocument = xmlEncrypter.encryptProperties(properties, threeReceipients, true)
-		Properties decProperties = xmlEncrypter.decryptProperties(encDocument);
+		Properties decProperties = xmlEncrypter.decryptProperties(encDocument)
 		then:
 		decProperties.getProperty("prop1") == "somevalue11"
 		decProperties.getProperty("prop2") == "somevalue22"
@@ -272,7 +297,7 @@ public class XMLEncrypterSpec extends Specification {
 		true
 		
 		when:
-		Element encryptionMethod = encryptedElement.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_ENCRYPTIONMETHOD).item(0);
+		Element encryptionMethod = encryptedElement.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_ENCRYPTIONMETHOD).item(0)
 		encryptionMethod.setAttribute(EncryptionConstants._ATT_ALGORITHM, "INVALID")
 		
 		xmlEncrypter.verifyCiphers(encryptedElement)
@@ -285,15 +310,15 @@ public class XMLEncrypterSpec extends Specification {
 		ContextMessageSecurityProvider.Context c = new ContextMessageSecurityProvider.Context("SomeUsage")
 		ContextMessageSecurityProvider securityProvider = Mock(ContextMessageSecurityProvider)
 
-		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI())
 		def encDoc = genComplexSAMLWithToEncryptedData()
 
 		when:
 		XMLEncrypter x = new XMLEncrypter(securityProvider, assertionPayloadParser.getDocumentBuilder(),
 				assertionPayloadParser.getAssertionMarshaller(),
 				assertionPayloadParser.getAssertionUnmarshaller())
-		x.decryptDoc(c, encDoc,new EncryptedAssertionXMLConverter())
+		x.decryptDoc(c, encDoc,new EncryptedAttributeXMLConverter())
 		then:
 		2 * securityProvider.getDecryptionKeyIds(c) >> xmlEncrypter.securityProvider.getDecryptionKeyIds()
 		2 * securityProvider.getDecryptionKey(c,!null) >> xmlEncrypter.securityProvider.getDecryptionKey(null)
@@ -305,15 +330,15 @@ public class XMLEncrypterSpec extends Specification {
 		ContextMessageSecurityProvider.Context c = ContextMessageSecurityProvider.DEFAULT_CONTEXT
 		ContextMessageSecurityProvider securityProvider = Mock(ContextMessageSecurityProvider)
 
-		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI())
 		def encDoc = genComplexSAMLWithToEncryptedData()
 
 		when:
 		XMLEncrypter x = new XMLEncrypter(securityProvider, assertionPayloadParser.getDocumentBuilder(),
 				assertionPayloadParser.getAssertionMarshaller(),
 				assertionPayloadParser.getAssertionUnmarshaller())
-		x.decryptDoc(c, encDoc,new EncryptedAssertionXMLConverter())
+		x.decryptDoc(c, encDoc,new EncryptedAttributeXMLConverter())
 		then:
 		2 * securityProvider.getDecryptionKeyIds(c) >> xmlEncrypter.securityProvider.getDecryptionKeyIds()
 		2 * securityProvider.getDecryptionKey(c,!null) >> xmlEncrypter.securityProvider.getDecryptionKey(null)
@@ -324,8 +349,8 @@ public class XMLEncrypterSpec extends Specification {
 		setup:
 		MessageSecurityProvider	 securityProvider = Mock(MessageSecurityProvider)
 
-		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI());
-		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI());
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI())
 		def encDoc = genComplexSAMLWithToEncryptedData()
 
 		when:
@@ -333,7 +358,7 @@ public class XMLEncrypterSpec extends Specification {
 				assertionPayloadParser.getAssertionMarshaller(),
 				assertionPayloadParser.getAssertionUnmarshaller())
 
-		x.decryptDoc(encDoc,new EncryptedAssertionXMLConverter())
+		x.decryptDoc(encDoc,new EncryptedAttributeXMLConverter())
 		then:
 		2 * securityProvider.getDecryptionKeyIds() >> xmlEncrypter.securityProvider.getDecryptionKeyIds()
 		2 * securityProvider.getDecryptionKey(!null) >> xmlEncrypter.securityProvider.getDecryptionKey(null)
@@ -428,17 +453,17 @@ public class XMLEncrypterSpec extends Specification {
 	
 	private String docToString(Document doc) throws Exception {
 
-		ByteArrayOutputStream bo = new ByteArrayOutputStream();
+		ByteArrayOutputStream bo = new ByteArrayOutputStream()
 
-		TransformerFactory factory = TransformerFactory.newInstance();
-		Transformer transformer = factory.newTransformer();
-		transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-		DOMSource source = new DOMSource(doc);
-		StreamResult result = new StreamResult(bo);
-		transformer.transform(source, result);
+		TransformerFactory factory = TransformerFactory.newInstance()
+		Transformer transformer = factory.newTransformer()
+		transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes")
+		transformer.setOutputProperty(OutputKeys.INDENT, "yes")
+		DOMSource source = new DOMSource(doc)
+		StreamResult result = new StreamResult(bo)
+		transformer.transform(source, result)
 
-		bo.close();
+		bo.close()
 		return new String(bo.toByteArray(),"UTF-8")
 				
 	}
@@ -446,7 +471,7 @@ public class XMLEncrypterSpec extends Specification {
 
 	
 	private Document docToStringToDoc(Document doc) throws Exception{
-		return xmlEncrypter.documentBuilder.parse(new ByteArrayInputStream(docToString(doc).getBytes("UTF-8")));
+		return xmlEncrypter.documentBuilder.parse(new ByteArrayInputStream(docToString(doc).getBytes("UTF-8")))
 	}
 	
 	private Document genComplexSAMLWithToEncryptedData(){
@@ -456,17 +481,17 @@ public class XMLEncrypterSpec extends Specification {
 		JAXBElement<EncryptedDataType> encDataElement1 = xmlEncrypter.unmarshaller.unmarshal(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute1","Hej Svejs1" ), twoReceiptiensValidLast, true))
 		JAXBElement<EncryptedDataType> encDataElement2 = xmlEncrypter.unmarshaller.unmarshal(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute2","Hej Svejs2" ), twoReceiptiensValidLast, true))
 		
-		EncryptedElementType encryptedElementType1 = of.createEncryptedElementType();
-		encryptedElementType1.setEncryptedData(encDataElement1.getValue());
-		
-		EncryptedElementType encryptedElementType2 = of.createEncryptedElementType();
-		encryptedElementType2.setEncryptedData(encDataElement2.getValue());
-		
+		EncryptedElementType encryptedElementType1 = of.createEncryptedElementType()
+		encryptedElementType1.setEncryptedData(encDataElement1.getValue())
+
+		EncryptedElementType encryptedElementType2 = of.createEncryptedElementType()
+		encryptedElementType2.setEncryptedData(encDataElement2.getValue())
+
 		AttributeStatementType attributeStatementType = of.createAttributeStatementType()
 		attributeStatementType.attributeOrEncryptedAttribute.add(encryptedElementType1)
 		attributeStatementType.attributeOrEncryptedAttribute.add(encryptedElementType2)
 			
-		AssertionType assertionType = of.createAssertionType();
+		AssertionType assertionType = of.createAssertionType()
 		assertionType.setID("_" +MessageGenerateUtils.generateRandomUUID())
 		assertionType.setIssueInstant(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date()))
 		assertionType.setIssuer(nameIdType)
@@ -479,6 +504,25 @@ public class XMLEncrypterSpec extends Specification {
 		
 		//println new String(signedAssertion,"UTF-8")
 		return xmlEncrypter.documentBuilder.parse(new ByteArrayInputStream(signedAssertion))
+	}
+
+	byte[] createSimpleSignedAssertion(){
+		NameIDType nameIdType = of.createNameIDType()
+		nameIdType.setValue("SomeIssuer")
+
+		AttributeStatementType attributeStatementType = of.createAttributeStatementType()
+		attributeStatementType.attributeOrEncryptedAttribute.add(genSAMLAttribute("SomeAttribute1","Hej Svejs1" ).value)
+
+		AssertionType assertionType = of.createAssertionType()
+		assertionType.setID("_" +MessageGenerateUtils.generateRandomUUID())
+		assertionType.setIssueInstant(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date()))
+		assertionType.setIssuer(nameIdType)
+		assertionType.setVersion("2.0")
+		assertionType.getStatementOrAuthnStatementOrAuthzDecisionStatement().add(attributeStatementType)
+
+		def assertion = of.createAssertion(assertionType)
+
+		return assertionPayloadParser.marshallAndSignAssertion(assertion)
 	}
 
 	def testcertdata1 = """MIIDcTCCAlmgAwIBAgIEZf08dzANBgkqhkiG9w0BAQsFADBpMRAwDgYDVQQGEwdVbmtub3duMRAw
@@ -521,7 +565,7 @@ utkUJrOx5P7ZIr91erXUfsQbPDsQkcjAi3IPJFAr"""
 		"0E2YIa/kOrlvy5Z62sj24yczBL9uHfWpQUefA1+R9JpbOj0WEk+rAV0xJ2knmC/R" +
 		"NzHWz92kL6UKUFzyBXBiBbY7TSVjO+bV/uPaTEVP7QhJk4Cahg1a7h8iMdF78ths" +
 		"+xMeZX1KyiL4Dpo2rocZAvdL/C8qkt/uEgOjwOTdmoRVxkFWcm+DRNa26cclBQ4t" +
-		"Vw==").getBytes();
-	
+		"Vw==").getBytes()
+
 
 }
