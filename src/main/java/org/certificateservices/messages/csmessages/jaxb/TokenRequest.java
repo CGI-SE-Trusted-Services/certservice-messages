@@ -440,7 +440,7 @@ public class TokenRequest {
      *
      */
     public void setDepartmentName(String value) {
-        this.departmentName = departmentName;
+        this.departmentName = value;
     }
 
     /**
