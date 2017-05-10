@@ -103,7 +103,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	private SystemTime systemTime = new DefaultSystemTime();
 	private XMLEncrypter xmlEncrypter;
 	private XMLEncrypter userDataXmlEncrypter;
-	BaseSAMLMessageParser.EncryptedAttributeXMLConverter encryptedAssertionXMLConverter = new BaseSAMLMessageParser.EncryptedAttributeXMLConverter();
+	private BaseSAMLMessageParser.EncryptedAttributeXMLConverter encryptedAttributeXMLConverter = new BaseSAMLMessageParser.EncryptedAttributeXMLConverter();
 	private XMLSigner xmlSigner;
 	private CertificateFactory cf;
 	
@@ -657,7 +657,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 			getUserDataMarshaller().marshal(assertion, doc);
 			
 			@SuppressWarnings("unchecked")
-			JAXBElement<AssertionType> decryptedAssertion = (JAXBElement<AssertionType>) userDataXmlEncrypter.decryptDocument(doc, encryptedAssertionXMLConverter);
+			JAXBElement<AssertionType> decryptedAssertion = (JAXBElement<AssertionType>) userDataXmlEncrypter.decryptDocument(doc, encryptedAttributeXMLConverter);
 			
 			schemaValidateAssertion(decryptedAssertion);
 			
