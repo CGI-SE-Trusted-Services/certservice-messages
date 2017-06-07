@@ -47,8 +47,9 @@ class AuthorizationPayloadParserSpec extends Specification {
 		pp.getJAXBPackage() == "org.certificateservices.messages.authorization.jaxb"
 		pp.getNameSpace() == "http://certificateservices.org/xsd/authorization2_0"
 		pp.getSchemaAsInputStream("2.0") != null
-		pp.getDefaultPayloadVersion() == "2.0"
-		pp.getSupportedVersions() == ["2.0"] as String[]
+		pp.getSchemaAsInputStream("2.1") != null
+		pp.getDefaultPayloadVersion() == "2.1"
+		pp.getSupportedVersions() == ["2.1","2.0"] as String[]
 	}
 
 	def "Verify that genGetRequesterRolesRequest() generates a valid xml message and genGetRequesterRolesResponse() generates a valid CSMessageResponseData without any token type query"(){

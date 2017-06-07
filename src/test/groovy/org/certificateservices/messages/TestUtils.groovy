@@ -5,7 +5,9 @@ import org.certificateservices.messages.csmessages.CSMessageResponseData;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.utils.SystemTime;
 
-import groovy.xml.XmlUtil;
+import groovy.xml.XmlUtil
+import org.w3c.dom.Document
+
 import java.text.SimpleDateFormat
 
 public class TestUtils {
@@ -27,13 +29,17 @@ public class TestUtils {
 	public static String prettyPrintXML(String msg){
 	    return XmlUtil.serialize(msg);
     }
+
+	public static String prettyPrintXML(Document doc){
+		return XmlUtil.serialize(doc.getDocumentElement())
+	}
 	
 	public static void printXML(byte[] data){
-		println prettyPrintXML(data);
+		println prettyPrintXML(data)
 	}
 	
 	public static void printXML(String msg){
-		println prettyPrintXML(msg);
+		println prettyPrintXML(msg)
     }
 	
 	public static void messageContainsPayload(byte[] data, String payloadName){

@@ -17,6 +17,7 @@ import javax.xml.namespace.QName
 
 import static org.certificateservices.messages.TestUtils.printXML
 import static org.certificateservices.messages.TestUtils.slurpXml
+import static org.certificateservices.messages.ContextMessageSecurityProvider.DEFAULT_CONTEXT
 
 class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
@@ -28,7 +29,7 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 	Duration cacheDuration
 
 	def setup() {
-		smdmp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv);
+		smdmp.init(secProv);
 		smdmp.systemTime = mockedSystemTime
 
 		validUntil = simpleDateFormat.parse("2016-02-1")
@@ -70,7 +71,7 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.AdditionalMetadataLocation.size() == 1
 
 		when: "try to parse"
-		dt = smdmp.parseMessage(dtd,false)
+		dt = smdmp.parseMessage(null,dtd,false)
 		then:
 		dt != null
 
@@ -88,7 +89,7 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.IDPSSODescriptor.size() == 1
 
 		when: "try to parse"
-		dt = smdmp.parseMessage(dtd,false)
+		dt = smdmp.parseMessage(DEFAULT_CONTEXT,dtd,false)
 		then:
 		dt != null
 
@@ -204,7 +205,7 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.Attribute[0].@Name == "SomeAttr1"
 
 		when: "Try to parse and validate schema"
-		dt = smdmp.parseMessage(dtd, false)
+		dt = smdmp.parseMessage(DEFAULT_CONTEXT,dtd, false)
 		then:
 		dt != null
 
@@ -223,7 +224,7 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.SingleSignOnService[0].@Binding == "http://ssobinding1.com"
 
 		when: "Try to parse and validate schema"
-		dt = smdmp.parseMessage(dtd, false)
+		dt = smdmp.parseMessage(DEFAULT_CONTEXT,dtd, false)
 		then:
 		dt != null
 	}
@@ -267,7 +268,7 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.AttributeConsumingService.size() == 1
 
 		when: "Try to parse and validate schema"
-		dt = smdmp.parseMessage(dtd, false)
+		dt = smdmp.parseMessage(DEFAULT_CONTEXT,dtd, false)
 		then:
 		dt != null
 
@@ -286,7 +287,7 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.AssertionConsumerService[0].@Binding == "http://acbinding1.com"
 
 		when: "Try to parse and validate schema"
-		dt = smdmp.parseMessage(dtd, false)
+		dt = smdmp.parseMessage(DEFAULT_CONTEXT,dtd, false)
 		then:
 		dt != null
 	}
@@ -471,51 +472,51 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 				[createSP()], null,
 				null, null, null);
 		when:
-		byte[] edd = smdmp.genEntitiesDescriptor(validUntil,cacheDuration,"SomeName",createExtensions(),[edt1,edt2], true);
+		byte[] edd = smdmp.genEntitiesDescriptor(DEFAULT_CONTEXT,validUntil,cacheDuration,"SomeName",createExtensions(),[edt1,edt2], true);
 		//printXML(edd)
 		def xml = slurpXml(edd)
 		then:
 		xml.Signature.size() == 1
 
 		when:
-		EntitiesDescriptorType edt = smdmp.parseMessage(edd,true)
+		EntitiesDescriptorType edt = smdmp.parseMessage(DEFAULT_CONTEXT,edd,true)
 		then:
 		edt.signature != null
 
 
 		when:
-		edd = smdmp.genEntitiesDescriptor(null,null,null,null,[edt1], true);
+		edd = smdmp.genEntitiesDescriptor(DEFAULT_CONTEXT,null,null,null,null,[edt1], true);
 		//printXML(edd)
 		xml = slurpXml(edd)
 		then:
 		xml.Signature.size() == 1
 
 		when:
-		edt = smdmp.parseMessage(edd,true)
+		edt = smdmp.parseMessage(DEFAULT_CONTEXT,edd,true)
 		then:
 		edt.signature != null
 
 		when:
-		edd = smdmp.genEntitiesDescriptor(null,null,null,null,[edt1], false);
+		edd = smdmp.genEntitiesDescriptor(DEFAULT_CONTEXT,null,null,null,null,[edt1], false);
 		//printXML(edd)
 		xml = slurpXml(edd)
 		then:
 		xml.Signature.size() == 0
 
 		when:
-		smdmp.parseMessage(edd,true)
+		smdmp.parseMessage(DEFAULT_CONTEXT,edd,true)
 		then:
 		thrown MessageContentException
 
 		when:
-		edt = smdmp.parseMessage(edd,false)
+		edt = smdmp.parseMessage(DEFAULT_CONTEXT,edd,false)
 		then:
 		edt.signature == null
 	}
 
 	def "Verify that signed EntityDescriptor are generated correctly"(){
 		when:
-		byte[] edd = smdmp.genEntityDescriptor("SomeEntityId", validUntil,cacheDuration, createExtensions(),
+		byte[] edd = smdmp.genEntityDescriptor(DEFAULT_CONTEXT,"SomeEntityId", validUntil,cacheDuration, createExtensions(),
 				[createIDP(), createSP()], createOrganisation(),
 				createContactPersons(), createMetadataLocations(), createOtherAttributes(),true);
 		//printXML(edd)
@@ -524,37 +525,37 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.Signature.size() == 1
 
 		when:
-		EntityDescriptorType edt = smdmp.parseMessage(edd,true)
+		EntityDescriptorType edt = smdmp.parseMessage(DEFAULT_CONTEXT,edd,true)
 		then:
 		edt.signature != null
 
 
 		when:
-		edd = smdmp.genEntityDescriptor("SomeEntityId", null,null, null, [createIDP()], null, null, null, null, true);
+		edd = smdmp.genEntityDescriptor(DEFAULT_CONTEXT,"SomeEntityId", null,null, null, [createIDP()], null, null, null, null, true);
 		//printXML(edd)
 		xml = slurpXml(edd)
 		then:
 		xml.Signature.size() == 1
 
 		when:
-		edt = smdmp.parseMessage(edd,true)
+		edt = smdmp.parseMessage(DEFAULT_CONTEXT,edd,true)
 		then:
 		edt.signature != null
 
 		when:
-		edd = smdmp.genEntityDescriptor("SomeEntityId", null,null, null, [createIDP()], null, null, null, null, false);
+		edd = smdmp.genEntityDescriptor(DEFAULT_CONTEXT,"SomeEntityId", null,null, null, [createIDP()], null, null, null, null, false);
 		//printXML(edd)
 		xml = slurpXml(edd)
 		then:
 		xml.Signature.size() == 0
 
 		when:
-		smdmp.parseMessage(edd,true)
+		smdmp.parseMessage(DEFAULT_CONTEXT,edd,true)
 		then:
 		thrown MessageContentException
 
 		when:
-		edt = smdmp.parseMessage(edd,false)
+		edt = smdmp.parseMessage(DEFAULT_CONTEXT,edd,false)
 		then:
 		edt.signature == null
 	}
@@ -568,14 +569,14 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 				true, createSingleSignOnServices(), createNameIDMappingServices(), createAssertionIDRequestServices(),
 				["attrprofile1", "attrprofile2"], createSAMLAttributes())
 		JAXBElement<IDPSSODescriptorType> jdt = mdOf.createIDPSSODescriptor(dt)
-		byte[] dtd = smdmp.marshallAndSign(jdt)
+		byte[] dtd = smdmp.marshallAndSign(DEFAULT_CONTEXT,jdt)
 		//printXML(dtd)
 		def xml = slurpXml(dtd)
 		then:
 		xml.Signature.size() == 1
 
 		when:
-		dt = smdmp.parseMessage(dtd,true)
+		dt = smdmp.parseMessage(DEFAULT_CONTEXT,dtd,true)
 		then:
 		dt.signature != null
 
@@ -585,14 +586,14 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 				null,null,null,
 				null, createSingleSignOnServices(),null,null,null,null	)
 		jdt = mdOf.createIDPSSODescriptor(dt)
-		dtd = smdmp.marshallAndSign(jdt)
+		dtd = smdmp.marshallAndSign(DEFAULT_CONTEXT,jdt)
 		//printXML(dtd)
 		xml = slurpXml(dtd)
 		then:
 		xml.Signature.size() == 1
 
 		when:
-		dt = smdmp.parseMessage(dtd,true)
+		dt = smdmp.parseMessage(DEFAULT_CONTEXT,dtd,true)
 		then:
 		dt.signature != null
 	}
@@ -604,14 +605,14 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 				createContactPersons(),createOtherAttributes(), createArtifactResolutionServices(),
 				createSingleLogoutServices(), createManageNameIDServices(), ["nameid1","nameid2"],
 				true, false, createAssertionConsumerServices(), createAttributeConsumingServices())
-		byte[] dtd = smdmp.marshallAndSign(mdOf.createSPSSODescriptor(dt));
+		byte[] dtd = smdmp.marshallAndSign(DEFAULT_CONTEXT,mdOf.createSPSSODescriptor(dt));
 		//printXML(dtd)
 		def xml = slurpXml(dtd)
 		then:
 		xml.Signature.size() == 1
 
 		when:
-		dt = smdmp.parseMessage(dtd,true)
+		dt = smdmp.parseMessage(DEFAULT_CONTEXT,dtd,true)
 		then:
 		dt.signature != null
 
@@ -626,7 +627,7 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.Signature.size() == 1
 
 		when:
-		dt = smdmp.parseMessage(dtd,true)
+		dt = smdmp.parseMessage(DEFAULT_CONTEXT,dtd,true)
 		then:
 		dt.signature != null
 	}

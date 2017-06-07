@@ -42,7 +42,8 @@ public enum TokenTypePermissionType {
     MODIFYANDISSUE,
     CHANGESTATUS,
     PUTONHOLD,
-    DELETE;
+    DELETE,
+    RECOVERKEYS;
 
     public String value() {
         return name();

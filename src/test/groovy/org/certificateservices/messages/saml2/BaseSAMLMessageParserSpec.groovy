@@ -23,6 +23,7 @@ import javax.xml.bind.JAXBElement
 
 import static org.certificateservices.messages.TestUtils.printXML
 import static org.certificateservices.messages.TestUtils.slurpXml
+import static org.certificateservices.messages.ContextMessageSecurityProvider.DEFAULT_CONTEXT
 
 class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
@@ -34,7 +35,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
 	def setup(){
 		spmp = new SAMLProtocolMessageParser();
-		spmp.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv, null);
+		spmp.init(secProv, null);
 		spmp.systemTime = mockedSystemTime
 
 		bsmp = spmp;
@@ -55,7 +56,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		customMock.getCustomJAXBClasspath() >> "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.credmanagement.jaxb:org.certificateservices.messages.authorization.jaxb"
 		customMock.getCustomSchemaLocations() >> [DefaultCSMessageParser.CSMESSAGE_XSD_SCHEMA_2_0_RESOURCE_LOCATION , CredManagementPayloadParser.CREDMANAGEMENT_XSD_SCHEMA_2_0_RESOURCE_LOCATION , AuthorizationPayloadParser.AUTHORIZATION_XSD_SCHEMA_2_0_RESOURCE_LOCATION]
 		when:
-		p.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv, customMock);
+		p.init(secProv, customMock);
 		then:
 		p.customJAXBClasspath == "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.credmanagement.jaxb:org.certificateservices.messages.authorization.jaxb"
 		p.customSchemaLocations.length == 3
@@ -64,7 +65,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		p.customSchemaLocations[2] == AuthorizationPayloadParser.AUTHORIZATION_XSD_SCHEMA_2_0_RESOURCE_LOCATION
 		p.getJAXBContext().createJAXBIntrospector().getElementName(new IssueTokenCredentialsRequest()) != null
 		when:
-		Object o = p.parseMessage(csMessageData,false)
+		Object o = p.parseMessage(DEFAULT_CONTEXT,csMessageData,false)
 		then:
 		o instanceof CSMessage
 		p.schemaValidate(o)
@@ -77,7 +78,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 	
 	def "Verify genFailureMessage() generates a valid Failure message"(){
 		when: "Generate a message with failure message"
-		byte[] samlPData = bsmp.genFailureMessage("_143214321", ResponseStatusCodes.REQUESTER, "Some Error")
+		byte[] samlPData = bsmp.genFailureMessage(DEFAULT_CONTEXT,"_143214321", ResponseStatusCodes.REQUESTER, "Some Error")
 		//println new String(samlPData)
 
 		def xml = new XmlSlurper().parse(new ByteArrayInputStream(samlPData))
@@ -90,7 +91,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		xml.Status.StatusMessage == "Some Error"
 		
 		when: "Generate a message without failure message"
-		samlPData = bsmp.genFailureMessage("_143214321", ResponseStatusCodes.REQUESTER, null)
+		samlPData = bsmp.genFailureMessage(DEFAULT_CONTEXT,"_143214321", ResponseStatusCodes.REQUESTER, null)
 		//println new String(samlPData)
 
 		xml = new XmlSlurper().parse(new ByteArrayInputStream(samlPData))
@@ -107,7 +108,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 	
 	def "Verify getAssertionFromResponseType() returns null if no assertion exists in respinse"(){
 		setup:
-		ResponseType resp = spmp.parseMessage(bsmp.genFailureMessage("_143214321", ResponseStatusCodes.REQUESTER, "Some Error"), false)
+		ResponseType resp = spmp.parseMessage(DEFAULT_CONTEXT,bsmp.genFailureMessage(DEFAULT_CONTEXT,"_143214321", ResponseStatusCodes.REQUESTER, "Some Error"), false)
 		when:
 		def assertion = bsmp.getAssertionFromResponseType(resp)
 		then:
@@ -235,7 +236,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		subject.getContent().add(of.createNameID(subjectNameId));
 
 
-		byte[] failureMessage = bsmp.genFailureMessage("SomeResponseId", issuer,"SomeDestination","SomeConsent", extensions
+		byte[] failureMessage = bsmp.genFailureMessage(DEFAULT_CONTEXT,"SomeResponseId", issuer,"SomeDestination","SomeConsent", extensions
 		,ResponseStatusCodes.RESPONDER,"SomeFailureMessage", true);
 
 		def xml = slurpXml(failureMessage)
@@ -255,13 +256,13 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		xml.Status.StatusMessage == "SomeFailureMessage"
 
 		when:
-		ResponseType rt = bsmp.parseMessage(failureMessage, true)
+		ResponseType rt = bsmp.parseMessage(DEFAULT_CONTEXT,failureMessage, true)
 
 		then:
 		rt.getIssuer().value == "SomeIssuer"
 
 		when:
-		failureMessage = bsmp.genFailureMessage(null, null,null,null, null
+		failureMessage = bsmp.genFailureMessage(null,null, null,null,null, null
 				,ResponseStatusCodes.RESPONDER,null, false);
 
 		xml = slurpXml(failureMessage)
@@ -271,12 +272,12 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		xml.Signature.SignedInfo.size() == 0
 
 		when:
-		rt = bsmp.parseMessage(failureMessage, false)
+		rt = bsmp.parseMessage(null,failureMessage, false)
 		then:
 		rt.status.statusCode.value == "urn:oasis:names:tc:SAML:2.0:status:Responder"
 
 		when: "Verify that unsigned message throws exception if signature is required"
-		bsmp.parseMessage(failureMessage, true)
+		bsmp.parseMessage(DEFAULT_CONTEXT,failureMessage, true)
 		then:
 		thrown MessageContentException
 
@@ -303,7 +304,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		assertion.getValue().getStatementOrAuthnStatementOrAuthzDecisionStatement().get(0).getAttributeOrEncryptedAttribute().size() == 1
 
 		when:
-		assertion = bsmp.decryptAssertion(assertion)
+		assertion = bsmp.decryptAssertion(DEFAULT_CONTEXT,assertion)
 		then:
 		assertion.getValue().getStatementOrAuthnStatementOrAuthzDecisionStatement().get(0).getAttributeOrEncryptedAttribute().get(0) instanceof AttributeType
 		assertion.getValue().getStatementOrAuthnStatementOrAuthzDecisionStatement().get(0).getAttributeOrEncryptedAttribute().size() == 1

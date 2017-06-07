@@ -199,22 +199,23 @@ public class XMLSignerSpec extends Specification {
 
 	}
 
+
 	def "Verify that correct method is used if message security provider is ContextMessageSecurityProvider"(){
 		setup:
 		ContextMessageSecurityProvider.Context c = new ContextMessageSecurityProvider.Context("SomeUsage")
 		ContextMessageSecurityProvider securityProvider = Mock(ContextMessageSecurityProvider)
 		when:
 
-		XMLSigner x = new XMLSigner(c, securityProvider, assertionPayloadParser.getDocumentBuilder(), true,
+		XMLSigner x = new XMLSigner(securityProvider, assertionPayloadParser.getDocumentBuilder(), true,
 				xmlSigner.defaultSignatureLocationFinder,
 				xmlSigner.defaultOrganisationLookup)
-		x.verifyEnvelopedSignature(validSignatureSAMLP)
+		x.verifyEnvelopedSignature(c,validSignatureSAMLP)
 		then:
 		1 * securityProvider.isValidAndAuthorized(c,!null,_) >> true
 
 		when:
 		Document doc = xmlSigner.documentBuilder.parse(new ByteArrayInputStream(sAMLPWithNoSignature))
-		x.sign(doc, xmlSigner.defaultSignatureLocationFinder)
+		x.sign(c,doc, xmlSigner.defaultSignatureLocationFinder)
 		then:
 		1 * securityProvider.getSigningAlgorithmScheme(c) >> SigningAlgorithmScheme.RSAWithSHA256
 		1 * securityProvider.getSigningCertificate(c) >> xmlSigner.messageSecurityProvider.getSigningCertificate()

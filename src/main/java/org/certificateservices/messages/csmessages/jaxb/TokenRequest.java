@@ -439,8 +439,8 @@ public class TokenRequest {
      *     {@link String }
      *
      */
-    public void setDepartmentNamen(String value) {
-        this.departmentName = departmentName;
+    public void setDepartmentName(String value) {
+        this.departmentName = value;
     }
 
     /**

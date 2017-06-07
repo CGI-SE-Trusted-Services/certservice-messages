@@ -45,6 +45,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.apache.xml.security.Init;
+import org.certificateservices.messages.ContextMessageSecurityProvider;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
@@ -580,7 +581,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 
 			jaxbData.getCSMessageMarshaller(version).marshal(csMessage, doc);
 
-			return xmlSigner.marshallAndSign(doc, cSMessageSignatureLocationFinder, null);
+			return xmlSigner.marshallAndSign(ContextMessageSecurityProvider.DEFAULT_CONTEXT,doc, cSMessageSignatureLocationFinder);
 		} catch (JAXBException e) {
 			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
 		} catch (ParserConfigurationException e) {

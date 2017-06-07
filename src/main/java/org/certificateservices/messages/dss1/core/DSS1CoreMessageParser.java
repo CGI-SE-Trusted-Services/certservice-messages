@@ -1,5 +1,6 @@
 package org.certificateservices.messages.dss1.core;
 
+import org.certificateservices.messages.ContextMessageSecurityProvider;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
@@ -100,6 +101,7 @@ public class DSS1CoreMessageParser extends BaseSAMLMessageParser{
 
     /**
      * Method to generate a marshalled SignRequest that is optionally signed.
+     * @param context message security related context. Use null if no signature should be used.
      * @param requestID This attribute is used to correlate requests with responses.
      *                  When present in a request, the server MUST return it in the response.
      *                  (Optional, use null to not set).
@@ -113,10 +115,10 @@ public class DSS1CoreMessageParser extends BaseSAMLMessageParser{
      * @throws MessageProcessingException if internal error occurred generating the message.
      * @throws MessageContentException if bad message format was detected.
      */
-    public byte[] genSignRequest(String requestID, String profile, List<Object> optionalInputs, InputDocuments inputDocuments, boolean sign) throws MessageProcessingException, MessageContentException {
+    public byte[] genSignRequest(ContextMessageSecurityProvider.Context context,String requestID, String profile, List<Object> optionalInputs, InputDocuments inputDocuments, boolean sign) throws MessageProcessingException, MessageContentException {
         SignRequest sr = genSignRequest(requestID,profile,optionalInputs,inputDocuments);
         if(sign) {
-            return marshallAndSign(sr);
+            return marshallAndSign(context,sr);
         }
         return marshall(sr);
     }
@@ -148,6 +150,7 @@ public class DSS1CoreMessageParser extends BaseSAMLMessageParser{
 
     /**
      * Method to generate a marshalled SignResponse that is optionally signed.
+     * @param context message security related context. Use null if no signature should be used.
      * @param requestID This attribute is used to correlate requests with responses.
      *                  When present in a request, the server MUST return it in the response.
      *                  (Optional, use null to not set).
@@ -166,10 +169,10 @@ public class DSS1CoreMessageParser extends BaseSAMLMessageParser{
      * @throws MessageProcessingException if internal error occurred generating the message.
      * @throws MessageContentException if bad message format was detected.
      */
-    public byte[] genSignResponse(String requestID, String profile, Result result, List<Object> optionalOutputs, SignatureObject signatureObject, boolean sign) throws MessageProcessingException, MessageContentException {
+    public byte[] genSignResponse(ContextMessageSecurityProvider.Context context,String requestID, String profile, Result result, List<Object> optionalOutputs, SignatureObject signatureObject, boolean sign) throws MessageProcessingException, MessageContentException {
         SignResponse sr = genSignResponse(requestID,profile,result,optionalOutputs,signatureObject);
         if(sign) {
-            return marshallAndSign(sr);
+            return marshallAndSign(context,sr);
         }
         return marshall(sr);
     }
@@ -204,6 +207,7 @@ public class DSS1CoreMessageParser extends BaseSAMLMessageParser{
     /**
      * Method to generate a marshalled VerifyRequest that is optionally signed.
      *
+     * @param context message security related context. Use null if no signature should be used.
      * @param requestID This attribute is used to correlate requests with responses.
      *                  When present in a request, the server MUST return it in the response.
      *                  (Optional, use null to not set).
@@ -224,11 +228,11 @@ public class DSS1CoreMessageParser extends BaseSAMLMessageParser{
      * @throws MessageProcessingException if internal error occurred generating the message.
      * @throws MessageContentException if bad message format was detected.
      */
-    public byte[] genVerifyRequest(String requestID, String profile, List<Object> optionalInputs,
+    public byte[] genVerifyRequest(ContextMessageSecurityProvider.Context context,String requestID, String profile, List<Object> optionalInputs,
                                    InputDocuments inputDocuments,SignatureObject signatureObject, boolean sign) throws MessageProcessingException, MessageContentException {
         VerifyRequest vr = genVerifyRequest(requestID,profile,optionalInputs,inputDocuments,signatureObject);
         if(sign) {
-            return marshallAndSign(vr);
+            return marshallAndSign(context,vr);
         }
         return marshall(vr);
 
@@ -255,6 +259,7 @@ public class DSS1CoreMessageParser extends BaseSAMLMessageParser{
     /**
      * Method to generate a marshalled VerifyResponse that is optionally signed.
      *
+     * @param context message security related context. Use null if no signature should be used.
      * @param requestID This attribute is used to correlate requests with responses.
      *                  When present in a request, the server MUST return it in the response.
      *                  (Optional, use null to not set).
@@ -268,10 +273,10 @@ public class DSS1CoreMessageParser extends BaseSAMLMessageParser{
      * @throws MessageProcessingException if internal error occurred generating the message.
      * @throws MessageContentException if bad message format was detected.
      */
-    public byte[] genVerifyResponse(String requestID, String profile, Result result, List<Object> optionalOutputs, boolean sign) throws MessageProcessingException, MessageContentException {
+    public byte[] genVerifyResponse(ContextMessageSecurityProvider.Context context,String requestID, String profile, Result result, List<Object> optionalOutputs, boolean sign) throws MessageProcessingException, MessageContentException {
         JAXBElement<ResponseBaseType> vr = genVerifyResponse(requestID,profile,result,optionalOutputs);
         if(sign) {
-            return marshallAndSign(vr);
+            return marshallAndSign(context,vr);
         }
         return marshall(vr);
     }

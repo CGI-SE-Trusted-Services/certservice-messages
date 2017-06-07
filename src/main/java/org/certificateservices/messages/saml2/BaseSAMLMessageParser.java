@@ -37,7 +37,6 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLOutputFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -86,7 +85,6 @@ public abstract class BaseSAMLMessageParser {
 	protected static final String ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/cs-message-saml-schema-assertion-2.0.xsd";
 	protected static final String SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/cs-message-saml-schema-protocol-2.0.xsd";
 
-	protected ContextMessageSecurityProvider.Context securityProviderContext;
 
 	protected String customJAXBClasspath = null;
 	protected String[] customSchemaLocations = new String[0];
@@ -95,7 +93,8 @@ public abstract class BaseSAMLMessageParser {
 	protected org.certificateservices.messages.xmldsig.jaxb.ObjectFactory dsigOf = new org.certificateservices.messages.xmldsig.jaxb.ObjectFactory();
 	protected SystemTime systemTime = new DefaultSystemTime();
 	protected XMLEncrypter xmlEncrypter;
-	EncryptedAssertionXMLConverter encryptedAssertionXMLConverter = new EncryptedAssertionXMLConverter();
+	EncryptedAttributeXMLConverter encryptedAttributeXMLConverter = new EncryptedAttributeXMLConverter();
+
 	protected XMLSigner xmlSigner;
 	protected CertificateFactory cf;
 	protected SAMLParserCustomisations customisations;
@@ -110,25 +109,22 @@ public abstract class BaseSAMLMessageParser {
 
 	/**
 	 * Method to initialise the SAML parser using standard XSDs.
-	 * @param context related context used by messageSecurityProvider to determine which key to use for signing/decryption.
 	 * @param secProv Message Security Provider to use.
 	 * @throws MessageProcessingException if internal problems occurred setting up the SAMLMessageParser.
      */
-	public void init(ContextMessageSecurityProvider.Context context, ContextMessageSecurityProvider secProv) throws MessageProcessingException {
-		init(context, secProv,null);
+	public void init(MessageSecurityProvider secProv) throws MessageProcessingException {
+		init(secProv,null);
 	}
 
 	/**
 	 * Method to initialise the parser using standard XSDs and extra XSD used for extentions.
 	 *
-	 * @param context related context used by messageSecurityProvider to determine which key to use for signing/decryption.
-	 *                use ContextMessageSecurityProvider.DEFAULT_CONTEXT for default usages.
 	 * @param secProv Message Security Provider to use. If context is not default must a ContextMessageSecurityProvider be specified.
 	 * @param customisations implementation to specify non-SAML core JAXB extensions.
 	 *
 	 * @throws MessageProcessingException if internal problems occurred setting up the SAMLMessageParser.
 	 */
-	public void init(ContextMessageSecurityProvider.Context context,MessageSecurityProvider secProv, SAMLParserCustomisations customisations)
+	public void init(MessageSecurityProvider secProv, SAMLParserCustomisations customisations)
 			throws MessageProcessingException {
 		try {
 			this.customisations = customisations;
@@ -138,8 +134,8 @@ public abstract class BaseSAMLMessageParser {
 				customSchemaLocations = customisations.getCustomSchemaLocations();
 			}
 			messageSecurityProvider = secProv;
-			xmlEncrypter = new XMLEncrypter(context, secProv, getDocumentBuilder(), getMarshaller(), getUnmarshaller());
-			xmlSigner = new XMLSigner(context,secProv,getDocumentBuilder(), true, getSignatureLocationFinder(), getOrganisationLookup());
+			xmlEncrypter = new XMLEncrypter(secProv, getDocumentBuilder(), getMarshaller(), getUnmarshaller());
+			xmlSigner = new XMLSigner(secProv,getDocumentBuilder(), true, getSignatureLocationFinder(), getOrganisationLookup());
 			cf = CertificateFactory.getInstance("X.509");
 
 			schemaValidator = generateSchema().newValidator();
@@ -240,11 +236,11 @@ public abstract class BaseSAMLMessageParser {
 	 * @throws MessageContentException if response message data was invalid.
 	 * @throws MessageProcessingException if internal problems occurred generated the message.
 	 */
-	public Object parseMessage(byte[] message, boolean requireSignature) throws MessageContentException, MessageProcessingException{
+	public Object parseMessage(ContextMessageSecurityProvider.Context context, byte[] message, boolean requireSignature) throws MessageContentException, MessageProcessingException{
 
 		try {
 			if(requireSignature){
-				xmlSigner.verifyEnvelopedSignature(message, getSignatureLocationFinder(), getOrganisationLookup());
+				xmlSigner.verifyEnvelopedSignature(context, message, getSignatureLocationFinder(), getOrganisationLookup());
 			}
 			return unmarshall(message);
 		} catch (Exception e) {
@@ -260,6 +256,7 @@ public abstract class BaseSAMLMessageParser {
 	
 	/**
 	 * Method to generate a general SAMLP failure message.
+	 * @param context message security related context.
 	 * @param inResponseTo the ID of the attribute query
 	 * @param statusCode the failure code to respond to
 	 * @param failureMessage a descriptive failure message, may be null.
@@ -267,12 +264,14 @@ public abstract class BaseSAMLMessageParser {
 	 * @throws MessageContentException if parameters where invalid.
 	 * @throws MessageProcessingException if internal problems occurred generated the message.
 	 */
-	public byte[] genFailureMessage(String inResponseTo, ResponseStatusCodes statusCode, String failureMessage) throws MessageContentException, MessageProcessingException{
-		return genFailureMessage(inResponseTo,null,null,null,null,statusCode,failureMessage,false);
+	public byte[] genFailureMessage(ContextMessageSecurityProvider.Context context,String inResponseTo, ResponseStatusCodes statusCode, String failureMessage) throws MessageContentException, MessageProcessingException{
+		return genFailureMessage(context,inResponseTo,null,null,null,null,statusCode,failureMessage,false);
 	}
 
 	/**
 	 * Method to generate a general SAMLP failure message.
+	 *
+	 * @param context message security related context.
 	 * @param inResponseTo the ID of the request, null if message was unreadable
 	 * @param issuer Identifies the entity that generated the response message. (Optional, null for no issuer)
 	 * @param destination  A URI reference indicating the address to which this response has been sent. This is useful to prevent
@@ -296,7 +295,7 @@ public abstract class BaseSAMLMessageParser {
 	 * @throws MessageContentException if parameters where invalid.
 	 * @throws MessageProcessingException if internal problems occurred generated the message.
 	 */
-	public byte[] genFailureMessage(String inResponseTo, NameIDType issuer, String destination, String consent, ExtensionsType extensions, ResponseStatusCodes statusCode, String failureMessage, boolean signSAMLPResponse) throws MessageContentException, MessageProcessingException{
+	public byte[] genFailureMessage(ContextMessageSecurityProvider.Context context,String inResponseTo, NameIDType issuer, String destination, String consent, ExtensionsType extensions, ResponseStatusCodes statusCode, String failureMessage, boolean signSAMLPResponse) throws MessageContentException, MessageProcessingException{
 		try{
 			StatusCodeType statusCodeType = samlpOf.createStatusCodeType();
 			statusCodeType.setValue(statusCode.getURIValue());
@@ -323,7 +322,7 @@ public abstract class BaseSAMLMessageParser {
 			JAXBElement<ResponseType> response = samlpOf.createResponse(responseType);
 
 			if(signSAMLPResponse){
-				return marshallAndSignSAMLPOrAssertion(response,false,true);
+				return marshallAndSignSAMLPOrAssertion(context,response,false,true);
 			}
 
 			return marshall(response);
@@ -386,21 +385,22 @@ public abstract class BaseSAMLMessageParser {
 	}
 
 	/**
-	 * Method to decrypt an assertion of any type.
-	 * 
+	 * Method to decrypt an assertion containing encrypted attributes.
+	 *
+	 * @param context message security related context.
 	 * @param assertion the assertion to decrypt and parse
 	 * @return an decrypted assertion
 	 * @throws MessageContentException if content of message was invalid.
 	 * @throws MessageProcessingException if internal problems occurred parsing the assertions.
 	 * @throws NoDecryptionKeyFoundException if no key could be found decrypting the assertion.
 	 */
-	public JAXBElement<AssertionType> decryptAssertion(JAXBElement<AssertionType> assertion) throws MessageContentException, MessageProcessingException, NoDecryptionKeyFoundException{
+	public JAXBElement<AssertionType> decryptAssertion(ContextMessageSecurityProvider.Context context, JAXBElement<AssertionType> assertion) throws MessageContentException, MessageProcessingException, NoDecryptionKeyFoundException{
 		try {
 			Document doc = getDocumentBuilder().newDocument();
 			getMarshaller().marshal(assertion, doc);
 			
 			@SuppressWarnings("unchecked")
-			JAXBElement<AssertionType> decryptedAssertion = (JAXBElement<AssertionType>) xmlEncrypter.decryptDocument(doc, encryptedAssertionXMLConverter);
+			JAXBElement<AssertionType> decryptedAssertion = (JAXBElement<AssertionType>) xmlEncrypter.decryptDocument(context, doc, encryptedAttributeXMLConverter);
 			
 			schemaValidate(decryptedAssertion);
 
@@ -566,7 +566,7 @@ public abstract class BaseSAMLMessageParser {
 	 * @throws MessageProcessingException if problems occurred when processing the message.
 	 * @throws MessageContentException if unsupported version is detected in message.
 	 */
-	public byte[] marshallAndSign(Object message) throws MessageProcessingException, MessageContentException{
+	public byte[] marshallAndSign(ContextMessageSecurityProvider.Context context,Object message) throws MessageProcessingException, MessageContentException{
 		if(message == null){
 			throw new MessageProcessingException("Error marshalling assertion, message cannot be null.");
 		}
@@ -577,7 +577,7 @@ public abstract class BaseSAMLMessageParser {
 			throw new MessageProcessingException("Error marshalling message " + e.getMessage(), e);
 		}
 
-        xmlSigner.sign(doc, getSignatureLocationFinder());
+        xmlSigner.sign(context,doc, getSignatureLocationFinder());
 
 		return xmlSigner.marshallDoc(doc);
 	}
@@ -586,12 +586,13 @@ public abstract class BaseSAMLMessageParser {
 	 * Help method to marshall and sign an Assertion, either standalone or inside a SAMLP Response
 	 * 
 	 * Method that generates the signature and marshalls the message to byte array in UTF-8 format.
+	 * @param context the message security context to use.
 	 * @param message a Assertion or Response (SAMLP) structure.
 	 * @return a marshalled and signed message.
 	 * @throws MessageProcessingException if problems occurred when processing the message.
 	 * @throws MessageContentException if unsupported version is detected in message.
 	 */
-	protected byte[] marshallAndSignSAMLPOrAssertion(JAXBElement<?> message, boolean signAssertion, boolean signSAMLP) throws MessageProcessingException, MessageContentException{
+	protected byte[] marshallAndSignSAMLPOrAssertion(ContextMessageSecurityProvider.Context context,JAXBElement<?> message, boolean signAssertion, boolean signSAMLP) throws MessageProcessingException, MessageContentException{
 		if(message == null){
 			throw new MessageProcessingException("Error marshalling assertion, message cannot be null.");
 		}
@@ -605,11 +606,11 @@ public abstract class BaseSAMLMessageParser {
 
 		if(signAssertion) {
 
-			xmlSigner.sign(doc,  assertionSignatureLocationFinder);
+			xmlSigner.sign(context,doc,  assertionSignatureLocationFinder);
 		}
 		if(signSAMLP){
 
-			xmlSigner.sign(doc, samlpSignatureLocationFinder);
+			xmlSigner.sign(context,doc, samlpSignatureLocationFinder);
 		}
 		return xmlSigner.marshallDoc(doc);
 	}
@@ -653,9 +654,9 @@ public abstract class BaseSAMLMessageParser {
 
     
     /**
-     * Converter that replaces all decrypted EncryptedAssertions with Assertions
+     * Converter that replaces all decrypted EncryptedAttributes with Attributes
      */
-    public static class EncryptedAssertionXMLConverter implements DecryptedXMLConverter{
+    public static class EncryptedAttributeXMLConverter implements DecryptedXMLConverter{
 
 
 		public Document convert(Document doc) throws MessageContentException {

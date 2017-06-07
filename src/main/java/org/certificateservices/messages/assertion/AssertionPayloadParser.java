@@ -37,7 +37,6 @@ import org.xml.sax.SAXException;
 import javax.xml.XMLConstants;
 import javax.xml.bind.*;
 import javax.xml.bind.util.JAXBSource;
-import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -104,7 +103,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 	private SystemTime systemTime = new DefaultSystemTime();
 	private XMLEncrypter xmlEncrypter;
 	private XMLEncrypter userDataXmlEncrypter;
-	BaseSAMLMessageParser.EncryptedAssertionXMLConverter encryptedAssertionXMLConverter = new BaseSAMLMessageParser.EncryptedAssertionXMLConverter();
+	private BaseSAMLMessageParser.EncryptedAttributeXMLConverter encryptedAttributeXMLConverter = new BaseSAMLMessageParser.EncryptedAttributeXMLConverter();
 	private XMLSigner xmlSigner;
 	private CertificateFactory cf;
 	
@@ -124,7 +123,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 			cf = CertificateFactory.getInstance("X.509");
 			
 			assertionSchemaValidator = generateUserDataSchema().newValidator();
-			samlAssertionMessageParser.init(ContextMessageSecurityProvider.DEFAULT_CONTEXT,secProv, null);
+			samlAssertionMessageParser.init(secProv, null);
 		} catch (Exception e) {
 			throw new MessageProcessingException("Error initializing JAXB in AssertionPayloadParser: " + e.getMessage(),e);
 		}
@@ -658,7 +657,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 			getUserDataMarshaller().marshal(assertion, doc);
 			
 			@SuppressWarnings("unchecked")
-			JAXBElement<AssertionType> decryptedAssertion = (JAXBElement<AssertionType>) userDataXmlEncrypter.decryptDocument(doc, encryptedAssertionXMLConverter);
+			JAXBElement<AssertionType> decryptedAssertion = (JAXBElement<AssertionType>) userDataXmlEncrypter.decryptDocument(doc, encryptedAttributeXMLConverter);
 			
 			schemaValidateAssertion(decryptedAssertion);
 			
@@ -800,16 +799,7 @@ public class AssertionPayloadParser extends BasePayloadParser {
 			throw new MessageProcessingException("Error marshalling message " + e.getMessage(), e);
 		}
 
-		List<QName> beforeSiblings = new ArrayList<QName>();
-		beforeSiblings.add(new QName(NAMESPACE, "Subject"));
-		beforeSiblings.add(new QName(NAMESPACE, "Conditions"));
-		beforeSiblings.add(new QName(NAMESPACE, "Advice"));
-		beforeSiblings.add(new QName(NAMESPACE, "Statement"));
-		beforeSiblings.add(new QName(NAMESPACE, "AuthnStatement"));
-		beforeSiblings.add(new QName(NAMESPACE, "AuthzDecisionStatement"));
-		beforeSiblings.add(new QName(NAMESPACE, "AttributeStatement"));
-
-		return xmlSigner.marshallAndSign(doc,  assertionSignatureLocationFinder, beforeSiblings);
+		return xmlSigner.marshallAndSign(ContextMessageSecurityProvider.DEFAULT_CONTEXT,doc,  assertionSignatureLocationFinder);
 	}
 
 	

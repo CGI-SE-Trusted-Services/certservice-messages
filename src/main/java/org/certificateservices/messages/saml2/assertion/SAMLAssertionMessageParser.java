@@ -1,19 +1,31 @@
 package org.certificateservices.messages.saml2.assertion;
 
-import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.MessageSecurityProvider;
+import org.apache.xml.security.utils.XMLUtils;
+import org.certificateservices.messages.*;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.saml2.BaseSAMLMessageParser;
 import org.certificateservices.messages.saml2.assertion.jaxb.*;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
+import org.certificateservices.messages.utils.XMLEncrypter;
 import org.certificateservices.messages.utils.XMLSigner;
+import org.certificateservices.messages.xenc.jaxb.EncryptedDataType;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -27,6 +39,9 @@ import java.util.Properties;
 public class SAMLAssertionMessageParser extends BaseSAMLMessageParser{
 
     private static final String BASE_JAXB_CONTEXT = "org.certificateservices.messages.saml2.assertion.jaxb:org.certificateservices.messages.saml2.protocol.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.xmldsig.jaxb";
+
+    EncryptedAssertionXMLConverter encryptedAssertionXMLConverter = new EncryptedAssertionXMLConverter();
+
     @Override
     public String getNameSpace() {
         return ASSERTION_NAMESPACE;
@@ -121,38 +136,112 @@ public class SAMLAssertionMessageParser extends BaseSAMLMessageParser{
     }
 
     /**
-     * Method to verify a signature of an assertion in a parsed SAML message.
-     * @param assertion the assertion to verify.
-     * @throws MessageContentException
-     * @throws MessageProcessingException
+     * Method to create an Encrypt an assertion and create an EncryptedAssertion Element
+     * @param context message security related context.
+     * @param assertion assertion to encrypt
+     * @param reciepients a list of receipients
+     * @param useKeyId, use a id of the key used instead of full certificates.
+     * @return an decrypted assertion
+     * @throws MessageContentException if content of message was invalid.
+     * @throws MessageProcessingException if internal problems occurred parsing the assertions.
      */
-    public  void verifyAssertionSignature(JAXBElement<AssertionType> assertion) throws MessageContentException, MessageProcessingException {
-        DOMResult res = new DOMResult();
+    public JAXBElement<EncryptedElementType> genEncryptedAssertion(ContextMessageSecurityProvider.Context context, byte[] assertion, List<X509Certificate> reciepients, boolean useKeyId) throws MessageContentException, MessageProcessingException{
         try {
-            getMarshaller().marshal(assertion, res);
-        } catch (JAXBException e) {
-            throw new MessageContentException("Error marshalling assertion: " + e.getMessage(),e);
-        }
+            Document doc = getDocumentBuilder().parse(new ByteArrayInputStream(assertion));
+            Document encDoc = xmlEncrypter.encryptElement(context,doc,reciepients,useKeyId);
+            JAXBElement<EncryptedDataType> encryptedData = (JAXBElement<EncryptedDataType>) getUnmarshaller().unmarshal(encDoc);
+            EncryptedElementType encryptedElement = of.createEncryptedElementType();
+            encryptedElement.setEncryptedData(encryptedData.getValue());
+            return of.createEncryptedAssertion(encryptedElement);
 
-        xmlSigner.verifyEnvelopedSignature((Document) res.getNode(),getSignatureLocationFinder(),getOrganisationLookup());
+        } catch(JAXBException e ){
+            throw new MessageProcessingException(e.getMessage(),e);
+        } catch (SAXException e) {
+            throw new MessageProcessingException(e.getMessage(),e);
+        } catch (IOException e) {
+            throw new MessageContentException(e.getMessage(),e);
+        }
     }
 
     /**
-     * Method to verify a signature of an assertion in a parsed SAML message.
-     * @param assertion the assertion to verify.
-     * @throws MessageContentException
-     * @throws MessageProcessingException
+     * Method to decrypt an EncryptedAssertion .
+     *
+     * @param context message security related context.
+     * @param encryptedAssertion the encrypted assertion
+     * @param verify if signature if decrypted assertion should be verified.
+     * @return an decrypted assertion
+     * @throws MessageContentException if content of message was invalid.
+     * @throws MessageProcessingException if internal problems occurred parsing the assertions.
+     * @throws NoDecryptionKeyFoundException if no key could be found decrypting the assertion.
      */
-    public  void verifyAssertionSignature(AssertionType assertion) throws MessageContentException, MessageProcessingException {
-        DOMResult res = new DOMResult();
+    public JAXBElement<AssertionType> decryptEncryptedAssertion(ContextMessageSecurityProvider.Context context, EncryptedElementType encryptedAssertion, boolean verify) throws MessageContentException, MessageProcessingException, NoDecryptionKeyFoundException{
         try {
-            getMarshaller().marshal(of.createAssertion(assertion), res);
+            org.certificateservices.messages.xenc.jaxb.ObjectFactory xmlEncOf = new org.certificateservices.messages.xenc.jaxb.ObjectFactory();
+            Document doc = getDocumentBuilder().newDocument();
+
+            getMarshaller().marshal(xmlEncOf.createEncryptedData(encryptedAssertion.getEncryptedData()), doc);
+
+            Document decryptedDoc = xmlEncrypter.decryptDoc(context, doc,null);
+
+            if(verify) {
+                xmlSigner.verifyEnvelopedSignature(context, decryptedDoc, getSignatureLocationFinder(), getOrganisationLookup());
+            }
+            @SuppressWarnings("unchecked")
+            JAXBElement<AssertionType> decryptedAssertion = (JAXBElement<AssertionType>) getUnmarshaller().unmarshal(decryptedDoc);
+
+            schemaValidate(decryptedAssertion);
+
+            return decryptedAssertion;
+        } catch (JAXBException e) {
+            throw new MessageContentException("Error parsing assertion : " + e.getMessage(), e);
+        }catch (SecurityException e) {
+            throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+        } catch (SAXException e) {
+            throw new MessageContentException("Error parsing assertion : " + e.getMessage(), e);
+        }
+    }
+
+
+
+
+    /**
+     * Method to verify a signature of an assertion in a parsed SAML message.
+     * @param context message security related context.
+     * @param assertion the assertion to verify.
+     * @throws MessageContentException if assertion contained invalid data.
+     * @throws MessageProcessingException  if internal error occurred processing the assertion.
+     */
+    public  void verifyAssertionSignature(ContextMessageSecurityProvider.Context context,AssertionType assertion) throws MessageContentException, MessageProcessingException {
+        Document doc = getDocumentBuilder().newDocument();
+        try {
+            getMarshaller().marshal(of.createAssertion(assertion), doc);
         } catch (JAXBException e) {
             throw new MessageContentException("Error marshalling assertion: " + e.getMessage(),e);
         }
 
-        xmlSigner.verifyEnvelopedSignature((Document) res.getNode(),getSignatureLocationFinder(),getOrganisationLookup());
+        xmlSigner.verifyEnvelopedSignature(context,doc,getSignatureLocationFinder(),getOrganisationLookup());
     }
 
 
+    /**
+     * Converter that replaces all decrypted EncryptedAssertion with Assertion
+     */
+    public static class EncryptedAssertionXMLConverter implements XMLEncrypter.DecryptedXMLConverter {
+
+
+        public Document convert(Document doc) throws MessageContentException {
+            NodeList nodeList = doc.getElementsByTagNameNS(BaseSAMLMessageParser.ASSERTION_NAMESPACE, "Assertion");
+            for(int i =0; i < nodeList.getLength(); i++){
+                Element attribute= (Element) nodeList.item(i);
+                Element parent = (Element) attribute.getParentNode();
+                if(parent.getLocalName().equals("EncryptedAssertion") && parent.getNamespaceURI().equals(BaseSAMLMessageParser.ASSERTION_NAMESPACE)){
+                    parent.getParentNode().replaceChild(attribute, parent);
+                }
+
+            }
+
+            return doc;
+        }
+
+    }
 }

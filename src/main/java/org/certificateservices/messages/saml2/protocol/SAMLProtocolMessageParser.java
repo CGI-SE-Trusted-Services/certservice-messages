@@ -1,5 +1,6 @@
 package org.certificateservices.messages.saml2.protocol;
 
+import org.certificateservices.messages.ContextMessageSecurityProvider;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.assertion.ResponseStatusCodes;
@@ -100,6 +101,7 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
      * <p>
      *     The <AuthnRequest> message SHOULD be signed or otherwise authenticated and integrity protected by the protocol binding used to deliver the message.
      * </p>
+     * @param context message security related context. Use null if no signature should be used.
      * @param forceAuthn A Boolean value. If "true", the identity provider MUST authenticate the presenter directly rather than rely on a previous security context.
      *                      If a value is not provided, the default is "false". However, if both ForceAuthn and IsPassive are "true", the identity provider MUST NOT
      *                      freshly authenticate the presenter unless the constraints of IsPassive can be met. (Optional, use null of it shouldn't be set)
@@ -160,7 +162,7 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
      * @throws MessageProcessingException if internal problem occurred generating the message.
      * @throws MessageContentException if invalid message format was detected.
      */
-    public byte[] genAuthNRequest(Boolean forceAuthn, Boolean isPassive, String protocolBinding, Integer assertionConsumerServiceIndex,
+    public byte[] genAuthNRequest(ContextMessageSecurityProvider.Context context,Boolean forceAuthn, Boolean isPassive, String protocolBinding, Integer assertionConsumerServiceIndex,
                                   String assertionConsumerServiceURL, Integer attributeConsumingServiceIndex,
                                   String providerName, String destination, String consent, NameIDType issuer, ExtensionsType extensions, SubjectType subject, NameIDPolicyType nameIdPolicy, ConditionsType conditions,
                                   RequestedAuthnContextType requestedAuthnContext, ScopingType scoping, boolean signRequest) throws MessageProcessingException, MessageContentException{
@@ -192,7 +194,7 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
         }
 
         if(signRequest){
-            xmlSigner.sign(doc, authNSignatureLocationFinder);
+            xmlSigner.sign(context, doc, authNSignatureLocationFinder);
         }
 
         return xmlSigner.marshallDoc(doc);
@@ -202,6 +204,7 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
     /**
      * Method to generate a generic SAMLP  Response message.
      *
+     * @param context message security related context. Use null if no signature should be used.
      * @param inResponseTo the ID of the request, null if message was unreadable
      * @param issuer Identifies the entity that generated the response message. (Optional, null for no issuer)
      * @param destination  A URI reference indicating the address to which this response has been sent. This is useful to prevent
@@ -228,7 +231,7 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
      * @throws MessageContentException if parameters where invalid.
      * @throws MessageProcessingException if internal problems occurred generated the message.
      */
-    public byte[] genResponse(String inResponseTo, NameIDType issuer, String destination, String consent,
+    public byte[] genResponse(ContextMessageSecurityProvider.Context context, String inResponseTo, NameIDType issuer, String destination, String consent,
                               ExtensionsType extensions, ResponseStatusCodes statusCode, String statusMessage,
                               StatusDetailType statusDetail, List<JAXBElement<?>> assertions,
                               boolean signAssertions, boolean signSAMLPResponse) throws MessageContentException, MessageProcessingException{
@@ -245,7 +248,7 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
 
             JAXBElement<ResponseType> response = samlpOf.createResponse(responseType);
 
-            return marshallAndSignSAMLPOrAssertion(response,signAssertions,signSAMLPResponse);
+            return marshallAndSignSAMLPOrAssertion(context, response,signAssertions,signSAMLPResponse);
 
         }catch(Exception e){
             if(e instanceof MessageContentException){

@@ -1,5 +1,6 @@
 package org.certificateservices.messages.saml2.metadata;
 
+import org.certificateservices.messages.ContextMessageSecurityProvider;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
@@ -209,6 +210,7 @@ public class SAMLMetaDataMessageParser extends BaseSAMLMessageParser {
      *     other distinguishing extension attributes.
      * </p>
      *
+     * @param context message security related context. Use null if no signature should be used.
      * @param entityID Specifies the unique identifier of the SAML entity whose metadata is described by the element's
      *                 contents. (Required)
      * @param validUntil Optional attribute indicates the expiration time of the metadata contained in the element
@@ -234,15 +236,15 @@ public class SAMLMetaDataMessageParser extends BaseSAMLMessageParser {
      * @throws MessageProcessingException if internal error occurred generating the message.
      * @throws MessageContentException if bad message format was detected.
      */
-    public byte[] genEntityDescriptor(String entityID, Date validUntil, Duration cacheDuration,
-                                                    ExtensionsType extensions, List<Object> descriptors,
-                                                    OrganizationType organisation, List<ContactType> contactPersons,
-                                                    List<AdditionalMetadataLocationType> additionalMetadataLocations,
-                                                    Map<QName, String> otherAttributes, boolean sign) throws MessageProcessingException, MessageContentException {
+    public byte[] genEntityDescriptor(ContextMessageSecurityProvider.Context context,String entityID, Date validUntil, Duration cacheDuration,
+                                      ExtensionsType extensions, List<Object> descriptors,
+                                      OrganizationType organisation, List<ContactType> contactPersons,
+                                      List<AdditionalMetadataLocationType> additionalMetadataLocations,
+                                      Map<QName, String> otherAttributes, boolean sign) throws MessageProcessingException, MessageContentException {
         EntityDescriptorType edt = genEntityDescriptor(entityID, validUntil, cacheDuration, extensions, descriptors, organisation, contactPersons, additionalMetadataLocations, otherAttributes);
         JAXBElement<EntityDescriptorType> ed = mdOf.createEntityDescriptor(edt);
         if(sign){
-            return marshallAndSign(ed);
+            return marshallAndSign(context,ed);
         }
         return marshall(ed);
     }
@@ -285,6 +287,7 @@ public class SAMLMetaDataMessageParser extends BaseSAMLMessageParser {
      * entities. Its EntitiesDescriptor Type complex type contains a sequence of EntityDescriptor
      * elements, EntitiesDescriptor elements, or both. ID is generated automatically.
      *
+     * @param context message security related context. Use null if no signature should be used.
      * @param validUntil Optional attribute indicates the expiration time of the metadata contained in the element
      *                   and any contained elements. (Optional, use null to not set).
      * @param cacheDuration Optional attribute indicates the maximum length of time a consumer should cache the metadata
@@ -301,13 +304,13 @@ public class SAMLMetaDataMessageParser extends BaseSAMLMessageParser {
      * @throws MessageProcessingException if internal error occurred generating the message.
      * @throws MessageContentException if bad message format was detected.
      */
-    public byte[] genEntitiesDescriptor(Date validUntil, Duration cacheDuration, String name,
+    public byte[] genEntitiesDescriptor(ContextMessageSecurityProvider.Context context,Date validUntil, Duration cacheDuration, String name,
                                                         ExtensionsType extensions, List<Object> entityDescriptors,
                                                         boolean sign) throws MessageProcessingException, MessageContentException {
         EntitiesDescriptorType edt = genEntitiesDescriptor(validUntil,cacheDuration,name,extensions,entityDescriptors);
         JAXBElement<EntitiesDescriptorType> ed = mdOf.createEntitiesDescriptor(edt);
         if(sign){
-            return marshallAndSign(ed);
+            return marshallAndSign(context,ed);
         }
         return marshall(ed);
     }
