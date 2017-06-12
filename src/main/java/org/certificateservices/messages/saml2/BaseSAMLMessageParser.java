@@ -82,8 +82,8 @@ public abstract class BaseSAMLMessageParser {
 
 	public static String DEFAULT_SAML_VERSION = "2.0";
 
-	protected static final String ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/cs-message-saml-schema-assertion-2.0.xsd";
-	protected static final String SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/cs-message-saml-schema-protocol-2.0.xsd";
+	public static final String ASSERTION_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/cs-message-saml-schema-assertion-2.0.xsd";
+	public static final String SAMLP_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/cs-message-saml-schema-protocol-2.0.xsd";
 
 
 	protected String customJAXBClasspath = null;
@@ -440,8 +440,9 @@ public abstract class BaseSAMLMessageParser {
 
 	public void verifyConditions(ConditionsType conditions, String type, String messageId, ConditionLookup conditionLookup) throws MessageContentException {
 		try{
-			Date notBefore = MessageGenerateUtils.xMLGregorianCalendarToDate(conditions.getNotBefore());
-			Date notOnOrAfter = MessageGenerateUtils.xMLGregorianCalendarToDate(conditions.getNotOnOrAfter());
+			long clockSkew = conditionLookup.acceptedClockSkew();
+			Date notBefore = new Date(MessageGenerateUtils.xMLGregorianCalendarToDate(conditions.getNotBefore()).getTime() - clockSkew);
+			Date notOnOrAfter = new Date(MessageGenerateUtils.xMLGregorianCalendarToDate(conditions.getNotOnOrAfter()).getTime() + clockSkew);
 			Date currentTime = systemTime.getSystemTime();
 
 			if(notBefore.after(currentTime)){
@@ -819,9 +820,18 @@ public abstract class BaseSAMLMessageParser {
 		 * @throws MessageContentException if this system doesn't support the audience restriction condition.
 		 * @return this systems audience id, that should be matched against available
 		 * audience conditions.
-		 * @throws MessageProcessingException
+		 * @throws MessageContentException if this system doesn't support the Audience condition.
+		 * @throws MessageProcessingException  if internal problems occurred.
          */
 		String getThisAudienceId() throws MessageContentException, MessageProcessingException;
+
+		/**
+		 * Method that should return the acceptable clock skew in milliseconds when checking
+		 * the not before and not after conditions
+		 * @return the accepted clock skew in milliseconds
+		 * @throws MessageProcessingException  if internal problems occurred.
+		 */
+		long acceptedClockSkew() throws MessageProcessingException;
 
 	}
 
@@ -831,6 +841,13 @@ public abstract class BaseSAMLMessageParser {
 	 */
 	public static class SimpleConditionLookup implements BaseSAMLMessageParser.ConditionLookup {
 
+		long clockSkew = 0L;
+		public SimpleConditionLookup(){}
+
+		public SimpleConditionLookup(long clockSkew){
+			this.clockSkew = clockSkew;
+		}
+
 		@Override
 		public boolean usedBefore(String messageId) throws MessageContentException, MessageProcessingException {
 			throw new MessageContentException("OneTime Condition is not supported.");
@@ -839,6 +856,11 @@ public abstract class BaseSAMLMessageParser {
 		@Override
 		public String getThisAudienceId() throws MessageContentException, MessageProcessingException {
 			throw new MessageContentException("AudienceRestriction Condition is not supported.");
+		}
+
+		@Override
+		public long acceptedClockSkew() throws MessageProcessingException {
+			return clockSkew;
 		}
 	}
 

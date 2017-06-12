@@ -51,7 +51,6 @@ public class DefaultReqRespManager implements ReqRespManager,
 	 * Default constructor of a DefaultReqRespManager
 	 * 
 	 * @param timeOut time in milliseconds to wait for response.
-	 * @param csMessageDestination the cs message destination, all other messages will be disregarded.
 	 * @param messageHandler, the related message handler.
 	 * @param messageListenerName the name of the message listener to use, never null and must be registered in the message handler.
 	 * @param messageSenderName the name of the message sender to use, never null and must be registered in the message handler.
@@ -104,7 +103,7 @@ public class DefaultReqRespManager implements ReqRespManager,
 	}
 	
 	/**
-	 * @see org.certificateservices.messages.csmessages.manager.MessageResponseCallback#responseReceived(org.certificateservices.messages.csmessages.jaxb.CSMessage, Map<String, String>)
+	 * @see org.certificateservices.messages.csmessages.manager.MessageResponseCallback#responseReceived(byte[], CSMessage, Map)
 	 */
 	@Override
 	public void responseReceived(byte[] requestData, CSMessage responseMessage, Map<String, String> messageAttributes) {
