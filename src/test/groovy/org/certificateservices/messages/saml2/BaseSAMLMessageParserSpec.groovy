@@ -30,7 +30,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 	BaseSAMLMessageParser bsmp;
 	SAMLProtocolMessageParser spmp;
 
-	BaseSAMLMessageParser.SimpleConditionLookup scl = new BaseSAMLMessageParser.SimpleConditionLookup();
+	BaseSAMLMessageParser.SimpleConditionLookup scl = new BaseSAMLMessageParser.SimpleConditionLookup(1000L);
 
 
 	def setup(){
@@ -118,8 +118,8 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 	def "Verify that verifyAssertionConditions verifies notBefore and notOnOrAfter correctly"(){
 	   setup:
 	   def ticket = samp.generateSimpleAssertion("someIssuer", new Date(1436279212000), new Date(1436279412000), "SomeSubject",null).getValue()
-	   
-	   createMockedTime(1436279211000)
+
+	   createMockedTime(1436279210000)
 	   when: "Verify that MessageContent is thrown if not yet valid"
 	   bsmp.verifyAssertionConditions(ticket, scl)
 	   then:	
@@ -138,13 +138,13 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 	   true
 	   
 	   when: "Same millisecond as notOnOrAfter is not valid"
-	   createMockedTime(1436279412000)
+	   createMockedTime(1436279413000)
 	   bsmp.verifyAssertionConditions(ticket, scl)
 	   then:
 	   thrown MessageContentException
 	   
 	   when: "After notOnOrAfter is also not valid"
-	   createMockedTime(1436279413000)
+	   createMockedTime(1436279414000)
 	   bsmp.verifyAssertionConditions(ticket, scl)
 	   then:
 	   thrown MessageContentException

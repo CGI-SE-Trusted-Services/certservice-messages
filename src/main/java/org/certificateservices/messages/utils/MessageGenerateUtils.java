@@ -52,7 +52,7 @@ public class MessageGenerateUtils {
 	 * Method to convert a date to a XML gregorian calendar
 	 * @param date the date to convert
 	 * @return a XMLGregorianCalendar object or null if date is null.
-	 * @throws MessageException if internal problems occurred converting the date.
+	 * @throws MessageProcessingException if internal problems occurred converting the date.
 	 */
 	public static XMLGregorianCalendar dateToXMLGregorianCalendar(Date date) throws MessageProcessingException{
 		if(date == null){
@@ -72,7 +72,7 @@ public class MessageGenerateUtils {
 	 * Method to convert a  XML gregorian calendar to a date
 	 * @param calendarDate the date to convert
 	 * @return a Date object or null if calendarDate is null.
-	 * @throws MessageException if internal problems occurred converting the date.
+	 * @throws MessageProcessingException if internal problems occurred converting the date.
 	 */
 	public static Date xMLGregorianCalendarToDate(XMLGregorianCalendar calendarDate) throws MessageProcessingException{
 		if(calendarDate == null){
@@ -95,5 +95,7 @@ public class MessageGenerateUtils {
 	    }
 	    return new String(hexChars);
 	}
+
+
 
 }

@@ -33,8 +33,6 @@ public interface MessageHandler {
 	 * everything for connection with the message queue server.
 	 * 
 	 * @param config the configuration.
-	 * @param parser the message parser configuration.
-	 * @param callback the callback interface where response messages are sent.
 	 * @throws MessageProcessingException if configuration problems or other internal problems occurred.
 	 */
 	void init(Properties config) throws MessageProcessingException;
@@ -93,7 +91,7 @@ public interface MessageHandler {
 	 * 
 	 * @param componentName the componentName to use for sending.
 	 * @param messageId the id of the message
-	 * @param the message data to send
+	 * @param message the message data to send
 	 * @param messageAttributes meta data related to the message such as reply-to queues or correlation id etc if underlying implementation supports it. use null if no related
 	 * message attributes exists.
 	 * @throws MessageProcessingException if configuration problems or other internal problems occurred connecting to the MQ server.

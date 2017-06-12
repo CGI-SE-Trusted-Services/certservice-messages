@@ -102,6 +102,7 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
      *     The <AuthnRequest> message SHOULD be signed or otherwise authenticated and integrity protected by the protocol binding used to deliver the message.
      * </p>
      * @param context message security related context. Use null if no signature should be used.
+     * @param id the id to set in the AuthNRequest
      * @param forceAuthn A Boolean value. If "true", the identity provider MUST authenticate the presenter directly rather than rely on a previous security context.
      *                      If a value is not provided, the default is "false". However, if both ForceAuthn and IsPassive are "true", the identity provider MUST NOT
      *                      freshly authenticate the presenter unless the constraints of IsPassive can be met. (Optional, use null of it shouldn't be set)
@@ -162,14 +163,14 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
      * @throws MessageProcessingException if internal problem occurred generating the message.
      * @throws MessageContentException if invalid message format was detected.
      */
-    public byte[] genAuthNRequest(ContextMessageSecurityProvider.Context context,Boolean forceAuthn, Boolean isPassive, String protocolBinding, Integer assertionConsumerServiceIndex,
+    public byte[] genAuthNRequest(ContextMessageSecurityProvider.Context context,String id, Boolean forceAuthn, Boolean isPassive, String protocolBinding, Integer assertionConsumerServiceIndex,
                                   String assertionConsumerServiceURL, Integer attributeConsumingServiceIndex,
                                   String providerName, String destination, String consent, NameIDType issuer, ExtensionsType extensions, SubjectType subject, NameIDPolicyType nameIdPolicy, ConditionsType conditions,
                                   RequestedAuthnContextType requestedAuthnContext, ScopingType scoping, boolean signRequest) throws MessageProcessingException, MessageContentException{
 
         AuthnRequestType art = samlpOf.createAuthnRequestType();
 
-        populateRequestAbstractType(art,destination,consent,issuer,extensions);
+        populateRequestAbstractType(art,id, destination,consent,issuer,extensions);
 
         art.setForceAuthn(forceAuthn);
         art.setIsPassive(isPassive);
@@ -264,6 +265,41 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
     /**
      * Help method to populate all base fields of a RequestAbstractType
      *
+     * @param id the request id to set in the request.
+     * @param destination A URI reference indicating the address to which this request has been sent. This is useful to prevent malicious forwarding of
+     *                    requests to unintended recipients, a protection that is required by some protocol bindings. If it is present, the actual recipient
+     *                    MUST check that the URI reference identifies the location at which the message was received. If it does not, the request MUST be
+     *                    discarded. Some protocol bindings may require the use of this attribute (see [SAMLBind]). (Optional, use null of it shouldn't be set)
+     * @param consent Indicates whether or not (and under what conditions) consent has been obtained from a principal in
+     *                the sending of this request. See Section 8.4 for some URI references that MAY be used as the value.
+     *                of the Consent attribute and their associated descriptions. If no Consent value is provided, the
+     *                identifier urn:oasis:names:tc:SAML:2.0:consent:unspecified (see Section 8.4.1) is in effect. (Optional, use null of it shouldn't be set)
+     *
+     * @param issuer Identifies the entity that generated the request message. (For more information on this element, see Section 2.2.5.) (Optional, use null of it shouldn't be set)
+     * @param extensions This extension point contains optional protocol message extension elements that are agreed on
+     *                      between the communicating parties. No extension schema is required in order to make use of this
+     *                      extension point, and even if one is provided, the lax validation setting does not impose a requirement
+     *                      for the extension to be valid. SAML extension elements MUST be namespace-qualified in a non-
+     *                      SAML-defined namespace. (Optional, use null of it shouldn't be set)
+     * @throws MessageProcessingException if internal problem occurred generating the message.
+     * @throws MessageContentException if invalid message format was detected.
+     */
+    protected void populateRequestAbstractType(RequestAbstractType requestAbstractType, String id, String destination, String consent, NameIDType issuer, ExtensionsType extensions) throws MessageProcessingException, MessageContentException{
+        requestAbstractType.setID(id);
+        requestAbstractType.setIssueInstant(MessageGenerateUtils.dateToXMLGregorianCalendar(systemTime.getSystemTime()));
+        requestAbstractType.setVersion(DEFAULT_SAML_VERSION);
+
+        requestAbstractType.setDestination(destination);
+        requestAbstractType.setConsent(consent);
+
+        requestAbstractType.setIssuer(issuer);
+        requestAbstractType.setExtensions(extensions);
+
+    }
+
+    /**
+     * Help method to populate all base fields of a RequestAbstractType
+     *
      * @param destination A URI reference indicating the address to which this request has been sent. This is useful to prevent malicious forwarding of
      *                    requests to unintended recipients, a protection that is required by some protocol bindings. If it is present, the actual recipient
      *                    MUST check that the URI reference identifies the location at which the message was received. If it does not, the request MUST be
@@ -283,15 +319,7 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
      * @throws MessageContentException if invalid message format was detected.
      */
     protected void populateRequestAbstractType(RequestAbstractType requestAbstractType, String destination, String consent, NameIDType issuer, ExtensionsType extensions) throws MessageProcessingException, MessageContentException{
-        requestAbstractType.setID("_" + MessageGenerateUtils.generateRandomUUID());
-        requestAbstractType.setIssueInstant(MessageGenerateUtils.dateToXMLGregorianCalendar(systemTime.getSystemTime()));
-        requestAbstractType.setVersion(DEFAULT_SAML_VERSION);
-
-        requestAbstractType.setDestination(destination);
-        requestAbstractType.setConsent(consent);
-
-        requestAbstractType.setIssuer(issuer);
-        requestAbstractType.setExtensions(extensions);
+        populateRequestAbstractType(requestAbstractType, "_" + MessageGenerateUtils.generateRandomUUID(), destination,consent,issuer,extensions);
 
     }
 
