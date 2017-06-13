@@ -290,6 +290,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link TokenType.AllowedCSRSignatureAlgorithms }
+     * 
+     */
+    public TokenType.AllowedCSRSignatureAlgorithms createTokenTypeAllowedCSRSignatureAlgorithms() {
+        return new TokenType.AllowedCSRSignatureAlgorithms();
+    }
+
+    /**
      * Create an instance of {@link TokenType.KeystoreTypes }
      * 
      */
