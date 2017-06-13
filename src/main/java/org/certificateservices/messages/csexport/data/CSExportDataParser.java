@@ -68,15 +68,18 @@ public class CSExportDataParser {
 	public static String DEFAULT_VERSION = "1.1";
 	public static String VERSION_1_0 = "1.0";
 	public static String VERSION_1_1 = "1.1";
+	public static String VERSION_1_2 = "1.2";
 
 	private static final String CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_0 = "/cs-export-data_1_0.xsd";
 	private static final String CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_1 = "/cs-export-data_1_1.xsd";
+	private static final String CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_2 = "/cs-export-data_1_2.xsd";
 
 	private static final Map<String, String> versionToSchemaMap;
 	static{
 		versionToSchemaMap = new HashMap<String,String>();
 		versionToSchemaMap.put(VERSION_1_0, CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_0);
 		versionToSchemaMap.put(VERSION_1_1, CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_1);
+		versionToSchemaMap.put(VERSION_1_2, CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_2);
 	}
 
 	private ObjectFactory of = new ObjectFactory();
