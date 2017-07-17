@@ -598,7 +598,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @param request the request this message is a response to.
 	 * @param tokenSerial The unique serial number of the hard token within the organisation.
 	 * @param encryptedData The token data encrypted with the token administrators credential sent in the request.
-	 * @param keys list of encrypted keys recovered from frontend syste,
+	 * @param keys list of encrypted keys recovered from frontend system.
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
 	 * @return a generated message.
 	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
