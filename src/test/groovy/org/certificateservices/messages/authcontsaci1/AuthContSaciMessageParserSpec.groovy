@@ -23,7 +23,15 @@ class AuthContSaciMessageParserSpec extends Specification {
 
     AuthContSaciMessageParser p = new AuthContSaciMessageParser()
 
+    def currentTimeZone
+    def setup() {
+        currentTimeZone = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/Stockholm"))
+    }
 
+    def cleanup(){
+        TimeZone.setDefault(currentTimeZone)
+    }
 
     def "Verify that external generated message can be parsed with the parser"(){
         when:

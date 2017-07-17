@@ -598,7 +598,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @param request the request this message is a response to.
 	 * @param tokenSerial The unique serial number of the hard token within the organisation.
 	 * @param encryptedData The token data encrypted with the token administrators credential sent in the request.
-	 * @param keys list of encrypted keys recovered from backend syste,
+	 * @param keys list of encrypted keys recovered from frontend syste,
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
 	 * @return a generated message.
 	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
@@ -860,7 +860,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @param destinationId the destinationId used in the CSMessage.
 	 * @param organisation the related organisation
 	 * @param adminCredential the admin credential to encrypt the key store data to.
-	 * @param relatedCredentials the credentials pointing out which keys should be recovered from backend store.
+	 * @param relatedCredentials the credentials pointing out which keys should be recovered from frontend store.
 	 * @param originator the original requester of a message, null if not applicable.
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
 	 * @return a generated message.
@@ -904,7 +904,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @param requestId the id of the request
 	 * @param destinationId the destinationId used in the CSMessage.
 	 * @param organisation the related organisation
-	 * @param keys a list en encrypted keys to store in backend system.
+	 * @param keys a list en encrypted keys to store in frontend system.
 	 * @param originator the original requester of a message, null if not applicable.
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
 	 * @return a generated message.

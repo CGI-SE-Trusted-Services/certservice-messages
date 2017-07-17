@@ -258,7 +258,7 @@ public class AutoEnrollPayloadParser extends BasePayloadParser {
 	 *
 	 * @param keyRecoverable to indicate to the client that it should backup the generated private key by
 	 *                       including it along with the credential request.
-	 * @param wrappingCredential the credential that should be used to encrypt the key towards the backend service.
+	 * @param wrappingCredential the credential that should be used to encrypt the key towards the frontend service.
 	 *                           required in keyRecoverable is set to true.
 	 * @param credentialSubType the related credential subtype to generate.
 	 * @param tokenRequestAttributes map of used token request attributes used to construct the pkcs10, usually values from
