@@ -27,6 +27,7 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;enumeration value="CHANGESTATUS"/>
  *     &lt;enumeration value="PUTONHOLD"/>
  *     &lt;enumeration value="DELETE"/>
+ *     &lt;enumeration value="REQUEST"/>
  *   &lt;/restriction>
  * &lt;/simpleType>
  * </pre>
@@ -43,7 +44,8 @@ public enum TokenTypePermissionType {
     CHANGESTATUS,
     PUTONHOLD,
     DELETE,
-    RECOVERKEYS;
+    RECOVERKEYS,
+    REQUEST;
 
     public String value() {
         return name();

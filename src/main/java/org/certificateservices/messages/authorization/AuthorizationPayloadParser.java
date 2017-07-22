@@ -39,12 +39,13 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 	
 	public static final String AUTHORIZATION_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/authorization_schema2_0.xsd";
 	public static final String AUTHORIZATION_XSD_SCHEMA_2_1_RESOURCE_LOCATION = "/authorization_schema2_1.xsd";
+	public static final String AUTHORIZATION_XSD_SCHEMA_2_2_RESOURCE_LOCATION = "/authorization_schema2_2.xsd";
 
 	private ObjectFactory of = new ObjectFactory();
 	
-	private static final String[] SUPPORTED_AUTHORIZATION_VERSIONS = {"2.1","2.0"};
+	private static final String[] SUPPORTED_AUTHORIZATION_VERSIONS = {"2.2","2.1","2.0"};
 	
-	private static final String DEFAULT_AUTHORIZATION_VERSION = "2.1";
+	private static final String DEFAULT_AUTHORIZATION_VERSION = "2.2";
 	
 	
 	/**
@@ -71,6 +72,9 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
     	}
 		if(payLoadVersion.equals("2.1")){
 			return getClass().getResourceAsStream(AUTHORIZATION_XSD_SCHEMA_2_1_RESOURCE_LOCATION);
+		}
+		if(payLoadVersion.equals("2.2")){
+			return getClass().getResourceAsStream(AUTHORIZATION_XSD_SCHEMA_2_2_RESOURCE_LOCATION);
 		}
     	
     	throw new MessageContentException("Error unsupported Authorization Payload version: " + payLoadVersion);
