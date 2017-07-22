@@ -539,7 +539,7 @@ public abstract class BaseSAMLMessageParser {
 		getMarshaller().marshal(message, baos);
 		return baos.toByteArray();
 		}catch(Exception e){
-			throw new MessageProcessingException("Error occurred marshalling object: " + e.getMessage(),e );
+			throw new MessageProcessingException("Error occurred marshalling object: " + CSMessageUtils.getMarshallingExceptionMessage(e),e );
 		}
 	}
 
@@ -551,12 +551,15 @@ public abstract class BaseSAMLMessageParser {
 			}
 			return object;
 		}catch(SAXException e){
-			throw new MessageContentException("Error occurred during SAML unmarshaller: " + e.getMessage(),e);
+
+			throw new MessageContentException("Error occurred during SAML unmarshaller: " + CSMessageUtils.getMarshallingExceptionMessage(e),e);
 		}catch(JAXBException e){
-			throw new MessageContentException("Error occurred during SAML unmarshaller: " + e.getMessage(),e);
+			throw new MessageContentException("Error occurred during SAML unmarshaller: " + CSMessageUtils.getMarshallingExceptionMessage(e),e);
 		}
 
 	}
+
+
 
 	/**
 	 * Help method to marshall and sign an JAXB data that is supported by the parser implementation.

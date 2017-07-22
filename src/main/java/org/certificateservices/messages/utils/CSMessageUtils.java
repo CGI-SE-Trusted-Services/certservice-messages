@@ -71,5 +71,19 @@ public class CSMessageUtils {
 		}
 		throw new MessageContentException("Error fetching related payload name from CS Message, message didn't contain any GetApprovalRequest payload.");
 	}
+
+	/**
+	 * Help method to extract a more descriptive error message than 'null' when error
+	 * occurred in schema validation when unmarshalling and marshalling XML.
+	 *
+	 * @param e the exception to extracting exception from
+	 * @return the exception message if exists, otherwise the cause message.
+	 */
+	public static String getMarshallingExceptionMessage(Exception e){
+		if(e.getMessage() == null){
+			return e.getCause().getMessage();
+		}
+		return e.getMessage();
+	}
 	
 }

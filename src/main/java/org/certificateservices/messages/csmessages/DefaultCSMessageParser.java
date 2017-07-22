@@ -237,11 +237,11 @@ public class DefaultCSMessageParser implements CSMessageParser {
 
 			return parseMessage(doc,performValidation, requireSignature);
 		} catch (SAXException e) {
-			throw new MessageContentException("Error parsing CS Message: " + e.getMessage(),e);
+			throw new MessageContentException("Error parsing CS Message: " + CSMessageUtils.getMarshallingExceptionMessage(e),e);
 		} catch (IOException e) {
-			throw new MessageContentException("Error parsing CS Message: " + e.getMessage(),e);
+			throw new MessageContentException("Error parsing CS Message: " + CSMessageUtils.getMarshallingExceptionMessage(e),e);
 		} catch (ParserConfigurationException e) {
-			throw new MessageContentException("Error parsing CS Message: " + e.getMessage(),e);
+			throw new MessageContentException("Error parsing CS Message: " + CSMessageUtils.getMarshallingExceptionMessage(e),e);
 		}
 	}
 
@@ -266,7 +266,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			validateCSMessage(version, object, doc, performValidation, requireSignature);
 			return (CSMessage) object;
 		}catch(JAXBException e){
-			throw new MessageContentException("Error parsing CS Message: " + e.getMessage(),e);
+			throw new MessageContentException("Error parsing CS Message: " + CSMessageUtils.getMarshallingExceptionMessage(e),e);
 		} 
 	}
 
@@ -583,9 +583,9 @@ public class DefaultCSMessageParser implements CSMessageParser {
 
 			return xmlSigner.marshallAndSign(ContextMessageSecurityProvider.DEFAULT_CONTEXT,doc, cSMessageSignatureLocationFinder);
 		} catch (JAXBException e) {
-			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
+			throw new MessageProcessingException("Error marshalling CS Message, " + CSMessageUtils.getMarshallingExceptionMessage(e),e);
 		} catch (ParserConfigurationException e) {
-			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
+			throw new MessageProcessingException("Error marshalling CS Message, " + CSMessageUtils.getMarshallingExceptionMessage(e),e);
 		}
 		
 		
@@ -611,9 +611,9 @@ public class DefaultCSMessageParser implements CSMessageParser {
 
 			return xmlSigner.marshallDoc(doc);
 		} catch (JAXBException e) {
-			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
+			throw new MessageProcessingException("Error marshalling CS Message, " + CSMessageUtils.getMarshallingExceptionMessage(e),e);
 		} catch (ParserConfigurationException e) {
-			throw new MessageProcessingException("Error marshalling CS Message, " + e.getMessage(),e);
+			throw new MessageProcessingException("Error marshalling CS Message, " + CSMessageUtils.getMarshallingExceptionMessage(e),e);
 		}
 	}
 
