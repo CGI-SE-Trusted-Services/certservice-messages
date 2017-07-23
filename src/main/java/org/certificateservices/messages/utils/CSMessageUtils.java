@@ -5,6 +5,8 @@ import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.csmessages.jaxb.GetApprovalRequest;
 
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.UnmarshalException;
 
 /**
  * Utility methods used when working with CS Messages
@@ -81,6 +83,13 @@ public class CSMessageUtils {
 	 */
 	public static String getMarshallingExceptionMessage(Exception e){
 		if(e.getMessage() == null){
+			if(e.getCause().getMessage() == null){
+				if(e instanceof JAXBException){
+					if(((JAXBException) e).getLinkedException() != null && ((JAXBException) e).getLinkedException().getMessage() != null){
+						return ((JAXBException) e).getLinkedException().getMessage();
+					}
+				}
+			}
 			return e.getCause().getMessage();
 		}
 		return e.getMessage();
