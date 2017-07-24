@@ -641,7 +641,22 @@ public class DefaultCSMessageParserSpec extends Specification{
 		thrown MessageContentException
 	}
 	
-	
+	def "Verify that setCSMessageVersion changes the version of generated requests"(){
+		when:
+		requestMessageParser.setCSMessageVersion("2.0")
+		CSMessage request = requestMessageParser.parseMessage(requestMessageParser.generateIsApprovedRequest(TEST_ID, "somedest", "someorg", "someid", null, null));
+		then:
+		request.version == "2.0"
+		when:
+		request = requestMessageParser.parseMessage(credManagementPayloadParser.genGetCredentialRequest(TEST_ID,"somedest","someorg","somesubtype","someissuerid","someserialnumber",null,null))
+		then:
+		request.version == "2.0"
+
+		cleanup:
+		requestMessageParser.setCSMessageVersion(DefaultCSMessageParser.DEFAULT_CSMESSAGE_PROTOCOL)
+	}
+
+
 	@Unroll
 	def "Verify that getMarshaller returns a marshaller for CS Message Version: #version"(){
 		setup:

@@ -66,7 +66,6 @@ import org.certificateservices.messages.csmessages.jaxb.Payload;
 import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
 import org.certificateservices.messages.sensitivekeys.SensitiveKeysParser;
 import org.certificateservices.messages.utils.*;
-import org.certificateservices.messages.utils.XMLSigner.SignatureLocationFinder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -134,6 +133,8 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	
 	private String sourceId = null;
 	private XMLSigner xmlSigner;
+
+	private String csMessageVersion = DEFAULT_CSMESSAGE_PROTOCOL;
 	
 	public static final String DEFAULT_CSMESSAGE_PROTOCOL = CSMESSAGE_VERSION_2_1;
 	
@@ -293,7 +294,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * 
 	 */
 	public byte[] generateCSRequestMessage(String requestId, String destinationId, String organisation, String payLoadVersion, Object payload, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
-		CSMessage message = genCSMessage(DEFAULT_CSMESSAGE_PROTOCOL, payLoadVersion,null, requestId, destinationId, organisation, originator, payload,  assertions);
+		CSMessage message = genCSMessage(csMessageVersion, payLoadVersion,null, requestId, destinationId, organisation, originator, payload,  assertions);
 		return marshallAndSignCSMessage( message);
 	}
 
@@ -345,7 +346,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		IsApprovedRequest payload = objectFactory.createIsApprovedRequest();
 		payload.setApprovalId(approvalId);
 		
-		return generateCSRequestMessage(requestId, destinationId, organisation, DEFAULT_CSMESSAGE_PROTOCOL, payload, originator, assertions);
+		return generateCSRequestMessage(requestId, destinationId, organisation, csMessageVersion, payload, originator, assertions);
 	}
 	
 	/**
@@ -877,6 +878,30 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			retval = request.getOriginator().getCredential();
 		}
 		return retval;
+	}
+
+	/**
+	 * Method to return the CSMessageVersion set in generated request messages. Response messages
+	 * always use the same version as in the request.
+	 *
+	 * This is automatically set to the latest version.
+	 * @return the CS Message Version used.
+	 */
+	public String getCSMessageVersion(){
+		return csMessageVersion;
+	}
+
+	/**
+	 * Method to set the CSMessageVersion set in generated request messages. Should
+	 * only be used under special cases. Response messages
+	 * always use the same version as in the request.
+	 *
+	 * CSMessageVersion is automatically set to the latest version.
+	 *
+	 * @return the CS Message Version used.
+	 */
+	public void setCSMessageVersion(String csMessageVersion){
+		this.csMessageVersion = csMessageVersion;
 	}
 	
 	/**
