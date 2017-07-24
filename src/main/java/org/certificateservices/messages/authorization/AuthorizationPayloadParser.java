@@ -46,8 +46,7 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 	private static final String[] SUPPORTED_AUTHORIZATION_VERSIONS = {"2.2","2.1","2.0"};
 	
 	private static final String DEFAULT_AUTHORIZATION_VERSION = "2.2";
-	
-	
+
 	/**
 	 * @see PayloadParser#getJAXBPackage()
 	 */
@@ -135,7 +134,7 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 			payload.getTokenTypePermissionQuery().getTokenType().addAll(tokenTypeQuery);
 		}
 
-		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -157,9 +156,25 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 			response.getRoles().getRole().add(role);
 		}
 
+		String payloadVersion = request.getPayLoadVersion();
+
 		if(tokenTypePermissions != null && tokenTypePermissions.size() > 0){
 			response.setTokenTypePermissions(of.createGetRolesTypeTokenTypePermissions());
-			response.getTokenTypePermissions().getTokenTypePermission().addAll(tokenTypePermissions);
+			for(TokenTypePermission ttp : tokenTypePermissions){
+				// Skip v 2.1 rules
+				if(ttp.getRuleType() == TokenTypePermissionType.RECOVERKEYS){
+					if(payloadVersion.equals("2.0")){
+						continue;
+					}
+				}
+				// Skip v 2.2 rules
+				if(ttp.getRuleType() == TokenTypePermissionType.REQUEST){
+					if(payloadVersion.equals("2.0") || payloadVersion.equals("2.1")){
+						continue;
+					}
+				}
+				response.getTokenTypePermissions().getTokenTypePermission().add(ttp);
+			}
 		}
 		
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, false);

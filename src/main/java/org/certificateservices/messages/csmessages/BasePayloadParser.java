@@ -31,6 +31,8 @@ public abstract class BasePayloadParser implements PayloadParser {
 	protected MessageSecurityProvider secProv;
 	
 	protected ObjectFactory csMessageObjectFactory = new ObjectFactory();
+
+	protected String payloadVersion = getDefaultPayloadVersion();
 	
 	/**
 	 * Default initializer setting the parser and config properties.
@@ -218,8 +220,25 @@ public abstract class BasePayloadParser implements PayloadParser {
 		}
 		throw new MessageContentException("Unsupported Payload version: " + payloadVersion + " for PayLoadParser " + this.getClass().getSimpleName());
 	}
-	
-	
 
+	/**
+	 *
+	 * @return Method to get the current payload version used when generating request messages.
+	 * Response messages always use the same version as the request.
+	 */
+	public String getPayloadVersion(){
+		return payloadVersion;
+	}
+
+	/**
+	 * Method that only should be used under special purposes when generating request message, normally should default
+	 * payload version be used that is set automatically.
+	 * Response messages always use the same version as the request.
+	 *
+	 * @param payloadVersion method to set the payload version to use instead of the default one.
+	 */
+	public void setPayloadVersion(String payloadVersion){
+		this.payloadVersion = payloadVersion;
+	}
 
 }
