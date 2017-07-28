@@ -7,7 +7,9 @@ import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.csmessages.XSDLSInput;
 import org.certificateservices.messages.saml2.BaseSAMLMessageParser;
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType;
 import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType;
+import org.certificateservices.messages.saml2.metadata.attr.jaxb.EntityAttributesType;
 import org.certificateservices.messages.saml2.metadata.jaxb.*;
 import org.certificateservices.messages.saml2.metadata.ui.jaxb.DiscoHintsType;
 import org.certificateservices.messages.saml2.metadata.ui.jaxb.KeywordsType;
@@ -47,7 +49,7 @@ public class SAMLMetaDataMessageParser extends BaseSAMLMessageParser {
 
     public static final String NAMESPACE = "urn:oasis:names:tc:SAML:2.0:metadata";
 
-    private static final String BASE_JAXB_CONTEXT = "org.certificateservices.messages.saml2.assertion.jaxb:org.certificateservices.messages.saml2.metadata.jaxb:org.certificateservices.messages.saml2.metadata.ui.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.xmldsig.jaxb";
+    private static final String BASE_JAXB_CONTEXT = "org.certificateservices.messages.saml2.assertion.jaxb:org.certificateservices.messages.saml2.metadata.jaxb:org.certificateservices.messages.saml2.metadata.ui.jaxb:org.certificateservices.messages.saml2.metadata.attr.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.xmldsig.jaxb";
 
     protected static final String METADATA_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/cs-message-saml-schema-metadata-2.0.xsd";
 
@@ -55,6 +57,7 @@ public class SAMLMetaDataMessageParser extends BaseSAMLMessageParser {
 
     private static ObjectFactory mdOf = new ObjectFactory();
     private static org.certificateservices.messages.saml2.metadata.ui.jaxb.ObjectFactory uiOf = new org.certificateservices.messages.saml2.metadata.ui.jaxb.ObjectFactory();
+    private static org.certificateservices.messages.saml2.metadata.attr.jaxb.ObjectFactory attrOf = new org.certificateservices.messages.saml2.metadata.attr.jaxb.ObjectFactory();
 
     @Override
     public String getNameSpace() {
@@ -925,6 +928,27 @@ public class SAMLMetaDataMessageParser extends BaseSAMLMessageParser {
      */
     public JAXBElement<String> genUIGeolocationHint(String value){
         return uiOf.createGeolocationHint(value);
+    }
+
+    /**
+     * Help method to generate MD Entity Attribute used as an extension in EntityId
+     * @param attributeOrAssertion an array of AttributeType or AssertionType to and to the EntityAttribute element
+     * @return a new EntityAttributes element
+     * @throws MessageContentException if invalid type was given in list
+     */
+    public JAXBElement<EntityAttributesType> genMDEntityAttributes(List<Object> attributeOrAssertion) throws MessageContentException{
+        EntityAttributesType entityAttributes = attrOf.createEntityAttributesType();
+
+        for(Object o : attributeOrAssertion){
+            if(o instanceof AttributeType || o instanceof AssertionType){
+                entityAttributes.getAttributeOrAssertion().add(o);
+            }else{
+                throw new MessageContentException("Error constructing MDAttr EntityAttributes, only AttributeType or AssertionType is allowed as attributes.");
+            }
+
+        }
+
+        return attrOf.createEntityAttributes(entityAttributes);
     }
 
     /**
