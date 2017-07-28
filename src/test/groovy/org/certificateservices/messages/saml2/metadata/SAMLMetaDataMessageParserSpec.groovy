@@ -5,7 +5,9 @@ import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser
 import org.certificateservices.messages.saml2.BaseSAMLMessageParser
 import org.certificateservices.messages.saml2.CommonSAMLMessageParserSpecification
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType
 import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType
+import org.certificateservices.messages.saml2.metadata.attr.jaxb.EntityAttributesType
 import org.certificateservices.messages.saml2.metadata.jaxb.*
 import org.certificateservices.messages.saml2.metadata.ui.jaxb.DiscoHintsType
 import org.certificateservices.messages.saml2.metadata.ui.jaxb.KeywordsType
@@ -849,9 +851,38 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 		l.value == "SomeGeoLocation"
 	}
 
+	def "Verify that genMDAttribute generates valid extension data in a EntityDataType"(){
+		when: "Generate MD Entity Attributes extensions"
+		def extension = smdmp.genMDEntityAttributes(createSAMLAttributes())
+
+		and:  "Generate minimal entity data structure using the extension"
+		def dt = smdmp.genEntityDescriptor("SomeEntityId", null,null, smdmp.genExtensions([extension]),
+				[createIDP()], null,
+				null, null, null);
+		def dtd = smdmp.marshall(mdOf.createEntityDescriptor(dt))
+		//printXML(dtd)
+		def xml = slurpXml(dtd)
+
+		then:
+		xml.Extensions.EntityAttributes.size() == 1
+		xml.Extensions.EntityAttributes.Attribute.size() == 2
+	}
+
+	def "Verify that genMDAttribute throws MessageContentException if invalid parameter is given"(){
+		when:
+		smdmp.genMDEntityAttributes([new AttributeType(), new EntitiesDescriptorType()])
+		then:
+		def e = thrown(MessageContentException)
+		e.message == "Error constructing MDAttr EntityAttributes, only AttributeType or AssertionType is allowed as attributes."
+		when: "Verify that both attriutetype and assertion type is valid"
+		def t = smdmp.genMDEntityAttributes([new AttributeType(), new AssertionType()])
+		then:
+		t.value.attributeOrAssertion.size() == 2
+	}
+
 	def "Verify that parser can parse a MD document containing UIInfo and DiscoHints"(){
 		when:
-		EntityDescriptorType edt = smdmp.parseMessage(null,MDWithUIElements,false)
+		EntityDescriptorType edt = smdmp.parseMessage(null,MDWithUIElementsAndAttr,false)
 		then:
 		edt.roleDescriptorOrIDPSSODescriptorOrSPSSODescriptor[0].extensions.any.size() == 2
 		edt.roleDescriptorOrIDPSSODescriptorOrSPSSODescriptor[0].extensions.any[0].name.localPart == "UIInfo"
@@ -859,6 +890,17 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 
 		edt.roleDescriptorOrIDPSSODescriptorOrSPSSODescriptor[0].extensions.any[1].name.localPart == "DiscoHints"
 		edt.roleDescriptorOrIDPSSODescriptorOrSPSSODescriptor[0].extensions.any[1].value.ipHintOrDomainHintOrGeolocationHint.size() == 4
+	}
+
+	def "Verify that parser can parse a MD document containing md attributes"(){
+		when:
+		EntityDescriptorType edt = smdmp.parseMessage(null,MDWithUIElementsAndAttr,false)
+		then:
+		edt.extensions.any.size() == 1
+		edt.extensions.any[0].name.localPart == "EntityAttributes"
+		edt.extensions.any[0].value.attributeOrAssertion.size() == 1
+		edt.extensions.any[0].value.attributeOrAssertion[0].attributeValue.size() == 6
+
 	}
 
 	private ExtensionsType createExtensions(){
@@ -1036,8 +1078,47 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 
 
 
-	static final MDWithUIElements = """
-<EntityDescriptor entityID="https://idp.switch.ch/idp/shibboleth" xmlns="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:mdui="urn:oasis:names:tc:SAML:metadata:ui">
+	static final MDWithUIElementsAndAttr = """
+<EntityDescriptor entityID="https://idp.switch.ch/idp/shibboleth" xmlns="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:mdui="urn:oasis:names:tc:SAML:metadata:ui" xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+  <Extensions>
+    <mdattr:EntityAttributes
+          xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute">
+      <saml:Attribute xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+            Name="FinnishAuthMethod"
+            NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:type="xs:string">
+          urn:oid:1.2.246.517.3002.110.1
+        </saml:AttributeValue>
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:type="xs:string">
+          urn:oid:1.2.246.517.3002.110.2
+        </saml:AttributeValue>
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:type="xs:string">
+          urn:oid:1.2.246.517.3002.110.3
+        </saml:AttributeValue>
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:type="xs:string">
+          urn:oid:1.2.246.517.3002.110.5
+        </saml:AttributeValue>
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:type="xs:string">
+          urn:oid:1.2.246.517.3002.110.6
+        </saml:AttributeValue>
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:type="xs:string">
+          urn:oid:1.2.246.517.3002.110.999
+        </saml:AttributeValue>
+      </saml:Attribute>
+    </mdattr:EntityAttributes>
+  </Extensions>
   <IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
     <Extensions>
       <mdui:UIInfo>
