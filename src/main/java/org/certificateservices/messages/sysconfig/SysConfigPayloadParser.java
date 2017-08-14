@@ -113,7 +113,7 @@ public class SysConfigPayloadParser extends BasePayloadParser {
 		payload.setApplication(application);
 		payload.setOrganisationShortName(organisation);
 		
-		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -155,7 +155,7 @@ public class SysConfigPayloadParser extends BasePayloadParser {
 		PublishConfigurationRequest payload = of.createPublishConfigurationRequest();
 		payload.setSystemConfiguration(systemConfiguration);
 		
-		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**

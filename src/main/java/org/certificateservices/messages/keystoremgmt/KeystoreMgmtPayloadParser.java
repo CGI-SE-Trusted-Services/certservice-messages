@@ -118,7 +118,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 	public byte[] generateGetAvailableKeyStoreInfoRequest(String requestId, String destinationId, String organisation,  Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		GetAvailableKeyStoreInfoRequest payload = of.createGetAvailableKeyStoreInfoRequest();
 	
-		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
 	}
 	
 	
@@ -174,7 +174,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 		  payload.getCredentialRequestParams().setBaseRequestParams(credentialRequestParams);
 		}
 		
-		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -220,7 +220,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 		payload.setKeyStoreProviderName(keyStoreProviderName);
 		payload.setOrganisationShortName(organisation);
 		
-		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -268,7 +268,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 		  payload.getCredentials().getCredential().add(c);
 		}
 		
-		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -312,7 +312,7 @@ public class KeystoreMgmtPayloadParser extends BasePayloadParser {
 		payload.setOrganisationShortName(organisation);
 		payload.setDescription(description);
 		
-		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
 	}
 	
 	

@@ -39,14 +39,14 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 	
 	public static final String AUTHORIZATION_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/authorization_schema2_0.xsd";
 	public static final String AUTHORIZATION_XSD_SCHEMA_2_1_RESOURCE_LOCATION = "/authorization_schema2_1.xsd";
+	public static final String AUTHORIZATION_XSD_SCHEMA_2_2_RESOURCE_LOCATION = "/authorization_schema2_2.xsd";
 
 	private ObjectFactory of = new ObjectFactory();
 	
-	private static final String[] SUPPORTED_AUTHORIZATION_VERSIONS = {"2.1","2.0"};
+	private static final String[] SUPPORTED_AUTHORIZATION_VERSIONS = {"2.2","2.1","2.0"};
 	
-	private static final String DEFAULT_AUTHORIZATION_VERSION = "2.1";
-	
-	
+	private static final String DEFAULT_AUTHORIZATION_VERSION = "2.2";
+
 	/**
 	 * @see PayloadParser#getJAXBPackage()
 	 */
@@ -71,6 +71,9 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
     	}
 		if(payLoadVersion.equals("2.1")){
 			return getClass().getResourceAsStream(AUTHORIZATION_XSD_SCHEMA_2_1_RESOURCE_LOCATION);
+		}
+		if(payLoadVersion.equals("2.2")){
+			return getClass().getResourceAsStream(AUTHORIZATION_XSD_SCHEMA_2_2_RESOURCE_LOCATION);
 		}
     	
     	throw new MessageContentException("Error unsupported Authorization Payload version: " + payLoadVersion);
@@ -131,7 +134,7 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 			payload.getTokenTypePermissionQuery().getTokenType().addAll(tokenTypeQuery);
 		}
 
-		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getDefaultPayloadVersion(), payload, originator, assertions);
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
 	}
 	
 	/**
@@ -153,9 +156,25 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 			response.getRoles().getRole().add(role);
 		}
 
+		String payloadVersion = request.getPayLoadVersion();
+
 		if(tokenTypePermissions != null && tokenTypePermissions.size() > 0){
 			response.setTokenTypePermissions(of.createGetRolesTypeTokenTypePermissions());
-			response.getTokenTypePermissions().getTokenTypePermission().addAll(tokenTypePermissions);
+			for(TokenTypePermission ttp : tokenTypePermissions){
+				// Skip v 2.1 rules
+				if(ttp.getRuleType() == TokenTypePermissionType.RECOVERKEYS){
+					if(payloadVersion.equals("2.0")){
+						continue;
+					}
+				}
+				// Skip v 2.2 rules
+				if(ttp.getRuleType() == TokenTypePermissionType.REQUEST){
+					if(payloadVersion.equals("2.0") || payloadVersion.equals("2.1")){
+						continue;
+					}
+				}
+				response.getTokenTypePermissions().getTokenTypePermission().add(ttp);
+			}
 		}
 		
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, false);

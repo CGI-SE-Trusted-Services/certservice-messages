@@ -5,8 +5,14 @@ import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser
 import org.certificateservices.messages.saml2.BaseSAMLMessageParser
 import org.certificateservices.messages.saml2.CommonSAMLMessageParserSpecification
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType
 import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType
+import org.certificateservices.messages.saml2.metadata.attr.jaxb.EntityAttributesType
 import org.certificateservices.messages.saml2.metadata.jaxb.*
+import org.certificateservices.messages.saml2.metadata.ui.jaxb.DiscoHintsType
+import org.certificateservices.messages.saml2.metadata.ui.jaxb.KeywordsType
+import org.certificateservices.messages.saml2.metadata.ui.jaxb.LogoType
+import org.certificateservices.messages.saml2.metadata.ui.jaxb.UIInfoType
 import org.certificateservices.messages.utils.MessageGenerateUtils
 import org.certificateservices.messages.xenc.jaxb.EncryptionMethodType
 
@@ -24,6 +30,8 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 	SAMLMetaDataMessageParser smdmp = new SAMLMetaDataMessageParser();
 
 	ObjectFactory mdOf = new ObjectFactory()
+	org.certificateservices.messages.saml2.metadata.ui.jaxb.ObjectFactory uiOf = new org.certificateservices.messages.saml2.metadata.ui.jaxb.ObjectFactory()
+
 
 	Date validUntil
 	Duration cacheDuration
@@ -605,7 +613,7 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 				createContactPersons(),createOtherAttributes(), createArtifactResolutionServices(),
 				createSingleLogoutServices(), createManageNameIDServices(), ["nameid1","nameid2"],
 				true, false, createAssertionConsumerServices(), createAttributeConsumingServices())
-		byte[] dtd = smdmp.marshallAndSign(DEFAULT_CONTEXT,mdOf.createSPSSODescriptor(dt));
+		byte[] dtd = smdmp.marshallAndSign(DEFAULT_CONTEXT,mdOf.createSPSSODescriptor(dt))
 		//printXML(dtd)
 		def xml = slurpXml(dtd)
 		then:
@@ -632,10 +640,271 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 		dt.signature != null
 	}
 
+
+
+	def "Verify that genUIInfo generates a valid UIInfo type"(){
+		when:
+		JAXBElement<LogoType> logoEN = smdmp.genUILogo(123,324,"http://someURI.en", "en")
+		JAXBElement<LogoType> logoSV = smdmp.genUILogo(123,324,"http://someURI.sv","sv")
+
+		JAXBElement<LocalizedNameType> displayName = smdmp.genUIDisplayName("Some DisplayName","en")
+
+		JAXBElement<LocalizedNameType> description = smdmp.genUIDescription("Some Description","en")
+
+		JAXBElement<LocalizedURIType> privStatment = smdmp.genUIPrivacyStatementURL("http://SomePrivStatement","en")
+
+		JAXBElement<LocalizedURIType> infoURL = smdmp.genUIInformationURL("http://SomeInfoURL ","en")
+
+		JAXBElement<KeywordsType> kw = smdmp.genUIKeywords(["asdf asd","sdf"],"en")
+
+		def otherXML = dsignObj.createKeyName("SomeKeyName1")
+
+		JAXBElement<UIInfoType> uiInfo = smdmp.genUIInfo([logoEN,logoSV,displayName,description,privStatment,infoURL,kw, otherXML])
+
+		def dt = smdmp.genSPSSODescriptor(null,null,["urn:oasis:names:tc:SAML:2.0:protocol"],
+				null, smdmp.genExtensions([uiInfo]), null,null, null,null, null,
+				null,null,null,
+				null, null,createAssertionConsumerServices(),null)
+		byte[] dtd = smdmp.marshall(mdOf.createSPSSODescriptor(dt))
+		//printXML(dtd)
+		def xml = slurpXml(dtd)
+		then:
+		xml.Extensions.size() == 1
+		xml.Extensions.UIInfo.Logo.size() == 2
+		xml.Extensions.UIInfo.DisplayName.size() == 1
+		xml.Extensions.UIInfo.Description.size() == 1
+		xml.Extensions.UIInfo.PrivacyStatementURL.size() == 1
+		xml.Extensions.UIInfo.InformationURL.size() == 1
+		xml.Extensions.UIInfo.Keywords.size() == 1
+		xml.Extensions.UIInfo.Keywords == "asdf+asd sdf"
+		xml.Extensions.UIInfo.KeyName == "SomeKeyName1"
+
+		when:
+		smdmp.genUIInfo([])
+		then:
+		def e = thrown(MessageContentException)
+		e.message == "Error constructing UIInfo, at least one child element must exist."
+
+		when:
+		smdmp.genUIInfo(null)
+		then:
+		e = thrown(MessageContentException)
+		e.message == "Error constructing UIInfo, at least one child element must exist."
+
+	}
+
+	def "Verify that genUIDiscoHints generates a valid DiscoHints type"(){
+		when:
+		JAXBElement<String> ipHint1 = smdmp.genUIIPHint("123.123.123.123")
+		JAXBElement<String> ipHint2 = smdmp.genUIIPHint("124.124.124.124")
+
+		JAXBElement<String> domainHint = smdmp.genUIDomainHint("domain1")
+
+		JAXBElement<String> geoHint1 = smdmp.genUIGeolocationHint("geohint1")
+
+		def otherXML = dsignObj.createKeyName("SomeKeyName1")
+
+		JAXBElement<DiscoHintsType> discoHints = smdmp.genUIDiscoHints([ipHint1, ipHint2, domainHint, geoHint1, otherXML])
+
+		def dt = smdmp.genSPSSODescriptor(null,null,["urn:oasis:names:tc:SAML:2.0:protocol"],
+				null, smdmp.genExtensions([discoHints]), null,null, null,null, null,
+				null,null,null,
+				null, null,createAssertionConsumerServices(),null)
+		byte[] dtd = smdmp.marshall(mdOf.createSPSSODescriptor(dt))
+		//printXML(dtd)
+		def xml = slurpXml(dtd)
+		then:
+		xml.Extensions.size() == 1
+		xml.Extensions.DiscoHints.IPHint.size() == 2
+		xml.Extensions.DiscoHints.DomainHint.size() == 1
+		xml.Extensions.DiscoHints.GeolocationHint.size() == 1
+		xml.Extensions.DiscoHints.KeyName == "SomeKeyName1"
+
+		when:
+		smdmp.genUIDiscoHints([])
+		then:
+		def e = thrown(MessageContentException)
+		e.message == "Error constructing DiscoHints, at least one child element must exist."
+
+		when:
+		smdmp.genUIDiscoHints(null)
+		then:
+		e = thrown(MessageContentException)
+		e.message == "Error constructing DiscoHints, at least one child element must exist."
+
+	}
+
+	def "Verify genUILogo sets all values"(){
+		when:
+		def l = smdmp.genUILogo(123,324,"http://someURI.en", "en")
+		then:
+		l.name.localPart == "Logo"
+		l.value.width.toString() == "123"
+		l.value.height.toString() == "324"
+		l.value.value == "http://someURI.en"
+		l.value.lang == "en"
+
+		when: // Verify language is optional
+		smdmp.genUILogo(123,324,"http://someURI.en", null)
+		then:
+		true
+	}
+
+	def "Verify genUIDisplayName sets all values"(){
+		when:
+		def l = smdmp.genUIDisplayName("SomeDispName", "en")
+		then:
+		l.name.localPart == "DisplayName"
+		l.value.value == "SomeDispName"
+		l.value.lang == "en"
+
+		when: // Verify language is required
+		smdmp.genUIDisplayName("SomeDispName",null)
+		then:
+		def e = thrown(MessageContentException)
+		e.message == "lang attribute is required for MD UI DisplayName"
+	}
+
+	def "Verify genUIDescription sets all values"(){
+		when:
+		def l = smdmp.genUIDescription("SomeDescription", "en")
+		then:
+		l.name.localPart == "Description"
+		l.value.value == "SomeDescription"
+		l.value.lang == "en"
+
+		when: // Verify language is required
+		smdmp.genUIDescription("SomeDescription",null)
+		then:
+		def e = thrown(MessageContentException)
+		e.message == "lang attribute is required for MD UI Description"
+	}
+
+	def "Verify genUIInformationURL sets all values"(){
+		when:
+		def l = smdmp.genUIInformationURL("SomeInformationURL", "en")
+		then:
+		l.name.localPart == "InformationURL"
+		l.value.value == "SomeInformationURL"
+		l.value.lang == "en"
+
+		when: // Verify language is required
+		smdmp.genUIInformationURL("SomeInformationURL",null)
+		then:
+		def e = thrown(MessageContentException)
+		e.message == "lang attribute is required for MD UI InformationURL"
+	}
+
+	def "Verify genUIPrivacyStatementURL sets all values"(){
+		when:
+		def l = smdmp.genUIPrivacyStatementURL("SomePrivacyStatementURL", "en")
+		then:
+		l.name.localPart == "PrivacyStatementURL"
+		l.value.value == "SomePrivacyStatementURL"
+		l.value.lang == "en"
+
+		when: // Verify language is required
+		smdmp.genUIPrivacyStatementURL("SomePrivacyStatementURL",null)
+		then:
+		def e = thrown(MessageContentException)
+		e.message == "lang attribute is required for MD UI PrivacyStatementURL"
+	}
+
+	def "Verify genUIKeywords sets all values"(){
+		when:
+		def l = smdmp.genUIKeywords(["SomeKeyword", "Some Spaced Keyword"], "en")
+		then:
+		l.name.localPart == "Keywords"
+		l.value.value.size() == 2
+		l.value.value[0] == "SomeKeyword"
+		l.value.value[1] == "Some+Spaced+Keyword"
+		l.value.lang == "en"
+
+		when: // Verify language is required
+		smdmp.genUIKeywords(["SomePrivacyStatementURL"],null)
+		then:
+		def e = thrown(MessageContentException)
+		e.message == "lang attribute is required for MD UI Keywords"
+	}
+
+	def "Verify genUIIPHint sets all values"(){
+		when:
+		def l = smdmp.genUIIPHint("123.123.123.123")
+		then:
+		l.name.localPart == "IPHint"
+		l.value == "123.123.123.123"
+	}
+
+	def "Verify genUIDomainHint sets all values"(){
+		when:
+		def l = smdmp.genUIDomainHint("SomeDomain")
+		then:
+		l.name.localPart == "DomainHint"
+		l.value == "SomeDomain"
+	}
+
+	def "Verify genUIGeolocationHint sets all values"(){
+		when:
+		def l = smdmp.genUIGeolocationHint("SomeGeoLocation")
+		then:
+		l.name.localPart == "GeolocationHint"
+		l.value == "SomeGeoLocation"
+	}
+
+	def "Verify that genMDAttribute generates valid extension data in a EntityDataType"(){
+		when: "Generate MD Entity Attributes extensions"
+		def extension = smdmp.genMDEntityAttributes(createSAMLAttributes())
+
+		and:  "Generate minimal entity data structure using the extension"
+		def dt = smdmp.genEntityDescriptor("SomeEntityId", null,null, smdmp.genExtensions([extension]),
+				[createIDP()], null,
+				null, null, null);
+		def dtd = smdmp.marshall(mdOf.createEntityDescriptor(dt))
+		//printXML(dtd)
+		def xml = slurpXml(dtd)
+
+		then:
+		xml.Extensions.EntityAttributes.size() == 1
+		xml.Extensions.EntityAttributes.Attribute.size() == 2
+	}
+
+	def "Verify that genMDAttribute throws MessageContentException if invalid parameter is given"(){
+		when:
+		smdmp.genMDEntityAttributes([new AttributeType(), new EntitiesDescriptorType()])
+		then:
+		def e = thrown(MessageContentException)
+		e.message == "Error constructing MDAttr EntityAttributes, only AttributeType or AssertionType is allowed as attributes."
+		when: "Verify that both attriutetype and assertion type is valid"
+		def t = smdmp.genMDEntityAttributes([new AttributeType(), new AssertionType()])
+		then:
+		t.value.attributeOrAssertion.size() == 2
+	}
+
+	def "Verify that parser can parse a MD document containing UIInfo and DiscoHints"(){
+		when:
+		EntityDescriptorType edt = smdmp.parseMessage(null,MDWithUIElementsAndAttr,false)
+		then:
+		edt.roleDescriptorOrIDPSSODescriptorOrSPSSODescriptor[0].extensions.any.size() == 2
+		edt.roleDescriptorOrIDPSSODescriptorOrSPSSODescriptor[0].extensions.any[0].name.localPart == "UIInfo"
+		edt.roleDescriptorOrIDPSSODescriptorOrSPSSODescriptor[0].extensions.any[0].value.displayNameOrDescriptionOrKeywords.size() == 8
+
+		edt.roleDescriptorOrIDPSSODescriptorOrSPSSODescriptor[0].extensions.any[1].name.localPart == "DiscoHints"
+		edt.roleDescriptorOrIDPSSODescriptorOrSPSSODescriptor[0].extensions.any[1].value.ipHintOrDomainHintOrGeolocationHint.size() == 4
+	}
+
+	def "Verify that parser can parse a MD document containing md attributes"(){
+		when:
+		EntityDescriptorType edt = smdmp.parseMessage(null,MDWithUIElementsAndAttr,false)
+		then:
+		edt.extensions.any.size() == 1
+		edt.extensions.any[0].name.localPart == "EntityAttributes"
+		edt.extensions.any[0].value.attributeOrAssertion.size() == 1
+		edt.extensions.any[0].value.attributeOrAssertion[0].attributeValue.size() == 6
+
+	}
+
 	private ExtensionsType createExtensions(){
-		ExtensionsType extensions = mdOf.createExtensionsType()
-		extensions.any.add(dsignObj.createKeyName("SomeKeyName"))
-		return extensions;
+		return smdmp.genExtensions([dsignObj.createKeyName("SomeKeyName")])
 	}
 
 	private List<Object> createAnyXML(){
@@ -806,4 +1075,78 @@ class SAMLMetaDataMessageParserSpec extends CommonSAMLMessageParserSpecification
 		t.getAffiliateMember().add("SomeMember")
 		return t
 	}
+
+
+
+	static final MDWithUIElementsAndAttr = """
+<EntityDescriptor entityID="https://idp.switch.ch/idp/shibboleth" xmlns="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:mdui="urn:oasis:names:tc:SAML:metadata:ui" xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+  <Extensions>
+    <mdattr:EntityAttributes
+          xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute">
+      <saml:Attribute xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+            Name="FinnishAuthMethod"
+            NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:type="xs:string">
+          urn:oid:1.2.246.517.3002.110.1
+        </saml:AttributeValue>
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:type="xs:string">
+          urn:oid:1.2.246.517.3002.110.2
+        </saml:AttributeValue>
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:type="xs:string">
+          urn:oid:1.2.246.517.3002.110.3
+        </saml:AttributeValue>
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:type="xs:string">
+          urn:oid:1.2.246.517.3002.110.5
+        </saml:AttributeValue>
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:type="xs:string">
+          urn:oid:1.2.246.517.3002.110.6
+        </saml:AttributeValue>
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xsi:type="xs:string">
+          urn:oid:1.2.246.517.3002.110.999
+        </saml:AttributeValue>
+      </saml:Attribute>
+    </mdattr:EntityAttributes>
+  </Extensions>
+  <IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <Extensions>
+      <mdui:UIInfo>
+        <mdui:DisplayName xml:lang="en">SWITCH</mdui:DisplayName>
+        <mdui:DisplayName xml:lang="de">SWITCH</mdui:DisplayName>
+        <mdui:Description xml:lang="en">
+            Switzerland's national research and eduction network.
+        </mdui:Description>
+        <mdui:Description xml:lang="de">
+            Das schweizerische Hochschul- und Forschungsnetzwerk.
+        </mdui:Description>
+        <mdui:Logo height="16" width="16">https://switch.ch/resources/images/smalllogo.png</mdui:Logo>
+        <mdui:Logo height="97" width="172">https://switch.ch/resources/images/logo.png</mdui:Logo>
+        <mdui:InformationURL xml:lang="en">http://switch.ch</mdui:InformationURL>
+        <mdui:InformationURL xml:lang="de">http://switch.ch/de</mdui:InformationURL>
+      </mdui:UIInfo>
+      <mdui:DiscoHints>
+        <mdui:IPHint>130.59.0.0/16</mdui:IPHint>
+        <mdui:IPHint>2001:620::0/96</mdui:IPHint>
+        <mdui:DomainHint>switch.ch</mdui:DomainHint>
+        <mdui:GeolocationHint>geo:47.37328,8.531126</mdui:GeolocationHint>
+      </mdui:DiscoHints>
+    </Extensions>
+    <SingleSignOnService Binding="http://ssobinding1.com" Location="http://ssolocation1.com"/>
+  </IDPSSODescriptor>
+</EntityDescriptor>""".getBytes("UTF-8")
+
+
+
+
 }

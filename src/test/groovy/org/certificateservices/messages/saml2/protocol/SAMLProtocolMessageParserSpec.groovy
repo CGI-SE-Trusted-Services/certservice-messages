@@ -75,7 +75,7 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 		ScopingType scoping = samlpOf.createScopingType()
 		scoping.setProxyCount(new BigInteger("123"))
 
-		byte[] authNRequest = spmp.genAuthNRequest(DEFAULT_CONTEXT,true,false,"SomeProtocolBinding", 1,"http://assertionConsumerServiceURL",2,"SomeProviderName","SomeDestination","SomeConsent", issuer, extensions, subject, nameIdPolicy, conditions, requestedAuthnContext, scoping, true)
+		byte[] authNRequest = spmp.genAuthNRequest(DEFAULT_CONTEXT,"_1234512341234",true,false,"SomeProtocolBinding", 1,"http://assertionConsumerServiceURL",2,"SomeProviderName","SomeDestination","SomeConsent", issuer, extensions, subject, nameIdPolicy, conditions, requestedAuthnContext, scoping, true)
 
 		def xml = slurpXml(authNRequest)
 		//printXML(authNRequest)
@@ -86,7 +86,7 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 		xml.@AttributeConsumingServiceIndex == "2"
 		xml.@Consent == "SomeConsent"
 		xml.@Destination == "SomeDestination"
-		xml.@ID.toString().startsWith("_")
+		xml.@ID.toString() == "_1234512341234"
 		xml.@IsPassive == "false"
 		xml.@IssueInstant.toString().startsWith("20")
 		xml.@ProtocolBinding == "SomeProtocolBinding"
@@ -110,7 +110,7 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 		art.getIssuer().value == "SomeIssuer"
 
 		when:
-		authNRequest = spmp.genAuthNRequest(DEFAULT_CONTEXT,true,false,"SomeProtocolBinding", 1,"http://assertionConsumerServiceURL",2,"SomeProviderName","SomeDestination","SomeConsent", issuer, extensions, subject, nameIdPolicy, conditions, requestedAuthnContext, scoping, false)
+		authNRequest = spmp.genAuthNRequest(DEFAULT_CONTEXT,"_1234512341234",true,false,"SomeProtocolBinding", 1,"http://assertionConsumerServiceURL",2,"SomeProviderName","SomeDestination","SomeConsent", issuer, extensions, subject, nameIdPolicy, conditions, requestedAuthnContext, scoping, false)
 
 		xml = slurpXml(authNRequest)
 		//printXML(authNRequest)
@@ -133,14 +133,14 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 
 	def "Generate minimal AuthNRequest and verify that it is populated correctly"(){
 		when:
-		byte[] authNRequest = spmp.genAuthNRequest(DEFAULT_CONTEXT,null,null,null, null,null,null,null,null,null, null, null, null, null, null, null, null, true)
+		byte[] authNRequest = spmp.genAuthNRequest(DEFAULT_CONTEXT,"_1234512341234",null,null,null, null,null,null,null,null,null, null, null, null, null, null, null, null, true)
 
 		def xml = slurpXml(authNRequest)
 		//printXML(authNRequest)
 		AuthnRequestType art = spmp.parseMessage(DEFAULT_CONTEXT,authNRequest, true)
 
 		then:
-		xml.@ID.toString().startsWith("_")
+		xml.@ID == "_1234512341234"
 		xml.@IssueInstant.toString().startsWith("20")
 		xml.@Version == "2.0"
 

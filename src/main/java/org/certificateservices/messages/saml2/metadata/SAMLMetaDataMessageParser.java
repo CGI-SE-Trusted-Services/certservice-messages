@@ -7,8 +7,14 @@ import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser;
 import org.certificateservices.messages.csmessages.XSDLSInput;
 import org.certificateservices.messages.saml2.BaseSAMLMessageParser;
+import org.certificateservices.messages.saml2.assertion.jaxb.AssertionType;
 import org.certificateservices.messages.saml2.assertion.jaxb.AttributeType;
+import org.certificateservices.messages.saml2.metadata.attr.jaxb.EntityAttributesType;
 import org.certificateservices.messages.saml2.metadata.jaxb.*;
+import org.certificateservices.messages.saml2.metadata.ui.jaxb.DiscoHintsType;
+import org.certificateservices.messages.saml2.metadata.ui.jaxb.KeywordsType;
+import org.certificateservices.messages.saml2.metadata.ui.jaxb.LogoType;
+import org.certificateservices.messages.saml2.metadata.ui.jaxb.UIInfoType;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 import org.certificateservices.messages.utils.XMLSigner;
 import org.certificateservices.messages.xenc.jaxb.EncryptionMethodType;
@@ -23,6 +29,7 @@ import org.xml.sax.SAXException;
 import javax.xml.bind.JAXBElement;
 import javax.xml.datatype.Duration;
 import javax.xml.namespace.QName;
+import java.math.BigInteger;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -42,13 +49,15 @@ public class SAMLMetaDataMessageParser extends BaseSAMLMessageParser {
 
     public static final String NAMESPACE = "urn:oasis:names:tc:SAML:2.0:metadata";
 
-    private static final String BASE_JAXB_CONTEXT = "org.certificateservices.messages.saml2.assertion.jaxb:org.certificateservices.messages.saml2.metadata.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.xmldsig.jaxb";
+    private static final String BASE_JAXB_CONTEXT = "org.certificateservices.messages.saml2.assertion.jaxb:org.certificateservices.messages.saml2.metadata.jaxb:org.certificateservices.messages.saml2.metadata.ui.jaxb:org.certificateservices.messages.saml2.metadata.attr.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.xmldsig.jaxb";
 
     protected static final String METADATA_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/cs-message-saml-schema-metadata-2.0.xsd";
 
     private SAML2MetaDataSignatureLocationFinder signatureLocationFinder = new SAML2MetaDataSignatureLocationFinder();
 
-    private ObjectFactory mdOf = new ObjectFactory();
+    private static ObjectFactory mdOf = new ObjectFactory();
+    private static org.certificateservices.messages.saml2.metadata.ui.jaxb.ObjectFactory uiOf = new org.certificateservices.messages.saml2.metadata.ui.jaxb.ObjectFactory();
+    private static org.certificateservices.messages.saml2.metadata.attr.jaxb.ObjectFactory attrOf = new org.certificateservices.messages.saml2.metadata.attr.jaxb.ObjectFactory();
 
     @Override
     public String getNameSpace() {
@@ -721,6 +730,236 @@ public class SAMLMetaDataMessageParser extends BaseSAMLMessageParser {
         return t;
     }
 
+    /**
+     * Help method to generate a extensions type to be used with
+     *
+     * @param extentionObjects list of extensions elements (JAXBElements) to include.
+     * @return a newly generated ExtensionsType object.
+     */
+    public ExtensionsType genExtensions(List<Object> extentionObjects){
+        ExtensionsType extensions = mdOf.createExtensionsType();
+        extensions.getAny().addAll(extentionObjects);
+        return extensions;
+    }
+
+
+    /**
+     * Method to generate a MD UIInfo JAXBElement with given child elements.
+     *
+     * @param childElements a least one child element.
+     *
+     * @return a new JAXBElement containing a UI info of all child elements.
+     * @throws MessageContentException if no child elements where specified.
+     */
+    public JAXBElement<UIInfoType> genUIInfo(List<JAXBElement<?>> childElements) throws MessageContentException{
+        if(childElements == null || childElements.size() == 0){
+            throw new MessageContentException("Error constructing UIInfo, at least one child element must exist.");
+        }
+
+        UIInfoType uiInfoType = uiOf.createUIInfoType();
+        uiInfoType.getDisplayNameOrDescriptionOrKeywords().addAll(childElements);
+
+        return uiOf.createUIInfo(uiInfoType);
+    }
+
+    /**
+     * Method to generate a MD UI DiscoHints JAXBElement with given child elements.
+     *
+     * @param childElements a least one child element.
+     *
+     * @return a new JAXBElement containing a DiscoHints of all child elements.
+     * @throws MessageContentException if no child elements where specified.
+     */
+    public JAXBElement<DiscoHintsType> genUIDiscoHints(List<JAXBElement<?>> childElements) throws MessageContentException{
+        if(childElements == null || childElements.size() == 0){
+            throw new MessageContentException("Error constructing DiscoHints, at least one child element must exist.");
+        }
+        DiscoHintsType discoHintsType = uiOf.createDiscoHintsType();
+        discoHintsType.getIPHintOrDomainHintOrGeolocationHint().addAll(childElements);
+        return uiOf.createDiscoHints(discoHintsType);
+    }
+
+    /**
+     * Help method to generate a MD UI Logo element. Specifies the external location of a localized logo fit for
+     * display to users.
+     *
+     * @param width The rendered width of the logo measured in pixels.
+     * @param heigth The rendered height of the logo measured in pixels.
+     * @param uri the URI pointing to the logo.
+     * @param lang optional language specifier.
+     * @return a JAXBElement containing the logo.
+     */
+    public JAXBElement<LogoType> genUILogo(int width, int heigth, String uri, String lang){
+        LogoType l = uiOf.createLogoType();
+
+        l.setWidth(BigInteger.valueOf(width));
+        l.setHeight(BigInteger.valueOf(heigth));
+        l.setValue(uri);
+        l.setLang(lang);
+
+        return uiOf.createLogo(l);
+    }
+
+    /**
+     * Help method to generate a MD UI DisplayName element for the specified language. Specifies a localized name fit
+     * for display to users. Such names are meant to allow a user to distinguish and identify the entity acting in a
+     * particular role. The content of this element should be suitable for use in constructing accessible user
+     * interfaces for those with disabilities.
+     *
+     * @param name a string display name of related service.
+     * @param lang required language specifier.
+     * @return a JAXBElement containing the description.
+     * @throws MessageContentException if lang is not set.
+     */
+    public JAXBElement<LocalizedNameType> genUIDisplayName(String name, String lang) throws MessageContentException{
+        isSet(lang,"lang attribute is required for MD UI DisplayName");
+        LocalizedNameType n = mdOf.createLocalizedNameType();
+        n.setValue(name);
+        n.setLang(lang);
+        return uiOf.createDisplayName(n);
+    }
+
+    /**
+     * Help method to generate a MD UI Description element for the specified language. Specifies a brief, localized
+     * description fit for display to users. In the case of an md:SPSSODescriptor role, this SHOULD be a description
+     * of the service being offered. In the case of an md:IDPSSODescriptor role this SHOULD include a description of
+     * the user community serviced.
+     * <p>
+     *     In all cases this text MUST be standalone, meaning it is not to be used as a template requiring additional
+     *     text (e.g., "This service offers $description").
+     *
+     * @param description a string description
+     * @param lang required language specifier.
+     * @return a JAXBElement containing the description.
+     * @throws MessageContentException if lang is not set.
+     */
+    public JAXBElement<LocalizedNameType> genUIDescription(String description, String lang) throws MessageContentException{
+        isSet(lang,"lang attribute is required for MD UI Description");
+        LocalizedNameType d = mdOf.createLocalizedNameType();
+        d.setValue(description);
+        d.setLang(lang);
+        return uiOf.createDescription(d);
+    }
+
+    /**
+     * Help method to generate a MD UI Information URL element for the specified language. Specifies an external
+     * location for localized information about the entity acting in a given role meant to be viewed by users. The
+     * content found at the URL SHOULD provide more complete information than what would be provided by the
+     * mdui:Description element.
+     *
+     * @param url valid URL.
+     * @param lang required language specifier.
+     * @return a JAXBElement containing the URL.
+     * @throws MessageContentException if lang is not set.
+     */
+    public JAXBElement<LocalizedURIType> genUIInformationURL(String url, String lang) throws MessageContentException{
+        isSet(lang,"lang attribute is required for MD UI InformationURL");
+        LocalizedURIType u = mdOf.createLocalizedURIType();
+        u.setValue(url);
+        u.setLang(lang);
+        return uiOf.createInformationURL(u);
+    }
+
+    /**
+     * Help method to generate a MD UI Privacy Statement URL element for the specified language. Statements are meant to
+     * provide a user with information about how information will be used and managed by the entity acting in a given
+     * role.
+     *
+     * @param url valid URL.
+     * @param lang required language specifier.
+     * @return a JAXBElement containing the URL.
+     * @throws MessageContentException if lang is not set.
+     */
+    public JAXBElement<LocalizedURIType> genUIPrivacyStatementURL(String url, String lang) throws MessageContentException{
+        isSet(lang,"lang attribute is required for MD UI PrivacyStatementURL");
+        LocalizedURIType u = mdOf.createLocalizedURIType();
+        u.setValue(url);
+        u.setLang(lang);
+        return uiOf.createPrivacyStatementURL(u);
+    }
+
+    /**
+     * Help method to generate a MD UI Info Keywords element for the specified language. A keyword specifies a list of
+     * localized search keywords, tags, categories, or labels that apply to the containing role. This element extends
+     * the mdui:listOfStrings schema type with the following attribute.
+     *
+     * @param keywords a "list" of strings in the XML Schema [Schema2] sense, which means the keyword strings are
+     *                 space-delimited. Spaces within individual keywords are encoded with a “plus” (+) character; as
+     *                 a consequence, keywords may not contain that character.
+     * @param lang required language specifier.
+     * @return a JAXBElement containing the key words
+     * @throws MessageContentException if lang is not set.
+     */
+    public JAXBElement<KeywordsType> genUIKeywords(List<String> keywords, String lang) throws MessageContentException{
+        isSet(lang,"lang attribute is required for MD UI Keywords");
+        KeywordsType k = uiOf.createKeywordsType();
+        for(String keyword : keywords){
+            k.getValue().add(keyword.replaceAll(" ","+"));
+        }
+        k.setLang(lang);
+        return uiOf.createKeywords(k);
+    }
+
+    /**
+     * Help method to generate a MD UI Discovery IP Hint.
+     *
+     * @param value specifies an [RFC4632] block associated with, or serviced by, the entity.  Both IPv4 and IPv6 CIDR blocks MUST be supported.
+     * @return a JAXBElement containing the IP Hint
+     */
+    public JAXBElement<String> genUIIPHint(String value){
+        return uiOf.createIPHint(value);
+    }
+
+    /**
+     * Help method to generate a MD UI Discovery Domain Hint.
+     *
+     * @param value specifies a DNS domain associated with, or serviced by, the entity.
+     * @return a JAXBElement containing the Domain Hint
+     */
+    public JAXBElement<String> genUIDomainHint(String value){
+        return uiOf.createDomainHint(value);
+    }
+
+    /**
+     * Help method to generate a MD UI Discovery Geolocation Hint.
+     *
+     * @param value specifies a set of geographic coordinates associated with, or serviced by, the entity. Coordinates are given in URI form using the geo URI scheme [RFC5870].
+     * @return a JAXBElement containing the Geolocation Hint
+     */
+    public JAXBElement<String> genUIGeolocationHint(String value){
+        return uiOf.createGeolocationHint(value);
+    }
+
+    /**
+     * Help method to generate MD Entity Attribute used as an extension in EntityId
+     * @param attributeOrAssertion an array of AttributeType or AssertionType to and to the EntityAttribute element
+     * @return a new EntityAttributes element
+     * @throws MessageContentException if invalid type was given in list
+     */
+    public JAXBElement<EntityAttributesType> genMDEntityAttributes(List<Object> attributeOrAssertion) throws MessageContentException{
+        EntityAttributesType entityAttributes = attrOf.createEntityAttributesType();
+
+        for(Object o : attributeOrAssertion){
+            if(o instanceof AttributeType || o instanceof AssertionType){
+                entityAttributes.getAttributeOrAssertion().add(o);
+            }else{
+                throw new MessageContentException("Error constructing MDAttr EntityAttributes, only AttributeType or AssertionType is allowed as attributes.");
+            }
+
+        }
+
+        return attrOf.createEntityAttributes(entityAttributes);
+    }
+
+    /**
+     * Method that verifies that a given value is set (i.e not null or empty string) or throws MessageContentException with given
+     * error message.
+     */
+    protected void isSet(String value, String errorMessage) throws MessageContentException{
+        if(value == null || value.trim().equals("")){
+            throw new MessageContentException(errorMessage);
+        }
+    }
 
     /**
      * Method to populate the base RoleDescriptor type. ID Attribute is automatically generated.

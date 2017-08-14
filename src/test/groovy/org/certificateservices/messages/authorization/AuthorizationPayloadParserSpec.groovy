@@ -39,7 +39,9 @@ class AuthorizationPayloadParserSpec extends Specification {
 	def setup(){
 		setupRegisteredPayloadParser();
 		csMessageParser = CSMessageParserManager.getCSMessageParser()
-		pp = PayloadParserRegistry.getParser(AuthorizationPayloadParser.NAMESPACE);
+		pp = PayloadParserRegistry.getParser(AuthorizationPayloadParser.NAMESPACE)
+
+
 	}
 	
 	def "Verify that JAXBPackage(), getNameSpace(), getSchemaAsInputStream(), getSupportedVersions(), getDefaultPayloadVersion() returns the correct values"(){
@@ -48,8 +50,9 @@ class AuthorizationPayloadParserSpec extends Specification {
 		pp.getNameSpace() == "http://certificateservices.org/xsd/authorization2_0"
 		pp.getSchemaAsInputStream("2.0") != null
 		pp.getSchemaAsInputStream("2.1") != null
-		pp.getDefaultPayloadVersion() == "2.1"
-		pp.getSupportedVersions() == ["2.1","2.0"] as String[]
+		pp.getSchemaAsInputStream("2.2") != null
+		pp.getDefaultPayloadVersion() == "2.2"
+		pp.getSupportedVersions() == ["2.2","2.1","2.0"] as String[]
 	}
 
 	def "Verify that genGetRequesterRolesRequest() generates a valid xml message and genGetRequesterRolesResponse() generates a valid CSMessageResponseData without any token type query"(){
@@ -143,6 +146,97 @@ class AuthorizationPayloadParserSpec extends Specification {
 		expect:
 		pp.parseMessage(rd.responseData)
 
+	}
+
+	def "Verify that token type permission RECOVERKEYS is filtered out if payload version is 2.0"(){
+		setup:
+		CSMessage request = pp.parseMessage(pp.genGetRequesterRolesRequest(TEST_ID, "SOMESOURCEID", "someorg", ["testTokenType1","testTokenType2"],createOriginatorCredential(), null))
+		List tokenTypePermissions = []
+		tokenTypePermissions.add(createTokenTypePermission(TokenTypePermissionType.MODIFYANDISSUE))
+		tokenTypePermissions.add(createTokenTypePermission(TokenTypePermissionType.REQUEST))
+		tokenTypePermissions.add(createTokenTypePermission(TokenTypePermissionType.RECOVERKEYS))
+		when: // Verify that for RECOVERKEYS is included by default
+		CSMessageResponseData rd = pp.genGetRequesterRolesResponse("SomeRelatedEndEntity", request, ["role1","role2"], tokenTypePermissions, null)
+		then:
+		//printXML(rd.responseData)
+		def xml = slurpXml(rd.responseData)
+		def payloadObject = xml.payload.GetRequesterRolesResponse
+		payloadObject.tokenTypePermissions.tokenTypePermission.findAll {it.ruleType == "MODIFYANDISSUE"}.size() == 1
+		payloadObject.tokenTypePermissions.tokenTypePermission.findAll {it.ruleType == "RECOVERKEYS"}.size() == 1
+		when: // Verify that for RECOVERKEYS is included for 2.1
+		pp.setPayloadVersion("2.1")
+		request = pp.parseMessage(pp.genGetRequesterRolesRequest(TEST_ID, "SOMESOURCEID", "someorg", ["testTokenType1","testTokenType2"],createOriginatorCredential(), null))
+		rd = pp.genGetRequesterRolesResponse("SomeRelatedEndEntity", request, ["role1","role2"], tokenTypePermissions, null)
+		//printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.GetRequesterRolesResponse
+		then:
+		xml.@payLoadVersion=="2.1"
+		payloadObject.tokenTypePermissions.tokenTypePermission.findAll {it.ruleType == "MODIFYANDISSUE"}.size() == 1
+		payloadObject.tokenTypePermissions.tokenTypePermission.findAll {it.ruleType == "RECOVERKEYS"}.size() == 1
+
+		when: // Verify it is filtered out for version 2.0
+		pp.setPayloadVersion("2.0")
+		request = pp.parseMessage(pp.genGetRequesterRolesRequest(TEST_ID, "SOMESOURCEID", "someorg", ["testTokenType1","testTokenType2"],createOriginatorCredential(), null))
+		rd = pp.genGetRequesterRolesResponse("SomeRelatedEndEntity", request, ["role1","role2"], tokenTypePermissions, null)
+		//printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.GetRequesterRolesResponse
+		then:
+		xml.@payLoadVersion=="2.0"
+		payloadObject.tokenTypePermissions.tokenTypePermission.findAll {it.ruleType == "MODIFYANDISSUE"}.size() == 1
+		payloadObject.tokenTypePermissions.tokenTypePermission.findAll {it.ruleType == "RECOVERKEYS"}.size() == 0
+		cleanup:
+		pp.setPayloadVersion(pp.getDefaultPayloadVersion())
+	}
+
+	def "Verify that token type permission REQUEST is filtered out if payload version is 2.0 or 2.1"(){
+		setup:
+		CSMessage request = pp.parseMessage(pp.genGetRequesterRolesRequest(TEST_ID, "SOMESOURCEID", "someorg", ["testTokenType1","testTokenType2"],createOriginatorCredential(), null))
+		List tokenTypePermissions = []
+		tokenTypePermissions.add(createTokenTypePermission(TokenTypePermissionType.MODIFYANDISSUE))
+		tokenTypePermissions.add(createTokenTypePermission(TokenTypePermissionType.REQUEST))
+		tokenTypePermissions.add(createTokenTypePermission(TokenTypePermissionType.RECOVERKEYS))
+		when: // Verify that for REQUEST is included by default
+		CSMessageResponseData rd = pp.genGetRequesterRolesResponse("SomeRelatedEndEntity", request, ["role1","role2"], tokenTypePermissions, null)
+		then:
+		//printXML(rd.responseData)
+		def xml = slurpXml(rd.responseData)
+		def payloadObject = xml.payload.GetRequesterRolesResponse
+		payloadObject.tokenTypePermissions.tokenTypePermission.findAll {it.ruleType == "MODIFYANDISSUE"}.size() == 1
+		payloadObject.tokenTypePermissions.tokenTypePermission.findAll {it.ruleType == "REQUEST"}.size() == 1
+		when: // Verify it is filtered out for version  2.1
+		pp.setPayloadVersion("2.1")
+		request = pp.parseMessage(pp.genGetRequesterRolesRequest(TEST_ID, "SOMESOURCEID", "someorg", ["testTokenType1","testTokenType2"],createOriginatorCredential(), null))
+		rd = pp.genGetRequesterRolesResponse("SomeRelatedEndEntity", request, ["role1","role2"], tokenTypePermissions, null)
+		//printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.GetRequesterRolesResponse
+		then:
+		xml.@payLoadVersion=="2.1"
+		payloadObject.tokenTypePermissions.tokenTypePermission.findAll {it.ruleType == "MODIFYANDISSUE"}.size() == 1
+		payloadObject.tokenTypePermissions.tokenTypePermission.findAll {it.ruleType == "REQUEST"}.size() == 0
+
+		when: // Verify it is filtered out for version 2.0
+		pp.setPayloadVersion("2.0")
+		request = pp.parseMessage(pp.genGetRequesterRolesRequest(TEST_ID, "SOMESOURCEID", "someorg", ["testTokenType1","testTokenType2"],createOriginatorCredential(), null))
+		rd = pp.genGetRequesterRolesResponse("SomeRelatedEndEntity", request, ["role1","role2"], tokenTypePermissions, null)
+		//printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.GetRequesterRolesResponse
+		then:
+		xml.@payLoadVersion=="2.0"
+		payloadObject.tokenTypePermissions.tokenTypePermission.findAll {it.ruleType == "MODIFYANDISSUE"}.size() == 1
+		payloadObject.tokenTypePermissions.tokenTypePermission.findAll {it.ruleType == "REQUEST"}.size() == 0
+		cleanup:
+		pp.setPayloadVersion(pp.getDefaultPayloadVersion())
+	}
+
+	TokenTypePermission createTokenTypePermission(TokenTypePermissionType type){
+		TokenTypePermission t = of.createTokenTypePermission()
+		t.tokenType = "SomeTokenType"
+		t.ruleType = type
+		return t
 	}
 
 }

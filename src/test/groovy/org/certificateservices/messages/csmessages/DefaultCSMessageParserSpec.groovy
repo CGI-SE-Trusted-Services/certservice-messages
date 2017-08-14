@@ -641,7 +641,22 @@ public class DefaultCSMessageParserSpec extends Specification{
 		thrown MessageContentException
 	}
 	
-	
+	def "Verify that setCSMessageVersion changes the version of generated requests"(){
+		when:
+		requestMessageParser.setCSMessageVersion("2.0")
+		CSMessage request = requestMessageParser.parseMessage(requestMessageParser.generateIsApprovedRequest(TEST_ID, "somedest", "someorg", "someid", null, null));
+		then:
+		request.version == "2.0"
+		when:
+		request = requestMessageParser.parseMessage(credManagementPayloadParser.genGetCredentialRequest(TEST_ID,"somedest","someorg","somesubtype","someissuerid","someserialnumber",null,null))
+		then:
+		request.version == "2.0"
+
+		cleanup:
+		requestMessageParser.setCSMessageVersion(DefaultCSMessageParser.DEFAULT_CSMESSAGE_PROTOCOL)
+	}
+
+
 	@Unroll
 	def "Verify that getMarshaller returns a marshaller for CS Message Version: #version"(){
 		setup:
@@ -694,6 +709,14 @@ public class DefaultCSMessageParserSpec extends Specification{
 		result = mp.parseMessage(doc,true,false)
 		then:
 		result != null
+	}
+
+	def "Verify that invalid CS Message generates a descriptive error message"(){
+		when:
+		mp.parseMessage(invalidCSMessage, false,false)
+		then:
+		def e = thrown(MessageContentException)
+		e.message == "Error parsing CS Message: cvc-complex-type.2.4.a: Invalid content was found starting with element 'cs:neme'. One of '{\"http://certificateservices.org/xsd/csmessages2_0\":name}' is expected."
 	}
 
 	def "Verify that populateOriginatorAssertionsAndSignCSMessage populates requests properly."(){
@@ -1004,6 +1027,19 @@ ZLCP64EJEfE1mGxCJg==</ds:X509Certificate>
 
 	def verifyPopulateWithMinCSMessage = """<?xml version="1.0" encoding="UTF-8"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.0" timeStamp="2017-01-06T08:03:25.638+03:00" version="2.0" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd">
   <cs:name>IsApprovedRequest</cs:name>
+  <cs:sourceId>SOMEREQUESTER</cs:sourceId>
+  <cs:destinationId>SOMESOURCEID</cs:destinationId>
+  <cs:organisation>someorg</cs:organisation>
+  <cs:payload>
+    <cs:IsApprovedRequest>
+      <cs:approvalId>123-212</cs:approvalId>
+    </cs:IsApprovedRequest>
+  </cs:payload>
+</cs:CSMessage>
+""".getBytes("UTF-8")
+
+	def invalidCSMessage = """<?xml version="1.0" encoding="UTF-8"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.0" timeStamp="2017-01-06T08:03:25.638+03:00" version="2.0" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd">
+  <cs:neme>IsApprovedRequest</cs:neme>
   <cs:sourceId>SOMEREQUESTER</cs:sourceId>
   <cs:destinationId>SOMESOURCEID</cs:destinationId>
   <cs:organisation>someorg</cs:organisation>
