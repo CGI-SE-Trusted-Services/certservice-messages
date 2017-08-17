@@ -438,6 +438,7 @@
               </execution>
             </executions>
             <configuration>
+              <target>target/certservice-messages.jar</target>
               <keystore>/home/bamboo/codesign.jks</keystore>
               <storepass>{xuMwDBggK/cHXMoR3I1DWjJcaX2SPzxvgYbDX2QjB1IvfIohS3PPsMiVAmYrcn1D}</storepass>
               <alias>codesigning</alias>
