@@ -415,5 +415,44 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>signed</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <skipTests>true</skipTests>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jarsigner-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>sign</id>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <keystore>/home/bamboo/codesign.jks</keystore>
+              <storepass>{xuMwDBggK/cHXMoR3I1DWjJcaX2SPzxvgYbDX2QjB1IvfIohS3PPsMiVAmYrcn1D}</storepass>
+              <alias>codesigning</alias>
+              <processMainArtifact>true</processMainArtifact>
+              <tsa>http://timestamp.digicert.com</tsa>
+              <removeExistingSignatures>true</removeExistingSignatures>
+              <arguments>
+                <argument>-signedjar</argument>
+                <argument>${project.build.directory}/signed-${project.build.finalName}.jar</argument>
+              </arguments>
+              <verbose>true</verbose>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
