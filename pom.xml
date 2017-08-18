@@ -422,10 +422,55 @@
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <skipSource>true</skipSource>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-assembly-plugin</artifactId>
             <configuration>
               <attach>false</attach>
               <dryRun>true</dryRun>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>deploy</id>
+                <phase>default-deploy</phase>
+                <goals>
+                  <goal>deploy</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>deploy-file</id>
+                <phase>deploy</phase>
+                <goals>
+                  <goal>deploy-file</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <file>target/signed-certservice-messages.jar</file>
+              <repositoryId>dev.certificateservices.org-release</repositoryId>
+              <url>https://dev.certificateservices.org/artifactory/libs-release-local</url>
+              <groupId>org.certificateservices.messages</groupId>
+              <artifactId>signed-certservice-messages</artifactId>
+              <version>${build.version}</version>
+              <skip>true</skip>
             </configuration>
           </plugin>
           <plugin>
@@ -452,8 +497,12 @@
               <alias>codesigning</alias>
               <processMainArtifact>true</processMainArtifact>
               <tsa>http://timestamp.digicert.com</tsa>
-              <removeExistingSignatures>true</removeExistingSignatures>
+              <removeExistingSignatures>false</removeExistingSignatures>
               <verbose>true</verbose>
+              <parameters>
+                <parameter>-signedjar</parameter>
+                <parameter>signed-certservice-messages.jar</parameter>
+              </parameters>
             </configuration>
           </plugin>
         </plugins>
