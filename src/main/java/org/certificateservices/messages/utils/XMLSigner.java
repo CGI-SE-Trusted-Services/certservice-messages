@@ -676,9 +676,11 @@ public class XMLSigner {
 	private Element findSignatureElementInObject(Element signedElement) throws MessageContentException{
 		NodeList childs = signedElement.getChildNodes();
 		for(int i = 0; i < childs.getLength(); i++){
-			Element next = (Element) childs.item(i);
-			if(next.getLocalName().equals("Signature") && next.getNamespaceURI().equals(XMLDSIG_NAMESPACE)){
-				return next;
+			Node next = childs.item(i);
+			if(next instanceof Element) {
+				if (((Element) next).getLocalName().equals("Signature") && ((Element) next).getNamespaceURI().equals(XMLDSIG_NAMESPACE)) {
+					return (Element) next;
+				}
 			}
 		}
 		
