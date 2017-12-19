@@ -21,7 +21,11 @@ import org.apache.xml.security.encryption.XMLCipher;
  *
  */
 public enum EncryptionAlgorithmScheme {
-	
+
+	RSA_PKCS1_5_WITH_AES128(XMLCipher.AES_128, XMLCipher.RSA_v1dot5),
+	RSA_OAEP_WITH_AES128(XMLCipher.AES_128, XMLCipher.RSA_OAEP),
+	RSA_PKCS1_5_WITH_AES192(XMLCipher.AES_192, XMLCipher.RSA_v1dot5),
+	RSA_OAEP_WITH_AES192(XMLCipher.AES_192, XMLCipher.RSA_OAEP),
 	RSA_PKCS1_5_WITH_AES256(XMLCipher.AES_256, XMLCipher.RSA_v1dot5),
 	RSA_OAEP_WITH_AES256(XMLCipher.AES_256, XMLCipher.RSA_OAEP);
 	

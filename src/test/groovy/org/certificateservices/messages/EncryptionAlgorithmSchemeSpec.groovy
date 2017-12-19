@@ -15,6 +15,10 @@ public class EncryptionAlgorithmSchemeSpec extends Specification{
 		algorithm.getKeyEncryptionAlgorithmURI() == keyalgvalue
 		where:
 		algorithm                   | dataalgvalue                                            | keyalgvalue
+		RSA_PKCS1_5_WITH_AES128     | "http://www.w3.org/2001/04/xmlenc#aes128-cbc"           | "http://www.w3.org/2001/04/xmlenc#rsa-1_5"
+		RSA_OAEP_WITH_AES128        | "http://www.w3.org/2001/04/xmlenc#aes128-cbc"           | "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"
+		RSA_PKCS1_5_WITH_AES192     | "http://www.w3.org/2001/04/xmlenc#aes192-cbc"           | "http://www.w3.org/2001/04/xmlenc#rsa-1_5"
+		RSA_OAEP_WITH_AES192        | "http://www.w3.org/2001/04/xmlenc#aes192-cbc"           | "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"
 		RSA_PKCS1_5_WITH_AES256     | "http://www.w3.org/2001/04/xmlenc#aes256-cbc"           | "http://www.w3.org/2001/04/xmlenc#rsa-1_5"
 		RSA_OAEP_WITH_AES256        | "http://www.w3.org/2001/04/xmlenc#aes256-cbc"           | "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"
 			
