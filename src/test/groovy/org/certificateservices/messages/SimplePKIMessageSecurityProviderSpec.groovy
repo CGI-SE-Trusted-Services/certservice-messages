@@ -25,6 +25,7 @@ class SimplePKIMessageSecurityProviderSpec extends Specification {
 	SimpleMessageSecurityProvider prov
 	
 	X509Certificate testCert
+	X509Certificate testCertWithKeyUsage
 	Properties config
 	String signKeyKeyId
 
@@ -35,6 +36,7 @@ class SimplePKIMessageSecurityProviderSpec extends Specification {
 
 		CertificateFactory cf = CertificateFactory.getInstance("X.509","BC")
 		testCert = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(base64Cert)))
+		testCertWithKeyUsage = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(base64Cert2)))
 		
 		config = new Properties();
 		config.setProperty(SETTING_SIGNINGKEYSTORE_PATH, this.getClass().getResource("/dummykeystore.jks").getPath())
@@ -84,11 +86,17 @@ class SimplePKIMessageSecurityProviderSpec extends Specification {
 	
 	def "Test that isValidAndAuthorized() does not trust an untrusted certificate"(){
 		setup:
+		XMLSigner.systemTime = TestUtils.mockSystemTime("2017-12-01")
+		expect:
+		  !prov.isValidAndAuthorized(testCertWithKeyUsage, "someorg")
+	}
+
+	def "Test that isValidAndAuthorized() does accept certificate with wrong key usage"(){
+		setup:
 		XMLSigner.systemTime = TestUtils.mockSystemTime("2013-10-01")
 		expect:
-		  !prov.isValidAndAuthorized(testCert, "someorg")
+		!prov.isValidAndAuthorized(testCert, "someorg")
 	}
-	
 	
 	def "Test that isValidAndAuthorized() does not trust an expired certificate"(){
 		setup:
@@ -263,7 +271,28 @@ class SimplePKIMessageSecurityProviderSpec extends Specification {
 		"0E2YIa/kOrlvy5Z62sj24yczBL9uHfWpQUefA1+R9JpbOj0WEk+rAV0xJ2knmC/R" +
 		"NzHWz92kL6UKUFzyBXBiBbY7TSVjO+bV/uPaTEVP7QhJk4Cahg1a7h8iMdF78ths" +
 		"+xMeZX1KyiL4Dpo2rocZAvdL/C8qkt/uEgOjwOTdmoRVxkFWcm+DRNa26cclBQ4t" +
-		"Vw==").getBytes();
+		"Vw==").getBytes()
+
+	public static byte[] base64Cert2 = ("MIIDtTCCAp2gAwIBAgIIQIAaGoHvZG0wDQYJKoZIhvcNAQEFBQAwZTE1MDMGA1UE" +
+			"AwwsTG9naWNhIFNFIElNIENlcnRpZmljYXRlIFNlcnZpY2UgU1QgU2VydmVyQ0Ex" +
+			"LDAqBgNVBAoMI0xvZ2ljYSBTRSBJTSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlIFNUMB4X" +
+			"DTE3MDcxMjExMDcwMloXDTE5MDcxMTExMDcwMlowWTEpMCcGA1UEAwwgdGVzdC5i" +
+			"YWNrZW5kLnNpZ25hdHVyZXNlcnZpY2Uuc2UxLDAqBgNVBAoMI0xvZ2ljYSBTRSBJ" +
+			"TSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlIFNUMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A" +
+			"MIIBCgKCAQEAhLoCPpDifhnsbiR27W1tJ4SFrjHvhfe8GVlQC6F7pps5x7LsRj4X" +
+			"ZvcpIQ+o7qaFD7mMxMb4qPEH/n8sUsbPt12ByRgarXFOI9S6XyB0il6TGuODXvIX" +
+			"GeUhZHcRUdgB/nbGgZrboPIMXU5IXJAcm6/K4CJwr0s1Ix/vGy/QgjJ1Dl9obxSJ" +
+			"1Lh5tnUJxd5/2XQod+6up5XAtieLwfURJSj3gF6dKNp/cMhwVkPtDM2PA+zdayil" +
+			"+PUsvKiZQxBny/K7obmALCuTqDmQkE2WvLGdezooBQjpCeWUSweq+8IVDgrkLkrI" +
+			"GFM2ERmGYnnFG/E0Iv4l+ye9SGMGGfnMRwIDAQABo3UwczAMBgNVHRMBAf8EAjAA" +
+			"MB8GA1UdIwQYMBaAFOBD1HKL2rBlAoaehRcftgg2gElPMBMGA1UdJQQMMAoGCCsG" +
+			"AQUFBwMBMB0GA1UdDgQWBBQ1p+7jFbgGWSTPUFU7TmukAROfDDAOBgNVHQ8BAf8E" +
+			"BAMCBaAwDQYJKoZIhvcNAQEFBQADggEBAFVOWWhnXDGglSp5jxuhxEftfYp8ZK/q" +
+			"npmY6Dkgix2qZL2KFpzxd3CF1HHAIFyw+X9bVZHemIeEjtHttinkzsOPBkAYA2FY" +
+			"gWSBy4Wc8ucxoguxnNrVGRBv20CX6jIfOCeAZGi0oTrj4OvBwbLvNgh35BwAHl99" +
+			"rPIJOnH7SogrGNGYYHaCxEjEDYB2uOZ/0z17MHdZ1aPpgR/6z+kZUQ0mjskkGAXt" +
+			"B+eV9XZWiEf4DcQWCNkpeYW9H3dI9nsxCbxUuH5dJMsWtpzADQYScIMh0dlFTxeQ" +
+			"tXiZAHBV81NZPvVE8wUr2cX+V46RBvi9fqFV7ysx12Pzc6qjVU2C1Ok=").getBytes()
 	
 
 }
