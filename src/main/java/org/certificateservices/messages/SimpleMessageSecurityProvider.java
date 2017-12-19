@@ -265,7 +265,7 @@ public class SimpleMessageSecurityProvider implements
 			return false;
 		}
 
-		boolean foundMatching = true;
+		boolean foundMatching = false;
 		try{
 			Enumeration<String> aliases = trustStore.aliases();
 			while(aliases.hasMoreElements()){
