@@ -14,6 +14,8 @@ import org.certificateservices.messages.utils.MessageGenerateUtils;
 import org.certificateservices.messages.utils.XMLSigner;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBElement;
@@ -369,6 +371,30 @@ public class SAMLProtocolMessageParser extends BaseSAMLMessageParser{
         statusResponseType.setConsent(consent);
         statusResponseType.setExtensions(extensions);
 
+    }
+
+    /**
+     * Method that extracts all unencrypted SAMLP assertions from a SAMLPResponse and
+     * tries to retain any internal signature of existing assertions.
+     * @param samlPResponse the SAMLPResponse to extract Assertions from.
+     * @return a list containing all assertions found in SAMLP Document.
+     */
+    public List<Document> extractAssertionsFromSAMLP(Document samlPResponse) throws MessageContentException{
+        try{
+            List<Document> retval = new ArrayList<Document>();
+            NodeList assertionNodes = samlPResponse.getElementsByTagNameNS(ASSERTION_NAMESPACE, "Assertion");
+            for(int i=0; i < assertionNodes.getLength(); i++ ){
+                Node assertionNode = assertionNodes.item(i);
+                Document newDoc = getDocumentBuilder().newDocument();
+                Node newNode = assertionNode.cloneNode(true);
+                newDoc.adoptNode(newNode);
+                newDoc.appendChild(newNode);
+                retval.add(newDoc);
+            }
+            return retval;
+        }catch(Exception e){
+            throw new MessageContentException("Error extracting assertions from SAMLP Response: " + e.getMessage(), e);
+        }
     }
 
     /**
