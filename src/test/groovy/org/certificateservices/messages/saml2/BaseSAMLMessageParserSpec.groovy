@@ -18,6 +18,7 @@ import org.certificateservices.messages.saml2.protocol.jaxb.ResponseType
 import org.certificateservices.messages.utils.MessageGenerateUtils
 import org.certificateservices.messages.utils.SystemTime
 import org.certificateservices.messages.xenc.jaxb.EncryptedDataType
+import org.w3c.dom.Document
 
 import javax.xml.bind.JAXBElement
 
@@ -323,6 +324,21 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 		responseType.status.statusCode.value == ResponseStatusCodes.SUCCESS.getURIValue()
 		responseType.version == BaseSAMLMessageParser.DEFAULT_SAML_VERSION
 		responseType.getAssertionOrEncryptedAssertion().size() == 1
+
+	}
+
+	def "Verify marshallDoc and unmarshallDoc works correctly"(){
+		when:
+		Document doc = samp.unmarshallDoc(csMessageData)
+
+		then:
+		doc.getDocumentElement().getElementsByTagNameNS("http://certificateservices.org/xsd/csmessages2_0", "name").length > 0
+
+		when:
+		byte[] messageData = samp.marshallDoc(doc)
+
+		then:
+		messageData == csMessageData
 
 	}
 

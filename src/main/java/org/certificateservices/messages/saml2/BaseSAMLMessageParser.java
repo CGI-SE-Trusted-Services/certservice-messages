@@ -585,6 +585,32 @@ public abstract class BaseSAMLMessageParser {
 
 		return xmlSigner.marshallDoc(doc);
 	}
+
+	/**
+	 * Help method to marshall a Doc into byte array, generates no signature just converts.
+	 *
+	 * @param doc Document to marshall into byte array
+	 * @return a byte array representation of the doc
+	 * @throws MessageProcessingException if internal problems occurred when processing the message.
+	 * @throws MessageContentException if message was malformed.
+	 */
+	public byte[] marshallDoc(Document doc) throws MessageProcessingException, MessageContentException{
+		return xmlSigner.marshallDoc(doc);
+	}
+
+	/**
+	 * Method to convert a message to a Document
+	 * @param message the bytearray xml message to convert to Document.
+	 * @return the Document object.
+	 * @throws MessageContentException if message was malformed.
+	 */
+	public Document unmarshallDoc(byte[] message) throws MessageContentException{
+		try{
+			return documentBuilder.parse(new ByteArrayInputStream(message));
+		}catch(Exception e){
+			throw new MessageContentException("Error converting message into Document: " + e.getMessage(),e);
+		}
+	}
 	
 	/**
 	 * Help method to marshall and sign an Assertion, either standalone or inside a SAMLP Response
