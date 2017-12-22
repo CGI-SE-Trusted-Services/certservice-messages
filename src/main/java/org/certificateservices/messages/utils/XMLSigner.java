@@ -498,7 +498,7 @@ public class XMLSigner {
      */
 	public static boolean checkBasicCertificateValidation(X509Certificate cert){
 		boolean[] keyUsage = cert.getKeyUsage();
-		if (keyUsage[0] == false) {
+		if (keyUsage != null && keyUsage[0] == false) {
 			return false;
 		}
 
