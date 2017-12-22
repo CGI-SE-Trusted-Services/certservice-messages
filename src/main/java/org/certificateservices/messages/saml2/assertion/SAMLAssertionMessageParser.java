@@ -175,27 +175,62 @@ public class SAMLAssertionMessageParser extends BaseSAMLMessageParser{
      * @throws NoDecryptionKeyFoundException if no key could be found decrypting the assertion.
      */
     public JAXBElement<AssertionType> decryptEncryptedAssertion(ContextMessageSecurityProvider.Context context, EncryptedElementType encryptedAssertion, boolean verify) throws MessageContentException, MessageProcessingException, NoDecryptionKeyFoundException{
+        Document decryptedDoc = decryptEncryptedAssertionToDoc(context,encryptedAssertion);
+        return marshallAndVerifyAssertionDoc(context,decryptedDoc,verify);
+    }
+
+    /**
+     * Method to decrypt an EncryptedAssertion and convert it to Document. This method does not verify the signature nor schema. This
+     * can be used by calling marshallAndVerifyAssertionDoc() afterwards or just call decryptEncryptedAssertion().
+     *
+     * @param context message security related context.
+     * @param encryptedAssertion the encrypted assertion
+     * @return an decrypted assertion i Document format.
+     * @throws MessageContentException if content of message was invalid.
+     * @throws MessageProcessingException if internal problems occurred parsing the assertions.
+     * @throws NoDecryptionKeyFoundException if no key could be found decrypting the assertion.
+     */
+    public Document decryptEncryptedAssertionToDoc(ContextMessageSecurityProvider.Context context, EncryptedElementType encryptedAssertion) throws MessageContentException, MessageProcessingException, NoDecryptionKeyFoundException{
         try {
             org.certificateservices.messages.xenc.jaxb.ObjectFactory xmlEncOf = new org.certificateservices.messages.xenc.jaxb.ObjectFactory();
             Document doc = getDocumentBuilder().newDocument();
 
             getMarshaller().marshal(xmlEncOf.createEncryptedData(encryptedAssertion.getEncryptedData()), doc);
 
-            Document decryptedDoc = xmlEncrypter.decryptDoc(context, doc,null);
-
-            if(verify) {
-                xmlSigner.verifyEnvelopedSignature(context, decryptedDoc, getSignatureLocationFinder(), getOrganisationLookup());
-            }
-            @SuppressWarnings("unchecked")
-            JAXBElement<AssertionType> decryptedAssertion = (JAXBElement<AssertionType>) getUnmarshaller().unmarshal(decryptedDoc);
-
-            schemaValidate(decryptedAssertion);
-
-            return decryptedAssertion;
+            return xmlEncrypter.decryptDoc(context, doc,null);
         } catch (JAXBException e) {
             throw new MessageContentException("Error parsing assertion : " + e.getMessage(), e);
         }catch (SecurityException e) {
             throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(),e);
+        }
+    }
+
+    /**
+     * Method to decrypt an EncryptedAssertion .
+     *
+     * @param context message security related context.
+     * @param assertionDoc the encrypted assertion
+     * @param verify if signature if decrypted assertion should be verified.
+     * @return an decrypted assertion
+     * @throws MessageContentException if content of message was invalid.
+     * @throws MessageProcessingException if internal problems occurred parsing the assertions.
+     * @throws NoDecryptionKeyFoundException if no key could be found decrypting the assertion.
+     */
+    public JAXBElement<AssertionType> marshallAndVerifyAssertionDoc(ContextMessageSecurityProvider.Context context, Document assertionDoc, boolean verify) throws MessageContentException, MessageProcessingException, NoDecryptionKeyFoundException {
+        try {
+            if (verify) {
+                xmlSigner.verifyEnvelopedSignature(context, assertionDoc, getSignatureLocationFinder(), getOrganisationLookup());
+            }
+            @SuppressWarnings("unchecked")
+            JAXBElement<AssertionType> assertion = (JAXBElement<AssertionType>) getUnmarshaller().unmarshal(assertionDoc);
+
+            schemaValidate(assertion);
+
+            return assertion;
+        } catch (JAXBException e) {
+            throw new MessageContentException("Error parsing assertion : " + e.getMessage(), e);
+        } catch (SecurityException e) {
+            throw new MessageProcessingException("Internal error parsing assertion: " + e.getMessage(), e);
         } catch (SAXException e) {
             throw new MessageContentException("Error parsing assertion : " + e.getMessage(), e);
         }
@@ -204,13 +239,13 @@ public class SAMLAssertionMessageParser extends BaseSAMLMessageParser{
 
 
 
-    /**
-     * Method to verify a signature of an assertion in a parsed SAML message.
-     * @param context message security related context.
-     * @param assertion the assertion to verify.
-     * @throws MessageContentException if assertion contained invalid data.
-     * @throws MessageProcessingException  if internal error occurred processing the assertion.
-     */
+            /**
+             * Method to verify a signature of an assertion in a parsed SAML message.
+             * @param context message security related context.
+             * @param assertion the assertion to verify.
+             * @throws MessageContentException if assertion contained invalid data.
+             * @throws MessageProcessingException  if internal error occurred processing the assertion.
+             */
     public  void verifyAssertionSignature(ContextMessageSecurityProvider.Context context,AssertionType assertion) throws MessageContentException, MessageProcessingException {
         Document doc = getDocumentBuilder().newDocument();
         try {
