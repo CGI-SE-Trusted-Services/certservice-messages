@@ -83,7 +83,7 @@ class CSAgentProtocolPayloadParserSpec extends Specification {
 		payloadObject.scanId == TEST_ID
 		payloadObject.scanTimeStamp == "1970-01-02T13:12:03.123+03:00"
 		payloadObject.discoveredCredentials.dc.size() == 3
-		payloadObject.discoveredCredentials.dc[0].h == "l9A14yA2pnAFjyvk4AinxWNVSJdQpdpvKvNC20qWjpk="
+		payloadObject.discoveredCredentials.dc[0].h == "tSau8aNBz+blw3ftTCIoiO64H5E6EHEQqGfgCcF1jyQ="
 		payloadObject.discoveredCredentials.dc[0].t == "1970-01-15T08:57:09.281+03:00"
 		payloadObject.discoveredCredentials.dc[0].as.a.size() == 3
 		payloadObject.discoveredCredentials.dc[0].as.a[0].key == "somekey1"
@@ -107,9 +107,9 @@ class CSAgentProtocolPayloadParserSpec extends Specification {
         verifySuccessfulBasePayload(payloadObject, TEST_ID)
 
 		payloadObject.unknownCredentials.h.size() == 3
-		payloadObject.unknownCredentials.h[0] == "l9A14yA2pnAFjyvk4AinxWNVSJdQpdpvKvNC20qWjpk="
-		payloadObject.unknownCredentials.h[1] == "4JsWgRREQBs1yUCB7oyCp2G808/XJgzwY+P+xSD19ek="
-		payloadObject.unknownCredentials.h[2] == "eZOVCfqo0gSZ04JLp6QpeQEBLeRdmEpb0mdv35nVH1Q="
+		payloadObject.unknownCredentials.h[0] == "tSau8aNBz+blw3ftTCIoiO64H5E6EHEQqGfgCcF1jyQ="
+		payloadObject.unknownCredentials.h[1] == "hHaN3uZZ7+r965crVRQxQbwjtuMzxw6LaNKXdKsJpUg="
+		payloadObject.unknownCredentials.h[2] == "+ymo1TCdfDWxgNvXjGOkVaXR+0UUmjJkwI8a/0NSS+s="
 	}
 
 	def "Verify that genDiscoveredCredentialDataRequest() generates a valid xml message and genDiscoveredCredentialDataResponse() generates a valid CSMessageResponseData"(){
@@ -126,7 +126,7 @@ class CSAgentProtocolPayloadParserSpec extends Specification {
 		payloadObject.scanId == TEST_ID
 		payloadObject.scanTimeStamp == "1970-01-02T13:12:03.123+03:00"
 		payloadObject.discoveredCredentialData.dcd.size() == 3
-		payloadObject.discoveredCredentialData.dcd[0].h == "l9A14yA2pnAFjyvk4AinxWNVSJdQpdpvKvNC20qWjpk="
+		payloadObject.discoveredCredentialData.dcd[0].h == "tSau8aNBz+blw3ftTCIoiO64H5E6EHEQqGfgCcF1jyQ="
 		payloadObject.discoveredCredentialData.dcd[0].t == "1970-01-15T08:57:09.281+03:00"
 		payloadObject.discoveredCredentialData.dcd[0].as.a.size() == 3
 		payloadObject.discoveredCredentialData.dcd[0].as.a[0].key == "somekey1"
@@ -199,7 +199,7 @@ class CSAgentProtocolPayloadParserSpec extends Specification {
 	}
 
 	private String createHash(number){
-		return new String(Base64.encoder.encode(d.digest(("message" + number).getBytes())))
+		return Base64.encoder.encodeToString(d.digest(("message ${number}").getBytes()))
 	}
 
 	private Attribute createAttribute(String key, String value){
