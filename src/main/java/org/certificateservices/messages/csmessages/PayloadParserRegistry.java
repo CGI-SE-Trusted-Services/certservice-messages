@@ -21,6 +21,7 @@ import org.certificateservices.messages.assertion.AssertionPayloadParser;
 import org.certificateservices.messages.authorization.AuthorizationPayloadParser;
 import org.certificateservices.messages.autoenroll.AutoEnrollPayloadParser;
 import org.certificateservices.messages.credmanagement.CredManagementPayloadParser;
+import org.certificateservices.messages.csagent.CSAgentProtocolPayloadParser;
 import org.certificateservices.messages.csexport.protocol.CSExportProtocolPayloadParser;
 import org.certificateservices.messages.encryptedcsmessage.EncryptedCSMessagePayloadParser;
 import org.certificateservices.messages.keystoremgmt.KeystoreMgmtPayloadParser;
@@ -65,6 +66,7 @@ public class PayloadParserRegistry {
 		  payloadParserRegistry.put(AuthorizationPayloadParser.NAMESPACE, AuthorizationPayloadParser.class);
 		  payloadParserRegistry.put(CSExportProtocolPayloadParser.NAMESPACE, CSExportProtocolPayloadParser.class);
 		  payloadParserRegistry.put(AutoEnrollPayloadParser.NAMESPACE, AutoEnrollPayloadParser.class);
+		  payloadParserRegistry.put(CSAgentProtocolPayloadParser.NAMESPACE, CSAgentProtocolPayloadParser.class);
 		}
 	}
 	
