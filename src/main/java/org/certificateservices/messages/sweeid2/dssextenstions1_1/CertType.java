@@ -7,7 +7,7 @@ package org.certificateservices.messages.sweeid2.dssextenstions1_1;
 public enum CertType {
     PKC("PKC"),
     QC("QC"),
-    QC_SSD("QC/SSD");
+    QC_SSD("QC/SSCD");
 
     private String value;
     CertType(String value){
