@@ -241,14 +241,14 @@
                 <pluginExecution>
                   <pluginExecutionFilter>
                     <groupId>
-											org.codehaus.mojo
-										</groupId>
+                      org.codehaus.mojo
+                    </groupId>
                     <artifactId>
-											sql-maven-plugin
-										</artifactId>
+                      sql-maven-plugin
+                    </artifactId>
                     <versionRange>
-											[1.5,)
-										</versionRange>
+                      [1.5,)
+                    </versionRange>
                     <goals>
                       <goal>execute</goal>
                     </goals>

@@ -23,6 +23,8 @@
 
 
     <body>
+        <menu ref="reports"/>
+
         <menu name="Documentation">
             <item name="Readme" href="index.html"/>
             <item name="LICENSE" href="LICENSE.txt"/>
@@ -42,6 +44,6 @@
             <item name="PKI Message 1.0 Specification, Rev 1.1" href="PKIMessage_Protocol_Specification_1.0_Revision_1.1.doc"/>
         </menu>
 
-        <menu ref="reports"/>
+
     </body>
 </project>
