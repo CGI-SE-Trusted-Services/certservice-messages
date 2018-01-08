@@ -18,7 +18,7 @@ class CertTypeSpec extends Specification {
 		type            | value
 		PKC 			| "PKC"
 		QC   			| "QC"
-		QC_SSD 			| "QC/SSD"
+		QC_SSD 			| "QC/SSCD"
 	}
 
 }
