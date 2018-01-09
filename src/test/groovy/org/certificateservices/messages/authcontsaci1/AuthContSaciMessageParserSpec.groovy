@@ -14,6 +14,7 @@ import org.certificateservices.messages.utils.MessageGenerateUtils
 import spock.lang.Specification
 
 import java.security.Security
+import java.sql.Time
 
 /**
  * Created by philip on 2017-05-20.
@@ -24,7 +25,7 @@ class AuthContSaciMessageParserSpec extends Specification {
     AuthContSaciMessageParser p = new AuthContSaciMessageParser()
 
     def currentTimeZone
-    def setup() {
+    def setup(){
         currentTimeZone = TimeZone.getDefault()
         TimeZone.setDefault(TimeZone.getTimeZone("Europe/Stockholm"))
     }
