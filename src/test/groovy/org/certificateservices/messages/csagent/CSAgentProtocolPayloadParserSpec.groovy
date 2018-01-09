@@ -52,11 +52,18 @@ class CSAgentProtocolPayloadParserSpec extends Specification {
 	}
 
 	DefaultCSMessageParser csMessageParser
+	def currentTimeZone
 
 	def setup(){
+		currentTimeZone = TimeZone.getDefault()
+		TimeZone.setDefault(TimeZone.getTimeZone("Europe/Stockholm"))
 		setupRegisteredPayloadParser()
 		csMessageParser = CSMessageParserManager.getCSMessageParser()
 		pp = PayloadParserRegistry.getParser(CSAgentProtocolPayloadParser.NAMESPACE)
+	}
+
+	def cleanup(){
+		TimeZone.setDefault(currentTimeZone)
 	}
 	
 	def "Verify that JAXBPackage(), getNameSpace(), getSchemaAsInputStream(), getSupportedVersions(), getDefaultPayloadVersion() returns the correct values"(){
@@ -81,10 +88,10 @@ class CSAgentProtocolPayloadParserSpec extends Specification {
         verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","DiscoveredCredentialsRequest", createOriginatorCredential(), csMessageParser)
 		payloadObject.agentId == "someAgentId"
 		payloadObject.scanId == TEST_ID
-		payloadObject.scanTimeStamp == "1970-01-02T13:12:03.123+03:00"
+		payloadObject.scanTimeStamp == "1970-01-02T11:12:03.123+01:00"
 		payloadObject.discoveredCredentials.dc.size() == 3
 		payloadObject.discoveredCredentials.dc[0].h == "tSau8aNBz+blw3ftTCIoiO64H5E6EHEQqGfgCcF1jyQ="
-		payloadObject.discoveredCredentials.dc[0].t == "1970-01-15T08:57:09.281+03:00"
+		payloadObject.discoveredCredentials.dc[0].t == "1970-01-15T06:57:09.281+01:00"
 		payloadObject.discoveredCredentials.dc[0].as.a.size() == 3
 		payloadObject.discoveredCredentials.dc[0].as.a[0].key == "somekey1"
 		payloadObject.discoveredCredentials.dc[0].as.a[0].value == "somevalue1"
@@ -124,10 +131,10 @@ class CSAgentProtocolPayloadParserSpec extends Specification {
 		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","DiscoveredCredentialDataRequest", createOriginatorCredential(), csMessageParser)
 		payloadObject.agentId == "someAgentId"
 		payloadObject.scanId == TEST_ID
-		payloadObject.scanTimeStamp == "1970-01-02T13:12:03.123+03:00"
+		payloadObject.scanTimeStamp == "1970-01-02T11:12:03.123+01:00"
 		payloadObject.discoveredCredentialData.dcd.size() == 3
 		payloadObject.discoveredCredentialData.dcd[0].h == "tSau8aNBz+blw3ftTCIoiO64H5E6EHEQqGfgCcF1jyQ="
-		payloadObject.discoveredCredentialData.dcd[0].t == "1970-01-15T08:57:09.281+03:00"
+		payloadObject.discoveredCredentialData.dcd[0].t == "1970-01-15T06:57:09.281+01:00"
 		payloadObject.discoveredCredentialData.dcd[0].as.a.size() == 3
 		payloadObject.discoveredCredentialData.dcd[0].as.a[0].key == "somekey1"
 		payloadObject.discoveredCredentialData.dcd[0].as.a[0].value == "somevalue1"
