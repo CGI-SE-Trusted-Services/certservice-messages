@@ -15,14 +15,14 @@
   </licenses>
   <distributionManagement>
     <repository>
-      <id>dev.certificateservices.org-release</id>
-      <name>dev.certificateservices.org</name>
-      <url>https://dev.certificateservices.org/artifactory/libs-release-local</url>
+      <id>repo.certificateservices.se-release</id>
+      <name>repo.certificateservices.se</name>
+      <url>https://repo.certificateservices.se/artifactory/libs-release-local</url>
     </repository>
     <snapshotRepository>
-      <id>dev.certificateservices.org-snapshot</id>
-      <name>dev.certificateservices.org</name>
-      <url>https://dev.certificateservices.org/artifactory/libs-snapshot-local</url>
+      <id>repo.certificateservices.se-snapshot</id>
+      <name>repo.certificateservices.se</name>
+      <url>https://repo.certificateservices.se/artifactory/libs-snapshot-local</url>
     </snapshotRepository>
   </distributionManagement>
   <properties>
@@ -465,8 +465,8 @@
             </executions>
             <configuration>
               <file>target/signed-certservice-messages.jar</file>
-              <repositoryId>dev.certificateservices.org-release</repositoryId>
-              <url>https://dev.certificateservices.org/artifactory/libs-release-local</url>
+              <repositoryId>repo.certificateservices.se-release</repositoryId>
+              <url>https://repo.certificateservices.se/artifactory/libs-release-local</url>
               <groupId>org.certificateservices.messages</groupId>
               <artifactId>signed-certservice-messages</artifactId>
               <version>${build.version}</version>
