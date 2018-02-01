@@ -1,9 +1,11 @@
-package org.certificateservices.messages.csexport.data
+package org.certificateservices.messages.csexport.protocol
 
 import org.apache.xml.security.Init
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.MessageProcessingException
+import org.certificateservices.messages.csexport.data.CSExportDataParser
+import org.certificateservices.messages.csexport.data.CSExportDataParserSpec
 import org.certificateservices.messages.csexport.data.jaxb.CSExport
 import org.certificateservices.messages.csexport.protocol.jaxb.*
 import org.certificateservices.messages.csexport.protocol.CSExportProtocolPayloadParser
@@ -35,7 +37,7 @@ class CSExportProtocolPayloadParserSpec extends Specification {
 	DefaultCSMessageParser csMessageParser
 
 	def setup(){
-		setupRegisteredPayloadParser();
+		org.certificateservices.messages.TestUtils.setupRegisteredPayloadParser();
 		csMessageParser = CSMessageParserManager.getCSMessageParser()
 		pp = PayloadParserRegistry.getParser(CSExportProtocolPayloadParser.NAMESPACE);
 		csExportDataParser = new CSExportDataParser(csMessageParser.messageSecurityProvider, true)
@@ -54,13 +56,13 @@ class CSExportProtocolPayloadParserSpec extends Specification {
 	def "Verify that genGetCSExportRequest() generates a valid xml message and genGetCSExportResponse() generates a valid CSMessageResponseData without any query paramters"(){
 		when:
 		csMessageParser.sourceId = "SOMEREQUESTER"
-		byte[] requestMessage = pp.genGetCSExportRequest(TEST_ID, "SOMESOURCEID", "someorg","1.0",null,createOriginatorCredential( ), null)
+		byte[] requestMessage = pp.genGetCSExportRequest(org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.TEST_ID, "SOMESOURCEID", "someorg","1.0",null, org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.createOriginatorCredential( ), null)
         //printXML(requestMessage)
-		def xml = slurpXml(requestMessage)
+		def xml = org.certificateservices.messages.TestUtils.slurpXml(requestMessage)
 		def payloadObject = xml.payload.GetCSExportRequest
 		then:
-		messageContainsPayload requestMessage, "csexp:GetCSExportRequest"
-		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GetCSExportRequest", createOriginatorCredential(), csMessageParser)
+        org.certificateservices.messages.TestUtils.messageContainsPayload requestMessage, "csexp:GetCSExportRequest"
+        org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GetCSExportRequest", org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.createOriginatorCredential(), csMessageParser)
 		payloadObject.@exportDataVersion == "1.0"
 		payloadObject.queryParameters.size() == 0
 		when:
@@ -69,15 +71,15 @@ class CSExportProtocolPayloadParserSpec extends Specification {
 		CSExport csExportData = csExportDataParser.genCSExport_1_xAsObject("1.0",[CSExportDataParserSpec.genOrganisation()], [CSExportDataParserSpec.genTokenType()])
 		CSMessageResponseData rd = pp.genGetCSExportResponse("SomeRelatedEndEntity", request, "1.0", csExportData, null)
 		//printXML(rd.responseData)
-		xml = slurpXml(rd.responseData)
+		xml = org.certificateservices.messages.TestUtils.slurpXml(rd.responseData)
 		payloadObject = xml.payload.GetCSExportResponse
 		
 		then:
-		messageContainsPayload rd.responseData, "csexp:GetCSExportResponse"
-		
-		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "GetCSExportResponse", "SomeRelatedEndEntity"
-		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","GetCSExportResponse", createOriginatorCredential(), csMessageParser)
-		verifySuccessfulBasePayload(payloadObject, TEST_ID)
+        org.certificateservices.messages.TestUtils.messageContainsPayload rd.responseData, "csexp:GetCSExportResponse"
+
+        org.certificateservices.messages.TestUtils.verifyCSMessageResponseData  rd, "SOMEREQUESTER", org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.TEST_ID, false, "GetCSExportResponse", "SomeRelatedEndEntity"
+        org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","GetCSExportResponse", org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.createOriginatorCredential(), csMessageParser)
+        org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.verifySuccessfulBasePayload(payloadObject, org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.TEST_ID)
 
 
 		when:
@@ -137,9 +139,9 @@ class CSExportProtocolPayloadParserSpec extends Specification {
 		q2.type = "SomeType2"
 
 		when:
-		byte[] requestMessage = pp.genGetCSExportRequest(TEST_ID, "SOMESOURCEID", "someorg","1.0",[q1,q2],createOriginatorCredential( ), null)
+		byte[] requestMessage = pp.genGetCSExportRequest(org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.TEST_ID, "SOMESOURCEID", "someorg","1.0",[q1, q2], org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.createOriginatorCredential( ), null)
 		//printXML(requestMessage)
-		def xml = slurpXml(requestMessage)
+		def xml = org.certificateservices.messages.TestUtils.slurpXml(requestMessage)
 		def payloadObject = xml.payload.GetCSExportRequest
 		then:
 		payloadObject.queryParameters.size() == 1
@@ -149,7 +151,7 @@ class CSExportProtocolPayloadParserSpec extends Specification {
 		payloadObject.queryParameters.queryParameter[1].type == "SomeType2"
 
 		when:
-		pp.parseMessage(pp.genGetCSExportRequest(TEST_ID, "SOMESOURCEID", "someorg","1.0",[new QueryParameter()],createOriginatorCredential( ), null));
+		pp.parseMessage(pp.genGetCSExportRequest(org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.TEST_ID, "SOMESOURCEID", "someorg","1.0",[new QueryParameter()], org.certificateservices.messages.csmessages.DefaultCSMessageParserSpec.createOriginatorCredential( ), null));
 		then:
 		thrown MessageContentException
 	}
