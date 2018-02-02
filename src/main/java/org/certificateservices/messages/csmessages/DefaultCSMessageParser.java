@@ -140,7 +140,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 
 	private String csMessageVersion = DEFAULT_CSMESSAGE_PROTOCOL;
 	
-	public static final String DEFAULT_CSMESSAGE_PROTOCOL = CSMESSAGE_VERSION_2_1;
+	public static final String DEFAULT_CSMESSAGE_PROTOCOL = CSMESSAGE_VERSION_2_2;
 	
 	private CSMessageSignatureLocationFinder cSMessageSignatureLocationFinder = new CSMessageSignatureLocationFinder();
 	/**
@@ -781,7 +781,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 				}
 			}
 		} catch (Exception e) {
-			throw new MessageContentException("Error parsing payload of CS Message: " + e.getMessage(), e);
+		throw new MessageContentException("Error parsing payload of CS Message: " + CSMessageUtils.getMarshallingExceptionMessage(e), e);
 		}   	
     }
 	

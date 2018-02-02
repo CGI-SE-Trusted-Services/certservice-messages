@@ -4,10 +4,10 @@
 		   xmlns:cs="http://certificateservices.org/xsd/csmessages2_0"
 		   elementFormDefault="qualified"
 		   targetNamespace="http://certificateservices.org/xsd/credmanagement2_0"
-		   version="2.1">
+		   version="2.2">
 
 	<xs:import namespace="http://certificateservices.org/xsd/csmessages2_0"
-			   schemaLocation="csmessages_schema2_0.xsd" />
+			   schemaLocation="csmessages_schema2_2.xsd" />
 
 	<xs:element name="IssueTokenCredentialsRequest">
 		<xs:complexType>
@@ -546,5 +546,53 @@
 			</xs:complexContent>
 		</xs:complexType>
 	</xs:element>
+
+	<xs:element name="GetCredentialAvailableActionsRequest">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cs:CSRequest">
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="1" name="credentialUniqueId" type="cs:notemptystring"/>
+						<xs:element minOccurs="0" maxOccurs="1" name="locale" default="en" type="cs:notemptystring"/>
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="GetCredentialAvailableActionsResponse">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cs:CSResponse">
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="1" name="operations">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element minOccurs="0" maxOccurs="unbounded" name="operation"
+												type="tns:CredentialAvailableActionsOperation" />
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:simpleType name="CredentialAvailableActionType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ISSUE" />
+			<xs:enumeration value="RENEW" />
+			<xs:enumeration value="REPLACE" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="CredentialAvailableActionsOperation">
+		<xs:sequence>
+			<xs:element minOccurs="1" maxOccurs="1" name="type" type="tns:CredentialAvailableActionType"/>
+			<xs:element minOccurs="1" maxOccurs="1" name="available" type="xs:boolean"/>
+			<xs:element minOccurs="1" maxOccurs="1" name="message" type="cs:notemptystring"/>
+		</xs:sequence>
+	</xs:complexType>
 
 </xs:schema>
