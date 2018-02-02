@@ -97,9 +97,11 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	
 	private static final String CSMESSAGE_VERSION_2_0 = "2.0";
 	private static final String CSMESSAGE_VERSION_2_1 = "2.1";
+	private static final String CSMESSAGE_VERSION_2_2 = "2.2";
 	
 	public static final String CSMESSAGE_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/csmessages_schema2_0.xsd";
 	public static final String CSMESSAGE_XSD_SCHEMA_2_1_RESOURCE_LOCATION = "/csmessages_schema2_1.xsd";
+	public static final String CSMESSAGE_XSD_SCHEMA_2_2_RESOURCE_LOCATION = "/csmessages_schema2_2.xsd";
 	
 	private static final String CSMESSAGE_XSD_SCHEMA_2_0_URI = "http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd";	
 	
@@ -107,12 +109,14 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	static{
 		csMessageSchemaMap.put(CSMESSAGE_VERSION_2_0, CSMESSAGE_XSD_SCHEMA_2_0_RESOURCE_LOCATION);
 		csMessageSchemaMap.put(CSMESSAGE_VERSION_2_1, CSMESSAGE_XSD_SCHEMA_2_1_RESOURCE_LOCATION);
+		csMessageSchemaMap.put(CSMESSAGE_VERSION_2_2, CSMESSAGE_XSD_SCHEMA_2_2_RESOURCE_LOCATION);
 	}
 	
 	private static final Map<String,String> csMessageSchemaUriMap = new HashMap<String,String>();
 	static{
 		csMessageSchemaUriMap.put(CSMESSAGE_VERSION_2_0, CSMESSAGE_XSD_SCHEMA_2_0_URI);
 		csMessageSchemaUriMap.put(CSMESSAGE_VERSION_2_1, CSMESSAGE_XSD_SCHEMA_2_0_URI);
+		csMessageSchemaUriMap.put(CSMESSAGE_VERSION_2_2, CSMESSAGE_XSD_SCHEMA_2_0_URI);
 	}
 	
 	public static final String XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION = "/xmldsig-core-schema.xsd";
@@ -121,7 +125,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	public static final String XMLDSIG_NAMESPACE = "http://www.w3.org/2000/09/xmldsig#";
 	public static final String XMLENC_NAMESPACE = "http://www.w3.org/2001/04/xmlenc#";
 	
-	private static final String[] SUPPORTED_CSMESSAGE_VERSIONS = {CSMESSAGE_VERSION_2_0,CSMESSAGE_VERSION_2_1};
+	private static final String[] SUPPORTED_CSMESSAGE_VERSIONS = {CSMESSAGE_VERSION_2_0,CSMESSAGE_VERSION_2_1,CSMESSAGE_VERSION_2_2};
 	
 	private ObjectFactory objectFactory = new ObjectFactory();
 	
