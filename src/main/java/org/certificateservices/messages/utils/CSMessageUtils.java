@@ -3,6 +3,7 @@ package org.certificateservices.messages.utils;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 import org.certificateservices.messages.csmessages.jaxb.GetApprovalRequest;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
@@ -82,15 +83,25 @@ public class CSMessageUtils {
 	 * @return the exception message if exists, otherwise the cause message.
 	 */
 	public static String getMarshallingExceptionMessage(Exception e){
-		if(e.getMessage() == null){
-			if(e.getCause().getMessage() == null){
-				if(e instanceof JAXBException){
-					if(((JAXBException) e).getLinkedException() != null && ((JAXBException) e).getLinkedException().getMessage() != null){
-						return ((JAXBException) e).getLinkedException().getMessage();
+		if(e.getMessage() == null) {
+			if (e.getCause() != null){
+				if(e.getCause().getMessage() == null) {
+					if (e instanceof JAXBException) {
+						if (((JAXBException) e).getLinkedException() != null && ((JAXBException) e).getLinkedException().getMessage() != null) {
+							return ((JAXBException) e).getLinkedException().getMessage();
+						}
+					}
+					if (e instanceof SAXParseException) {
+						if (((SAXParseException) e).getException() instanceof JAXBException) {
+							JAXBException je = (JAXBException) ((SAXParseException) e).getException();
+							if (je.getLinkedException() != null && je.getLinkedException().getMessage() != null) {
+								return je.getLinkedException().getMessage();
+							}
+						}
 					}
 				}
+				return e.getCause().getMessage();
 			}
-			return e.getCause().getMessage();
 		}
 		return e.getMessage();
 	}
