@@ -948,7 +948,8 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @param requestId the id of the request
 	 * @param destinationId the destinationId used in the CSMessage.
 	 * @param organisation the related organisation
-	 * @param credentialUniqueId the unique id of the credential unique id of the certificate
+	 * @param issuerId The unique id of the issuer, usually the subject DN name of the issuer.
+	 * @param serialNumber The serial number of the credential in hexadecimal encoding lowercase (for X509 certificates).
 	 * @param locale the locale in BCP 47 string, i.e en or en_GB or se_SV
 	 * @param originator the original requester of a message, null if not applicable.
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
@@ -956,9 +957,10 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
 	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
 	 */
-	public byte[] genGetCredentialAvailableActionsRequest(String requestId, String destinationId, String organisation, String credentialUniqueId, String locale, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+	public byte[] genGetCredentialAvailableActionsRequest(String requestId, String destinationId, String organisation, String issuerId, String serialNumber, String locale, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
 		GetCredentialAvailableActionsRequest payload = of.createGetCredentialAvailableActionsRequest();
-		payload.setCredentialUniqueId(credentialUniqueId);
+		payload.setIssuerId(issuerId);
+		payload.setSerialNumber(serialNumber);
 		payload.setLocale(locale);
 
 		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
