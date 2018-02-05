@@ -752,7 +752,7 @@ class CredManagementPayloadParserSpec extends Specification {
 	def "Verify that genGetCredentialAvailableActionsRequest() generates a valid xml message and genGetCredentialAvailableActionsResponse() generates a valid CSMessageResponseData"(){
 		when:
 		csMessageParser.sourceId = "SOMEREQUESTER"
-		byte[] requestMessage = pp.genGetCredentialAvailableActionsRequest(TEST_ID, "SOMESOURCEID", "someorg",  "someCredentialUniqueId", "en", createOriginatorCredential(), null)
+		byte[] requestMessage = pp.genGetCredentialAvailableActionsRequest(TEST_ID, "SOMESOURCEID", "someorg",  "SomeIssuerId","123abc", "en", createOriginatorCredential(), null)
 		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.GetCredentialAvailableActionsRequest
@@ -760,7 +760,8 @@ class CredManagementPayloadParserSpec extends Specification {
 		messageContainsPayload requestMessage, "credmanagement:GetCredentialAvailableActionsRequest"
 		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GetCredentialAvailableActionsRequest", createOriginatorCredential(), csMessageParser)
 
-		payloadObject.credentialUniqueId == "someCredentialUniqueId"
+		payloadObject.issuerId == "SomeIssuerId"
+		payloadObject.serialNumber == "123abc"
 		payloadObject.locale == "en"
 
 		when:

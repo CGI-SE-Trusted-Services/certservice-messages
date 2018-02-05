@@ -26,7 +26,8 @@ import org.certificateservices.messages.csmessages.jaxb.CSRequest;
  *   &lt;complexContent>
  *     &lt;extension base="{http://certificateservices.org/xsd/csmessages2_0}CSRequest">
  *       &lt;sequence>
- *         &lt;element name="credentialUniqueId" type="{http://certificateservices.org/xsd/csmessages2_0}notemptystring"/>
+ *         &lt;element name="issuerId" type="{http://certificateservices.org/xsd/csmessages2_0}notemptystring"/>
+ *         &lt;element name="serialNumber" type="{http://certificateservices.org/xsd/csmessages2_0}notemptystring"/>
  *         &lt;element name="locale" type="{http://certificateservices.org/xsd/csmessages2_0}notemptystring" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/extension>
@@ -38,7 +39,8 @@ import org.certificateservices.messages.csmessages.jaxb.CSRequest;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
-    "credentialUniqueId",
+    "issuerId",
+    "serialNumber",
     "locale"
 })
 @XmlRootElement(name = "GetCredentialAvailableActionsRequest")
@@ -47,32 +49,59 @@ public class GetCredentialAvailableActionsRequest
 {
 
     @XmlElement(required = true)
-    protected String credentialUniqueId;
+    protected String issuerId;
+    @XmlElement(required = true)
+    protected String serialNumber;
     @XmlElement(defaultValue = "en")
     protected String locale;
 
+
     /**
-     * Gets the value of the credentialUniqueId property.
-     * 
+     * Gets the value of the issuerId property.
+     *
      * @return
      *     possible object is
      *     {@link String }
-     *     
+     *
      */
-    public String getCredentialUniqueId() {
-        return credentialUniqueId;
+    public String getIssuerId() {
+        return issuerId;
     }
 
     /**
-     * Sets the value of the credentialUniqueId property.
-     * 
+     * Sets the value of the issuerId property.
+     *
      * @param value
      *     allowed object is
      *     {@link String }
-     *     
+     *
      */
-    public void setCredentialUniqueId(String value) {
-        this.credentialUniqueId = value;
+    public void setIssuerId(String value) {
+        this.issuerId = value;
+    }
+
+    /**
+     * Gets the value of the serialNumber property.
+     *
+     * @return
+     *     possible object is
+     *     {@link String }
+     *
+     */
+    public String getSerialNumber() {
+        return serialNumber;
+    }
+
+    /**
+     * Sets the value of the serialNumber property.
+     *
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *
+     */
+    public void setSerialNumber(String value) {
+        this.serialNumber = value;
     }
 
     /**
