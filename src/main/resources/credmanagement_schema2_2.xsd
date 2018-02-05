@@ -552,7 +552,10 @@
 			<xs:complexContent>
 				<xs:extension base="cs:CSRequest">
 					<xs:sequence>
-						<xs:element minOccurs="1" maxOccurs="1" name="credentialUniqueId" type="cs:notemptystring"/>
+						<xs:element minOccurs="1" maxOccurs="1" name="issuerId"
+									type="cs:notemptystring" />
+						<xs:element minOccurs="1" maxOccurs="1" name="serialNumber"
+									type="cs:notemptystring" />
 						<xs:element minOccurs="0" maxOccurs="1" name="locale" default="en" type="cs:notemptystring"/>
 					</xs:sequence>
 				</xs:extension>
