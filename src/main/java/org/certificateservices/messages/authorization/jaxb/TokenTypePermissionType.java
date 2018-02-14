@@ -28,6 +28,10 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;enumeration value="PUTONHOLD"/>
  *     &lt;enumeration value="DELETE"/>
  *     &lt;enumeration value="REQUEST"/>
+ *     &lt;enumeration value="BATCHUPDATE"/>
+ *     &lt;enumeration value="EXPORT"/>
+ *     &lt;enumeration value="IMPORT"/>
+ *     &lt;enumeration value="UNBLOCK"/>
  *   &lt;/restriction>
  * &lt;/simpleType>
  * </pre>
@@ -45,7 +49,11 @@ public enum TokenTypePermissionType {
     PUTONHOLD,
     DELETE,
     RECOVERKEYS,
-    REQUEST;
+    REQUEST,
+    BATCHUPDATE,
+    EXPORT,
+    IMPORT,
+    UNBLOCK;
 
     public String value() {
         return name();
