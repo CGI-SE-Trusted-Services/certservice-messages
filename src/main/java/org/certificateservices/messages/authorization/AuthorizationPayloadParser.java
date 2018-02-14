@@ -40,12 +40,13 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 	public static final String AUTHORIZATION_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/authorization_schema2_0.xsd";
 	public static final String AUTHORIZATION_XSD_SCHEMA_2_1_RESOURCE_LOCATION = "/authorization_schema2_1.xsd";
 	public static final String AUTHORIZATION_XSD_SCHEMA_2_2_RESOURCE_LOCATION = "/authorization_schema2_2.xsd";
+	public static final String AUTHORIZATION_XSD_SCHEMA_2_3_RESOURCE_LOCATION = "/authorization_schema2_3.xsd";
 
 	private ObjectFactory of = new ObjectFactory();
 	
-	private static final String[] SUPPORTED_AUTHORIZATION_VERSIONS = {"2.2","2.1","2.0"};
+	private static final String[] SUPPORTED_AUTHORIZATION_VERSIONS = {"2.3","2.2","2.1","2.0"};
 	
-	private static final String DEFAULT_AUTHORIZATION_VERSION = "2.2";
+	private static final String DEFAULT_AUTHORIZATION_VERSION = "2.3";
 
 	/**
 	 * @see PayloadParser#getJAXBPackage()
@@ -73,6 +74,9 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 			return getClass().getResourceAsStream(AUTHORIZATION_XSD_SCHEMA_2_1_RESOURCE_LOCATION);
 		}
 		if(payLoadVersion.equals("2.2")){
+			return getClass().getResourceAsStream(AUTHORIZATION_XSD_SCHEMA_2_2_RESOURCE_LOCATION);
+		}
+		if(payLoadVersion.equals("2.3")){
 			return getClass().getResourceAsStream(AUTHORIZATION_XSD_SCHEMA_2_2_RESOURCE_LOCATION);
 		}
     	
@@ -170,6 +174,12 @@ public class AuthorizationPayloadParser extends BasePayloadParser {
 				// Skip v 2.2 rules
 				if(ttp.getRuleType() == TokenTypePermissionType.REQUEST){
 					if(payloadVersion.equals("2.0") || payloadVersion.equals("2.1")){
+						continue;
+					}
+				}
+				// Skip v 2.3 rules
+				if(ttp.getRuleType() == TokenTypePermissionType.BATCHUPDATE || ttp.getRuleType() == TokenTypePermissionType.IMPORT || ttp.getRuleType() == TokenTypePermissionType.EXPORT || ttp.getRuleType() == TokenTypePermissionType.UNBLOCK ){
+					if(payloadVersion.equals("2.0") || payloadVersion.equals("2.1") || payloadVersion.equals("2.2")){
 						continue;
 					}
 				}
