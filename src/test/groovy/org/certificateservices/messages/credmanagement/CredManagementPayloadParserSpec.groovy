@@ -824,7 +824,7 @@ class CredManagementPayloadParserSpec extends Specification {
 		pp.parseMessage(issueTokenCredentialWithRenewandInvalidVersion,false, false)
 		then:
 		def e = thrown(MessageContentException)
-		e.message == "Error parsing payload of CS Message: cvc-complex-type.2.4.a: Invalid content was found starting with element 'cs:regenerateCredential'. One of '{\"http://certificateservices.org/xsd/csmessages2_0\":description, \"http://certificateservices.org/xsd/csmessages2_0\":requestedExpireDate, \"http://certificateservices.org/xsd/csmessages2_0\":requestedValidFromDate, \"http://certificateservices.org/xsd/csmessages2_0\":includeIssuerCredentials}' is expected."
+		e.message == "Error parsing payload of CS Message: cvc-complex-type.2.4.d: Invalid content was found starting with element 'cs:regenerateToken'. No child element is expected at this point."
 	}
 
 
@@ -1448,8 +1448,7 @@ ZLCP64EJEfE1mGxCJg==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signatu
             <cs:credentialType>SomeCredentialType</cs:credentialType>
             <cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType>
             <cs:x509RequestType>SomeX509RequestType</cs:x509RequestType>
-            <cs:credentialRequestData>MTIzNDVBQkM=</cs:credentialRequestData>
-            <cs:regenerateCredential>SomeOldCredentialId</cs:regenerateCredential>
+            <cs:credentialRequestData>MTIzNDVBQkM=</cs:credentialRequestData>           
           </cs:credentialRequest>
         </cs:credentialRequests>
         <cs:user>someuser</cs:user>
@@ -1457,6 +1456,7 @@ ZLCP64EJEfE1mGxCJg==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signatu
         <cs:tokenType>SomeTokenType</cs:tokenType>
         <cs:tokenClass>SomeTokenClass</cs:tokenClass>
         <cs:departmentName>SomeDepartment</cs:departmentName>
+        <cs:regenerateToken>SomeOldSerial</cs:regenerateToken>
       </credmanagement:tokenRequest>
     </credmanagement:IssueTokenCredentialsRequest>
   </cs:payload>
