@@ -387,6 +387,15 @@
 				type="tns:Assertions" />
 			<xs:element minOccurs="0" maxOccurs="1" name="departmentName"
 						type="tns:departmentnamestring" />
+			<xs:element maxOccurs="1" minOccurs="0" name="regenerateToken">
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:extension base="tns:notemptystring">
+							<xs:attribute default="RENEW" name="action" type="tns:RegenerateActionType"/>
+						</xs:extension>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="CredentialRequest">
@@ -417,15 +426,6 @@
 				name="requestedValidFromDate" type="xs:dateTime" />
 			<xs:element minOccurs="0" maxOccurs="1"
 				name="includeIssuerCredentials" default="false" type="xs:boolean" />
-			<xs:element maxOccurs="1" minOccurs="0" name="regenerateCredential">
-				<xs:complexType>
-					<xs:simpleContent>
-						<xs:extension base="tns:notemptystring">
-							<xs:attribute default="RENEW" name="action" type="tns:RegenerateActionType"/>
-						</xs:extension>
-					</xs:simpleContent>
-				</xs:complexType>
-			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
 
