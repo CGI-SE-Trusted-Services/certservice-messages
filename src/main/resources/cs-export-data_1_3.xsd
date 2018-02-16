@@ -98,6 +98,7 @@
 			<xs:element name="allowWildCard" minOccurs="1" maxOccurs="1" type="xs:boolean"/>
 			<xs:element name="comment" minOccurs="0" maxOccurs="1" type="xs:string" />
 			<xs:element name="customRegexp" minOccurs="0" maxOccurs="1" type="xs:string" />
+			<xs:element name="editable" minOccurs="0" maxOccurs="1" type="xs:boolean" default="true"/>
 		</xs:sequence>
 	</xs:complexType>
 
