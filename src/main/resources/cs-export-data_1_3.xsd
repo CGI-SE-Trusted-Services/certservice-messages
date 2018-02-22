@@ -99,6 +99,13 @@
 			<xs:element name="comment" minOccurs="0" maxOccurs="1" type="xs:string" />
 			<xs:element name="customRegexp" minOccurs="0" maxOccurs="1" type="xs:string" />
 			<xs:element name="editable" minOccurs="0" maxOccurs="1" type="xs:boolean" default="true"/>
+			<xs:element name="attributes" minOccurs="0" maxOccurs="1">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="attribute" minOccurs="0" maxOccurs="unbounded" type="tns:DepartmentDomainNameAttribute"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
 
@@ -382,6 +389,7 @@
 		</xs:sequence>
 	</xs:complexType>
 
+
 	<xs:complexType name="DepartmentAttribute">
 		<xs:sequence>
 			<xs:element name="key" minOccurs="1" maxOccurs="1">
@@ -402,6 +410,13 @@
 				</xs:simpleType>
 			</xs:element>
 		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="DepartmentDomainNameAttribute">
+		<xs:complexContent>
+			<xs:extension base="tns:DepartmentAttribute">
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 	<xs:complexType name="Department">
