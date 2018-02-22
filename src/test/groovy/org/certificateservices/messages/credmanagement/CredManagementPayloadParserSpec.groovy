@@ -4,6 +4,8 @@ import org.apache.xml.security.Init
 import org.apache.xml.security.utils.Base64
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.MessageContentException
+import org.certificateservices.messages.credmanagement.jaxb.CredentialAvailableActionType
+import org.certificateservices.messages.credmanagement.jaxb.CredentialAvailableActionsOperation
 import org.certificateservices.messages.credmanagement.jaxb.FieldValue
 import org.certificateservices.messages.credmanagement.jaxb.GetTokensResponse
 import org.certificateservices.messages.credmanagement.jaxb.GetUsersRequest
@@ -52,8 +54,10 @@ class CredManagementPayloadParserSpec extends Specification {
 		pp.getJAXBPackage() == "org.certificateservices.messages.credmanagement.jaxb"
 		pp.getNameSpace() == "http://certificateservices.org/xsd/credmanagement2_0"
 		pp.getSchemaAsInputStream("2.0") != null
-		pp.getDefaultPayloadVersion() == "2.1"
-		pp.getSupportedVersions() == ["2.0","2.1"] as String[]
+		pp.getSchemaAsInputStream("2.1") != null
+		pp.getSchemaAsInputStream("2.2") != null
+		pp.getDefaultPayloadVersion() == "2.2"
+		pp.getSupportedVersions() == ["2.0","2.1","2.2"] as String[]
 	}
 	
 	
@@ -745,6 +749,50 @@ class CredManagementPayloadParserSpec extends Specification {
 
 	}
 
+	def "Verify that genGetCredentialAvailableActionsRequest() generates a valid xml message and genGetCredentialAvailableActionsResponse() generates a valid CSMessageResponseData"(){
+		when:
+		csMessageParser.sourceId = "SOMEREQUESTER"
+		byte[] requestMessage = pp.genGetCredentialAvailableActionsRequest(TEST_ID, "SOMESOURCEID", "someorg",  "SomeIssuerId","123abc", "en", createOriginatorCredential(), null)
+		//printXML(requestMessage)
+		def xml = slurpXml(requestMessage)
+		def payloadObject = xml.payload.GetCredentialAvailableActionsRequest
+		then:
+		messageContainsPayload requestMessage, "credmanagement:GetCredentialAvailableActionsRequest"
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","GetCredentialAvailableActionsRequest", createOriginatorCredential(), csMessageParser)
+
+		payloadObject.issuerId == "SomeIssuerId"
+		payloadObject.serialNumber == "123abc"
+		payloadObject.locale == "en"
+
+		when:
+		csMessageParser.sourceId = "SOMESOURCEID"
+		CSMessage request = pp.parseMessage(requestMessage)
+
+		CSMessageResponseData rd = pp.genGetCredentialAvailableActionsResponse("SomeRelatedEndEntity", request, genOperations(), null)
+		//printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.GetCredentialAvailableActionsResponse
+
+		then:
+		messageContainsPayload rd.responseData, "credmanagement:GetCredentialAvailableActionsResponse"
+
+		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "GetCredentialAvailableActionsResponse", "SomeRelatedEndEntity"
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","GetCredentialAvailableActionsResponse", createOriginatorCredential(), csMessageParser)
+		verifySuccessfulBasePayload(payloadObject, TEST_ID)
+
+		payloadObject.operations.operation.size() == 2
+		payloadObject.operations.operation[0].type == "ISSUE"
+		payloadObject.operations.operation[0].available == "true"
+		payloadObject.operations.operation[0].message == "message1"
+		payloadObject.operations.operation[1].type == "RENEW"
+		payloadObject.operations.operation[1].available == "false"
+		payloadObject.operations.operation[1].message == "message2"
+
+		expect:
+		pp.parseMessage(rd.responseData)
+
+	}
+
 	def "Verify that 2.0 version GetUsersRequest doesn't populate startIndex and totalMatching and that users doesn't have departmentname in response"(){
 		when:
 		CSMessage request = pp.parseMessage(validGetUsersRequestV2_0)
@@ -770,6 +818,16 @@ class CredManagementPayloadParserSpec extends Specification {
 		then:
 		thrown MessageContentException
 	}
+
+	def "Verify that 2.1 IssueTokenCredentials with 2.2 data throws MessageContentException"(){
+		when:
+		pp.parseMessage(issueTokenCredentialWithRenewandInvalidVersion,false, false)
+		then:
+		def e = thrown(MessageContentException)
+		e.message == "Error parsing payload of CS Message: cvc-complex-type.2.4.d: Invalid content was found starting with element 'cs:regenerateToken'. No child element is expected at this point."
+	}
+
+
 
 	def "Verify that 2.0 version GetTokensRequest doesn't populate startIndex and totalMatching that users doesn't have departmentname in response"(){
 		when:
@@ -937,7 +995,7 @@ class CredManagementPayloadParserSpec extends Specification {
 	}
 	
 	
-	private TokenRequest createTokenRequest(boolean includeDepartment=false){
+	private TokenRequest createTokenRequest(boolean includeDepartment=false, String renewCredentialId= null){
 		TokenRequest retval = csMessageOf.createTokenRequest()
 		retval.user = "someuser";
 		retval.tokenContainer = "SomeTokenContainer"
@@ -948,18 +1006,22 @@ class CredManagementPayloadParserSpec extends Specification {
 		}
 
 		retval.setCredentialRequests(new TokenRequest.CredentialRequests())
-		retval.getCredentialRequests().getCredentialRequest().add(createCredentialRequest())
+		retval.getCredentialRequests().getCredentialRequest().add(createCredentialRequest(renewCredentialId))
 
 		return retval
 	}
 
-	private static CredentialRequest createCredentialRequest(){
-		CredentialRequest cr = csMessageOf.createCredentialRequest();
+	private static CredentialRequest createCredentialRequest(String renewCredentialId= null){
+		CredentialRequest cr = csMessageOf.createCredentialRequest()
 		cr.credentialRequestId = 123
 		cr.credentialType = "SomeCredentialType"
 		cr.credentialSubType = "SomeCredentialSubType"
 		cr.x509RequestType = "SomeX509RequestType"
 		cr.credentialRequestData = "12345ABC"
+		if(renewCredentialId != null) {
+			cr.regenerateCredential = of.createCredentialRequestRegenerateCredential()
+			cr.regenerateCredential.setValue(renewCredentialId)
+		}
 		return cr
 	}
 
@@ -1058,6 +1120,25 @@ class CredManagementPayloadParserSpec extends Specification {
 
 	private List<RecoverableKey> createRecoverableKey(){
 		return [pp.genRecoverableKey(1,key1Data),pp.genRecoverableKey(2,key2Data)]
+	}
+
+	private List<CredentialAvailableActionsOperation> genOperations(){
+		List retval = []
+
+		CredentialAvailableActionsOperation op1 = of.createCredentialAvailableActionsOperation()
+		op1.setType(CredentialAvailableActionType.ISSUE)
+		op1.setMessage("message1")
+		op1.available = true
+
+		CredentialAvailableActionsOperation op2 = of.createCredentialAvailableActionsOperation()
+		op2.setType(CredentialAvailableActionType.RENEW)
+		op2.setMessage("message2")
+		op2.available = false
+
+		retval << op1
+		retval << op2
+
+		return retval
 	}
 
 
@@ -1327,4 +1408,97 @@ HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
 WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
 ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
 ZLCP64EJEfE1mGxCJg==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></cs:CSMessage>""".getBytes("UTF-8")
+
+	def issueTokenCredentialWithRenewandInvalidVersion= """<?xml version="1.0" encoding="UTF-8"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:a="http://certificateservices.org/xsd/cs_agent_protocol2_0" xmlns:ae="http://certificateservices.org/xsd/autoenroll2_x" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:key="http://certificateservices.org/xsd/sensitivekeys" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.2" timeStamp="2018-02-02T14:41:25.558+01:00" version="2.1" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd">
+  <cs:name>IssueTokenCredentialsRequest</cs:name>
+  <cs:sourceId>SOMESOURCEID</cs:sourceId>
+  <cs:destinationId>SOMESOURCEID</cs:destinationId>
+  <cs:organisation>someorg</cs:organisation>
+  <cs:originator>
+    <cs:credential>
+      <cs:credentialRequestId>123</cs:credentialRequestId>
+      <cs:uniqueId>SomeOriginatorUniqueId</cs:uniqueId>
+      <cs:displayName>SomeOrignatorDisplayName</cs:displayName>
+      <cs:serialNumber>SomeSerialNumber</cs:serialNumber>
+      <cs:issuerId>SomeIssuerId</cs:issuerId>
+      <cs:status>100</cs:status>
+      <cs:credentialType>SomeCredentialType</cs:credentialType>
+      <cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType>
+      <cs:attributes>
+        <cs:attribute>
+          <cs:key>someattrkey</cs:key>
+          <cs:value>someattrvalue</cs:value>
+        </cs:attribute>
+      </cs:attributes>
+      <cs:usages>
+        <cs:usage>someusage</cs:usage>
+      </cs:usages>
+      <cs:credentialData>MTIzNDVBQkNFRg==</cs:credentialData>
+      <cs:issueDate>1970-01-01T01:00:01.234+01:00</cs:issueDate>
+      <cs:expireDate>1970-01-01T01:00:02.234+01:00</cs:expireDate>
+      <cs:validFromDate>1970-01-01T01:00:03.234+01:00</cs:validFromDate>
+    </cs:credential>
+  </cs:originator>
+  <cs:payload>
+    <credmanagement:IssueTokenCredentialsRequest>
+      <credmanagement:tokenRequest>
+        <cs:credentialRequests>
+          <cs:credentialRequest>
+            <cs:credentialRequestId>123</cs:credentialRequestId>
+            <cs:credentialType>SomeCredentialType</cs:credentialType>
+            <cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType>
+            <cs:x509RequestType>SomeX509RequestType</cs:x509RequestType>
+            <cs:credentialRequestData>MTIzNDVBQkM=</cs:credentialRequestData>           
+          </cs:credentialRequest>
+        </cs:credentialRequests>
+        <cs:user>someuser</cs:user>
+        <cs:tokenContainer>SomeTokenContainer</cs:tokenContainer>
+        <cs:tokenType>SomeTokenType</cs:tokenType>
+        <cs:tokenClass>SomeTokenClass</cs:tokenClass>
+        <cs:departmentName>SomeDepartment</cs:departmentName>
+        <cs:regenerateToken>SomeOldSerial</cs:regenerateToken>
+      </credmanagement:tokenRequest>
+    </credmanagement:IssueTokenCredentialsRequest>
+  </cs:payload>
+  <ds:Signature>
+    <ds:SignedInfo>
+      <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+      <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+      <ds:Reference URI="#12345678-1234-4444-8000-123456789012">
+        <ds:Transforms>
+          <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+        </ds:Transforms>
+        <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+        <ds:DigestValue>8plLrhoD6gAJaIaY3Or4CPmGO2vhbxF2F6Grde9VUWU=</ds:DigestValue>
+      </ds:Reference>
+    </ds:SignedInfo>
+    <ds:SignatureValue>aorMn8yZvsRSDyks7JyD42yh7qSYhv5GrvpCsbHoH4MN8Wxd3oWHHeWxvL3ClOx8lBgmyrVzxjSV
+ALWDwWHmMSfYW8mPW7aQAyLg4p4f7kNQzD1rECd9tTKP11cygZhfo7a9CZDQBD3DRAA5N/4kQK95
+KKre4DVDNX6clNNaXIIS0OHbBU9yE6V7auaBbPbFbFLKOGyR+nLhN/bdhXk8ECwqmVrUBI/JbgJg
+q20L6CbrIYXNgzoLedR4wxR+kHd5OK0PVglOAQtZ3r070Ll2RPT7hCHdzLYlhoakV38dHy4vIO1A
+I+eWw+9bSwrm1ybdrexzZwWPTJoPB5KoftfnoA==</ds:SignatureValue>
+    <ds:KeyInfo>
+      <ds:X509Data>
+        <ds:X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBD
+dXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAx
+MDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBD
+dXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/
+y3i/mT7WwtpW18/QfyUGpYPPxQ4bvPPn61y3jJg/dAbGHvnyQSHfIvrIJUN83q6evvk0bNZNVSEN
+UEP29isE4D+KjD3PFtAzQq18P8m/8mSXMva5VTooEUSDX+VJ/6el6tnyZdc85AlIJkkkvyiDKcjh
+f10yllaiVCHLunGMDXAec4DapPi5GdmSMMXyPOhRx5e+oy6b5q9XmT3C29VNVFf+tkAt3ew3BoQb
+d+VrlBI4oRYq+mfbgkXU6dSKr9DRqhsbu5rU4Jdst2KClXsxaxvC0rVeKQ8iXCDKFH5glzhSYoeW
+l7CI15CdQM6/so7EisSvAgMBAAGjgeMwgeAwHQYDVR0OBBYEFLpidyp0Pc46cUpJf1neFnq/rLJB
+MAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUgEn+Hp9+Yxe4lOhaIPmf++Wu7SYwGAYDVR0gBBEw
+DzANBgsrBgEEAYH1fgMDCTBABgNVHR8EOTA3MDWgM6Axhi9odHRwOi8vYXQtY3JsLndtLm5ldC9k
+ZW1vY3VzdG9tZXIxX3NlcnZlcmNhLmNybDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYB
+BQUHAwEwDwYDVR0RBAgwBoIEdGVzdDANBgkqhkiG9w0BAQUFAAOCAQEAZxGls/mNT4GyAf9u9lg7
+8sSA27sc3xFvHNogrT4yUCbYAOhLXO4HJ9XuKaFyz4bKz6JGdLaQDknDI1GUvpJLpiPTXk4cq1pp
+HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
+WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
+ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
+ZLCP64EJEfE1mGxCJg==</ds:X509Certificate>
+      </ds:X509Data>
+    </ds:KeyInfo>
+  </ds:Signature>
+</cs:CSMessage>""".getBytes("UTF-8")
 }

@@ -49,16 +49,18 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	
 	public static final String CREDMANAGEMENT_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/credmanagement_schema2_0.xsd";
 	public static final String CREDMANAGEMENT_XSD_SCHEMA_2_1_RESOURCE_LOCATION = "/credmanagement_schema2_1.xsd";
+	public static final String CREDMANAGEMENT_XSD_SCHEMA_2_2_RESOURCE_LOCATION = "/credmanagement_schema2_2.xsd";
 
 	private ObjectFactory of = new ObjectFactory();
 
 
 	private static final String CREDMANAGEMENT_VERSION_2_0 = "2.0";
 	private static final String CREDMANAGEMENT_VERSION_2_1 = "2.1";
+	private static final String CREDMANAGEMENT_VERSION_2_2 = "2.2";
 
-	private static final String[] SUPPORTED_CREDMANAGEMENT_VERSIONS = {CREDMANAGEMENT_VERSION_2_0,CREDMANAGEMENT_VERSION_2_1};
+	private static final String[] SUPPORTED_CREDMANAGEMENT_VERSIONS = {CREDMANAGEMENT_VERSION_2_0,CREDMANAGEMENT_VERSION_2_1,CREDMANAGEMENT_VERSION_2_2};
 
-	private static final String DEFAULT_CREDMANAGEMENT_VERSION = CREDMANAGEMENT_VERSION_2_1;
+	private static final String DEFAULT_CREDMANAGEMENT_VERSION = CREDMANAGEMENT_VERSION_2_2;
 	
 	
 	/**
@@ -85,6 +87,9 @@ public class CredManagementPayloadParser extends BasePayloadParser {
     	}
 		if(payLoadVersion.equals("2.1")){
 			return getClass().getResourceAsStream(CREDMANAGEMENT_XSD_SCHEMA_2_1_RESOURCE_LOCATION);
+		}
+		if(payLoadVersion.equals("2.2")){
+			return getClass().getResourceAsStream(CREDMANAGEMENT_XSD_SCHEMA_2_2_RESOURCE_LOCATION);
 		}
     	
     	throw new MessageContentException("Error unsupported Credential Management Payload version: " + payLoadVersion);
@@ -932,6 +937,51 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	 */
 	public CSMessageResponseData genStoreKeyResponse(String relatedEndEntity, CSMessage request, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
 		StoreKeyResponse response = of.createStoreKeyResponse();
+
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+	}
+
+	/**
+	 * Method to generate a GetCredentialAvailableActionsRequest to get available renewal action available
+	 * for a given certificate.
+	 *
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param issuerId The unique id of the issuer, usually the subject DN name of the issuer.
+	 * @param serialNumber The serial number of the credential in hexadecimal encoding lowercase (for X509 certificates).
+	 * @param locale the locale in BCP 47 string, i.e en or en_GB or se_SV
+	 * @param originator the original requester of a message, null if not applicable.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genGetCredentialAvailableActionsRequest(String requestId, String destinationId, String organisation, String issuerId, String serialNumber, String locale, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		GetCredentialAvailableActionsRequest payload = of.createGetCredentialAvailableActionsRequest();
+		payload.setIssuerId(issuerId);
+		payload.setSerialNumber(serialNumber);
+		payload.setLocale(locale);
+
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
+	}
+
+	/**
+	 * Method to generate a GetCredentialAvailableActionsResponse
+	 *
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the request this message is a response to.
+	 * @param operations a list of operations that is available for a given credential when renewing.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public CSMessageResponseData genGetCredentialAvailableActionsResponse(String relatedEndEntity, CSMessage request, List<CredentialAvailableActionsOperation> operations, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		GetCredentialAvailableActionsResponse response = of.createGetCredentialAvailableActionsResponse();
+		GetCredentialAvailableActionsResponse.Operations ops = of.createGetCredentialAvailableActionsResponseOperations();
+		ops.getOperation().addAll(operations);
+		response.setOperations(ops);
 
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}

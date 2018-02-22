@@ -6,6 +6,7 @@ import org.certificateservices.messages.DummyMessageSecurityProvider
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.csexport.data.CSExportDataParser
 import org.certificateservices.messages.csexport.data.jaxb.CSExport
+import org.certificateservices.messages.csexport.data.jaxb.Department
 import org.certificateservices.messages.csexport.data.jaxb.FieldConstraint
 import org.certificateservices.messages.csexport.data.jaxb.ObjectFactory
 import org.certificateservices.messages.csexport.data.jaxb.Organisation
@@ -177,18 +178,48 @@ class CSExportDataParserSpec extends Specification {
 
 	}
 
+	def "Verify that trying to parse a 1.3 xml using version 1.2 parser generates error"(){
+		setup: // Generate 1.1 data with 1.0 version tag
+		def org = genOrganisation("1.3")
+		def tt = genTokenType("1.1")
+		byte[] data = p.genCSExport_1_x("1.2",[org],[tt])
+
+		when:
+		p.parse(data)
+		then:
+		thrown MessageContentException
+
+	}
 
 
 
 
-	public static Organisation genOrganisation(){
+
+	public static Organisation genOrganisation(String version="1.1"){
 		Organisation o = of.createOrganisation()
 		o.setShortName("testorg1")
 		o.setDisplayName("Test Org")
 		o.setMatchAdminWith("SomeMatch")
 		o.setIssuerDistinguishedName("CN=IssuerDistingueshedName")
+		o.setDepartments(of.createOrganisationDepartments())
+		o.getDepartments().department.add(genDepartment(version))
 
 		return o
+	}
+
+	public static Department genDepartment(String version="1.1"){
+		Department d = of.createDepartment()
+		d.name = "Name"
+		d.description = "SomeDescription"
+		if(version == "1.3"){
+			d.setDomainNameRestrictions(of.createDepartmentDomainNameRestrictions())
+			d.domainNameRestrictions.restriction << of.createDomainNameRestriction()
+			d.domainNameRestrictions.restriction[0].domainNameValue = "test.org"
+			d.domainNameRestrictions.restriction[0].allowSubDomains = false
+			d.domainNameRestrictions.restriction[0].allowWildCard = true
+			d.domainNameRestrictions.restriction[0].customRegexp = "abc"
+		}
+		return d
 	}
 
 	public static TokenType genTokenType(String version = "1.0"){

@@ -65,14 +65,16 @@ public class CSExportDataParser {
 
 	public static String NAMESPACE = "http://certificateservices.org/xsd/csexport_data_1_0";
 
-	public static String DEFAULT_VERSION = "1.1";
+	public static String DEFAULT_VERSION = "1.3";
 	public static String VERSION_1_0 = "1.0";
 	public static String VERSION_1_1 = "1.1";
 	public static String VERSION_1_2 = "1.2";
+	public static String VERSION_1_3 = "1.3";
 
 	private static final String CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_0 = "/cs-export-data_1_0.xsd";
 	private static final String CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_1 = "/cs-export-data_1_1.xsd";
 	private static final String CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_2 = "/cs-export-data_1_2.xsd";
+	private static final String CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_3 = "/cs-export-data_1_3.xsd";
 
 	private static final Map<String, String> versionToSchemaMap;
 	static{
@@ -80,6 +82,7 @@ public class CSExportDataParser {
 		versionToSchemaMap.put(VERSION_1_0, CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_0);
 		versionToSchemaMap.put(VERSION_1_1, CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_1);
 		versionToSchemaMap.put(VERSION_1_2, CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_2);
+		versionToSchemaMap.put(VERSION_1_3, CSEXPORT_XSD_SCHEMA_RESOURCE_LOCATION_1_3);
 	}
 
 	private ObjectFactory of = new ObjectFactory();
