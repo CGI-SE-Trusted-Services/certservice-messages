@@ -334,7 +334,7 @@ class SweEID2DSSExtensionsMessageParserSpec extends CommonSAMLMessageParserSpeci
 		t.mustShow == false
 
 		when: "Test with encrypted message"
-		t = emp.genSignEncryptedMessage(true, "SomeDisplayEntity", SignMessageMimeType.HTML, "SomeMessage".getBytes("UTF-8"),
+		t = emp.genSignEncryptedMessage(ContextMessageSecurityProvider.DEFAULT_CONTEXT,true, "SomeDisplayEntity", SignMessageMimeType.HTML, "SomeMessage".getBytes("UTF-8"),
 				createOtherAttributes(), twoReceiptiensValidFirst);
 		d = emp.marshall(eidOf.createSignMessage(t))
 		//printXML(d);
