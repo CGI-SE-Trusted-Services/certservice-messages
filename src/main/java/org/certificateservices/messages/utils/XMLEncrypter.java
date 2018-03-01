@@ -108,7 +108,6 @@ public class XMLEncrypter {
 
 	}
 
-
 	/**
 	 * Method to create a encrypted DOM structure containing a EncryptedData element of the related JAXB Element.
 	 *
@@ -118,13 +117,28 @@ public class XMLEncrypter {
 	 * @return a new DOM Document the encrypted data.
 	 * @throws MessageProcessingException if internal problems occurred generating the data.
 	 */
+	@Deprecated
 	public Document encryptElement(JAXBElement<?> element, List<X509Certificate> receipients, boolean useKeyId) throws MessageProcessingException {
+		return encryptElement(ContextMessageSecurityProvider.DEFAULT_CONTEXT, element,receipients,useKeyId);
+	}
+
+	/**
+	 * Method to create a encrypted DOM structure containing a EncryptedData element of the related JAXB Element.
+	 *
+	 * @param context the message security provider context to use
+	 * @param element     the JAXB element to decrypt.
+	 * @param receipients a list of reciepiets of the message.
+	 * @param useKeyId    if in key info should be included the shorter KeyName tag instead of X509Certificate
+	 * @return a new DOM Document the encrypted data.
+	 * @throws MessageProcessingException if internal problems occurred generating the data.
+	 */
+	public Document encryptElement(Context context, JAXBElement<?> element, List<X509Certificate> receipients, boolean useKeyId) throws MessageProcessingException {
 		try {
 			Document doc = documentBuilder.newDocument();
 
 			marshaller.marshal(element, doc);
 
-			return encryptElement(doc, receipients, useKeyId);
+			return encryptElement(context, doc, receipients, useKeyId);
 
 		} catch (Exception e) {
 			if (e instanceof MessageProcessingException) {
