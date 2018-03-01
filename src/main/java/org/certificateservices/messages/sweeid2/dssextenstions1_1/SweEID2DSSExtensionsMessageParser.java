@@ -487,13 +487,13 @@ public class SweEID2DSSExtensionsMessageParser extends DSS1CoreMessageParser{
      * @param recipients a list of reciepiets of the message.
      * @return a populated SignMessage with a encrypted SignMessage.
      */
-    public SignMessageType genSignEncryptedMessage(Boolean mustShow, String displayEntity, SignMessageMimeType mimeType,
-                                          byte[] messageToEncrypt, Map<QName, String> otherAttributes, List<X509Certificate> recipients) throws MessageProcessingException {
+    public SignMessageType genSignEncryptedMessage(ContextMessageSecurityProvider.Context context, Boolean mustShow, String displayEntity, SignMessageMimeType mimeType,
+                                                   byte[] messageToEncrypt, Map<QName, String> otherAttributes, List<X509Certificate> recipients) throws MessageProcessingException {
         SignMessageType t = eid2Of.createSignMessageType();
         populateSignMessage(t,mustShow,displayEntity,mimeType,otherAttributes);
 
         JAXBElement<byte[]> message = eid2Of.createMessage(messageToEncrypt);
-        Document encryptedDoc = xmlEncrypter.encryptElement(message,recipients,false);
+        Document encryptedDoc = xmlEncrypter.encryptElement(context, message,recipients,false);
 
         EncryptedElementType encryptedElementType = null;
         try {
