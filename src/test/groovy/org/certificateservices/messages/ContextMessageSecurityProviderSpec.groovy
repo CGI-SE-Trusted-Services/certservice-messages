@@ -36,6 +36,10 @@ class ContextMessageSecurityProviderSpec extends Specification {
         c.setProperties([key2:"value2"])
         then:
         c.getProperties()["key2"] == "value2"
+        when: // Verify that object are ok as properties
+        c.getProperties()["key3"] = 123
+        then:
+        c.getProperties()["key3"] == 123
     }
 
     def "Verify hasCode and equals returns correct values"(){
@@ -63,5 +67,10 @@ class ContextMessageSecurityProviderSpec extends Specification {
         c1.toString() == "Context{usage='SomeUsage1', relatedOrganisation='null', properties=null}"
         c2.toString() == "Context{usage='SomeUsage1', relatedOrganisation='SomeOrg', properties=null}"
         c3.toString() == "Context{usage='SomeUsage1', relatedOrganisation='SomeOrg', properties={key1=value1}}"
+    }
+
+    def "Verify that Context.getProperties creates empty context if null"(){
+       expect:
+       new Context("SomeUsage1").getProperties().size() == 0
     }
 }
