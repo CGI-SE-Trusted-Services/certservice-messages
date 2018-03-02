@@ -4,6 +4,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.ContextMessageSecurityProvider
 import org.certificateservices.messages.MessageSecurityProvider
 import org.certificateservices.messages.csmessages.CSMessageParserManager
+import org.certificateservices.messages.xmldsig.jaxb.KeyInfoType
+import org.certificateservices.messages.xmldsig.jaxb.RSAKeyValueType
 
 import javax.crypto.KeyGenerator
 import java.security.Security
@@ -148,6 +150,32 @@ class XMLEncrypterSpec extends Specification {
 		where:
 		encScheme << EncryptionAlgorithmScheme.values()
 	}
+
+	@Unroll
+	def "Verify that encryptElement generates encrypted XML document with included KeyValue using encryption scheme: #encScheme"(){
+		setup:
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI())
+
+		when:
+		Document encDoc = xmlEncrypter.encryptElement(DEFAULT_CONTEXT,genSAMLAttribute("SomeAttribute","Hej Svejs" ), threeReceipients, XMLEncrypter.KeyInfoType.KEYVALUE)
+		String encXML = docToString(encDoc)
+		println encXML
+
+		def xml = new XmlSlurper().parse(new StringReader(encXML))
+		then:
+		xml.@Type == "http://www.w3.org/2001/04/xmlenc#Element"
+		xml.EncryptionMethod.@Algorithm == encScheme.getDataEncryptionAlgorithmURI()
+		xml.KeyInfo.EncryptedKey.size() == 3
+		xml.KeyInfo.EncryptedKey[0].EncryptionMethod.@Algorithm == encScheme.getKeyEncryptionAlgorithmURI()
+		xml.KeyInfo.EncryptedKey[0].KeyInfo.KeyValue.RSAKeyValue.Modulus.toString().length() > 0
+		xml.KeyInfo.EncryptedKey[0].KeyInfo.KeyValue.RSAKeyValue.Exponent.toString() == "AQAB"
+				xml.KeyInfo.EncryptedKey[0].CipherData.toString().length() > 0
+		xml.CipherData.toString().length() > 0
+		true
+		where:
+		encScheme << EncryptionAlgorithmScheme.values()
+	}
 	
 
 	@Unroll
@@ -200,7 +228,29 @@ class XMLEncrypterSpec extends Specification {
 		where:
 		encScheme << EncryptionAlgorithmScheme.values()
 	}
-	
+
+
+	@Unroll
+	def "Verify that decryptDocument decrypts document with keyinfo using keyvalue and scheme: #encScheme"(){
+		setup:
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI())
+		Document encDoc = docToStringToDoc(xmlEncrypter.encryptElement(DEFAULT_CONTEXT, genSAMLAttribute("SomeAttribute","Hej Svejs" ), twoReceiptiensValidLast, XMLEncrypter.KeyInfoType.KEYVALUE))
+		expect:
+		encDoc.getElementsByTagNameNS(XMLSigner.XMLDSIG_NAMESPACE,"RSAKeyValue").length > 0
+		when:
+		JAXBElement<AttributeType> decryptedAttribute = xmlEncrypter.decryptDocument(DEFAULT_CONTEXT,encDoc)
+		AttributeType attributeType = decryptedAttribute.getValue()
+		then:
+		attributeType.getName() == "SomeAttribute"
+		attributeType.getAttributeValue().get(0) == "Hej Svejs"
+
+
+		where:
+		encScheme << EncryptionAlgorithmScheme.values()
+	}
+
+
 
 	def "Verify that decryptDocument throws NoDecryptionKeyFoundException if no valid key info could be found"(){
 		setup:
@@ -566,6 +616,8 @@ utkUJrOx5P7ZIr91erXUfsQbPDsQkcjAi3IPJFAr"""
 		"NzHWz92kL6UKUFzyBXBiBbY7TSVjO+bV/uPaTEVP7QhJk4Cahg1a7h8iMdF78ths" +
 		"+xMeZX1KyiL4Dpo2rocZAvdL/C8qkt/uEgOjwOTdmoRVxkFWcm+DRNa26cclBQ4t" +
 		"Vw==").getBytes()
+
+
 
 
 }
