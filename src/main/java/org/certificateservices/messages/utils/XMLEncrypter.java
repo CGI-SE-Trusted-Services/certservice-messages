@@ -17,6 +17,7 @@ import org.apache.xml.security.encryption.EncryptedKey;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.encryption.XMLEncryptionException;
 import org.apache.xml.security.keys.KeyInfo;
+import org.apache.xml.security.keys.KeyUtils;
 import org.apache.xml.security.keys.content.KeyName;
 import org.apache.xml.security.keys.content.X509Data;
 import org.apache.xml.security.utils.Base64;
@@ -73,6 +74,15 @@ public class XMLEncrypter {
 	private Map<Context, KeyGenerator> dataKeyGeneratorMap = new HashMap<Context, KeyGenerator>();
 
 	private Set<String> supportedEncryptionChipers = new HashSet<String>();
+
+	/**
+	 * Enumeration of supported KeyInfoTypes
+	 */
+	public enum KeyInfoType{
+		KEYNAME,
+		KEYVALUE,
+		X509CERTIFICATE
+	}
 
 
 	/**
@@ -133,12 +143,26 @@ public class XMLEncrypter {
 	 * @throws MessageProcessingException if internal problems occurred generating the data.
 	 */
 	public Document encryptElement(Context context, JAXBElement<?> element, List<X509Certificate> receipients, boolean useKeyId) throws MessageProcessingException {
+		return encryptElement(context,element,receipients,useKeyId?KeyInfoType.KEYNAME:KeyInfoType.X509CERTIFICATE);
+	}
+
+	/**
+	 * Method to create a encrypted DOM structure containing a EncryptedData element of the related JAXB Element.
+	 *
+	 * @param context the message security provider context to use
+	 * @param element     the JAXB element to decrypt.
+	 * @param receipients a list of reciepiets of the message.
+	 * @param keyInfoType    The type of keyinfo to add to the encrypted element.
+	 * @return a new DOM Document the encrypted data.
+	 * @throws MessageProcessingException if internal problems occurred generating the data.
+	 */
+	public Document encryptElement(Context context, JAXBElement<?> element, List<X509Certificate> receipients, KeyInfoType keyInfoType) throws MessageProcessingException {
 		try {
 			Document doc = documentBuilder.newDocument();
 
 			marshaller.marshal(element, doc);
 
-			return encryptElement(context, doc, receipients, useKeyId);
+			return encryptElement(context, doc, receipients, keyInfoType);
 
 		} catch (Exception e) {
 			if (e instanceof MessageProcessingException) {
@@ -172,8 +196,22 @@ public class XMLEncrypter {
 	 * @throws MessageProcessingException if internal problems occurred generating the data.
 	 */
 	public  Document encryptElement(Context context, Document doc, List<X509Certificate> receipients, boolean useKeyId) throws MessageProcessingException{
+		return encryptElement(context,doc,receipients,useKeyId?KeyInfoType.KEYNAME:KeyInfoType.X509CERTIFICATE);
+	}
+
+	/**
+	 * Method to create a encrypted DOM structure containing a EncryptedData element of the related JAXB Element.
+	 *
+	 * @param context related security context.
+	 * @param doc the document to encrypt.
+	 * @param receipients a list of reciepiets of the message.
+	 * @param keyInfoType The type of keyinfo to add to the encrypted element.
+	 * @return a new DOM Document the encrypted data.
+	 * @throws MessageProcessingException if internal problems occurred generating the data.
+	 */
+	public  Document encryptElement(Context context, Document doc, List<X509Certificate> receipients, KeyInfoType keyInfoType) throws MessageProcessingException{
 		try{
-			
+
 			Key dataKey = getDataKeyGenerator(context).generateKey();
 
 			XMLCipher encDataXMLCipher = getEncDataXMLCipher(context);
@@ -181,7 +219,7 @@ public class XMLEncrypter {
 			EncryptedData encData = encDataXMLCipher.getEncryptedData();
 			KeyInfo keyInfo = new KeyInfo(doc);
 			for(X509Certificate receipient: receipients){
-				keyInfo.add(addReceipient(context, doc, dataKey, receipient, useKeyId));
+				keyInfo.add(addReceipient(context, doc, dataKey, receipient, keyInfoType));
 			}
 			encData.setKeyInfo(keyInfo);
 			Element documentElement = doc.getDocumentElement();
@@ -441,7 +479,9 @@ public class XMLEncrypter {
 			}else{
 				availableKeyIds = securityProvider.getDecryptionKeyIds();
 			}
-			
+
+
+
 			NodeList keyNameList = encryptedElement.getElementsByTagNameNS(XMLDSIG_NAMESPACE, "KeyName");
 			for(int i=0; i<keyNameList.getLength();i++){
 				Node keyName = keyNameList.item(i);
@@ -463,9 +503,20 @@ public class XMLEncrypter {
 					String keyId = generateKeyId(cert.getPublicKey());
 					if(availableKeyIds.contains(keyId)){
 						return getDecryptionKey(context,keyId);
-					}			
+					}
 				}
 			}
+
+			KeyInfo keyInfo = new KeyInfo(encryptedElement,encryptedElement.getBaseURI());
+			PublicKey publicKey = keyInfo.getPublicKey();
+			if(publicKey != null){
+				String keyId = generateKeyId(publicKey);
+				if(availableKeyIds.contains(keyId)){
+					return getDecryptionKey(context,keyId);
+				}
+			}
+
+
 
 		}catch(Exception e){
 			throw new NoDecryptionKeyFoundException("Error finding encryption public key in XML message: " + e.getMessage(), e);
@@ -503,18 +554,23 @@ public class XMLEncrypter {
 	/**
 	 * Help method to add a receipient to a message.
 	 */
-	private EncryptedKey addReceipient(Context context, Document doc, Key dataKey, X509Certificate receipient, boolean useKeyId) throws XMLEncryptionException, CertificateEncodingException, MessageProcessingException{
+	private EncryptedKey addReceipient(Context context, Document doc, Key dataKey, X509Certificate receipient, KeyInfoType keyInfoType) throws XMLEncryptionException, CertificateEncodingException, MessageProcessingException{
 		XMLCipher encKeyXMLCipher = getEncKeyXMLCipher(context);
 		encKeyXMLCipher.init(XMLCipher.WRAP_MODE,receipient.getPublicKey());
 		KeyInfo keyInfo = new KeyInfo(doc);
 		EncryptedKey retval = encKeyXMLCipher.encryptKey(doc, dataKey);
-		if(useKeyId){
-			KeyName keyName = new KeyName(doc, generateKeyId(receipient.getPublicKey()));
-			keyInfo.add(keyName);
-		}else{
-			X509Data x509Data = new X509Data(doc);
-		    x509Data.addCertificate(receipient.getEncoded());
-		    keyInfo.add(x509Data);
+
+		switch (keyInfoType){
+			case KEYNAME:
+				KeyName keyName = new KeyName(doc, generateKeyId(receipient.getPublicKey()));
+				keyInfo.add(keyName);
+				break;
+			case KEYVALUE:
+				keyInfo.add(receipient.getPublicKey());
+			case X509CERTIFICATE:
+				X509Data x509Data = new X509Data(doc);
+				x509Data.addCertificate(receipient.getEncoded());
+				keyInfo.add(x509Data);
 		}
 		retval.setKeyInfo(keyInfo);
 		return retval;
