@@ -91,6 +91,13 @@
 			<xs:enumeration value="REPLACE" />
 		</xs:restriction>
 	</xs:simpleType>
+
+	<xs:simpleType name="AutomationLevel">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="AUTOMATIC"/>
+			<xs:enumeration value="MANUAL"/>
+		</xs:restriction>
+	</xs:simpleType>
 	
 	<xs:complexType name="Approver">
 		<xs:sequence>
@@ -396,8 +403,11 @@
 					</xs:simpleContent>
 				</xs:complexType>
 			</xs:element>
+			<xs:element maxOccurs="1" minOccurs="0" name="automationLevel" default="MANUAL" type="tns:AutomationLevel" />
 		</xs:sequence>
 	</xs:complexType>
+
+
 	<xs:complexType name="CredentialRequest">
 		<xs:sequence>
 			<xs:element minOccurs="1" maxOccurs="1" name="credentialRequestId"
