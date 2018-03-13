@@ -4,6 +4,7 @@ import org.apache.xml.security.Init
 import org.apache.xml.security.utils.Base64
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.MessageContentException
+import org.certificateservices.messages.credmanagement.jaxb.AutomaticRenewCredentialResponse
 import org.certificateservices.messages.credmanagement.jaxb.CredentialAvailableActionType
 import org.certificateservices.messages.credmanagement.jaxb.CredentialAvailableActionsOperation
 import org.certificateservices.messages.credmanagement.jaxb.FieldValue
@@ -65,7 +66,7 @@ class CredManagementPayloadParserSpec extends Specification {
 		
 		when:
 		csMessageParser.sourceId = "SOMEREQUESTER"
-		byte[] requestMessage = pp.genIssueTokenCredentialsRequest(TEST_ID, "SOMESOURCEID", "someorg", createTokenRequest(true), null,  null, createOriginatorCredential(), null)
+		byte[] requestMessage = pp.genIssueTokenCredentialsRequest(TEST_ID, "SOMESOURCEID", "someorg", createTokenRequest(true, "1234", AutomationLevel.AUTOMATIC), null,  null, createOriginatorCredential(), null)
 		//printXML(requestMessage)
 		def xml = slurpXml(requestMessage)
 		def payloadObject = xml.payload.IssueTokenCredentialsRequest
@@ -78,6 +79,8 @@ class CredManagementPayloadParserSpec extends Specification {
 
 		payloadObject.tokenRequest.user == "someuser"
 		payloadObject.tokenRequest.departmentName == "SomeDepartment"
+		payloadObject.tokenRequest.regenerateToken == "1234"
+		payloadObject.tokenRequest.automationLevel == "AUTOMATIC"
 		payloadObject.fieldValues.size() == 0
 		payloadObject.hardTokenData.size() == 0
 		
@@ -793,6 +796,48 @@ class CredManagementPayloadParserSpec extends Specification {
 
 	}
 
+	def "Verify that genAutomaticRenewCredentialRequest() generates a valid xml message and genAutomaticRenewCredentialResponse() generates a valid CSMessageResponseData"(){
+		when:
+		csMessageParser.sourceId = "SOMEREQUESTER"
+		byte[] requestMessage = pp.genAutomaticRenewCredentialRequest(TEST_ID, "SOMESOURCEID", "someorg",  AutomationLevel.AUTOMATIC, ["somedata1".getBytes(),"somedata2".getBytes()], createOriginatorCredential(), null)
+		//printXML(requestMessage)
+		def xml = slurpXml(requestMessage)
+		def payloadObject = xml.payload.AutomaticRenewCredentialRequest
+		then:
+		messageContainsPayload requestMessage, "credmanagement:AutomaticRenewCredentialRequest"
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","AutomaticRenewCredentialRequest", createOriginatorCredential(), csMessageParser)
+
+		payloadObject.automationLevel == "AUTOMATIC"
+		payloadObject.renewalRequestData.size() == 2
+
+
+		when:
+		csMessageParser.sourceId = "SOMESOURCEID"
+		CSMessage request = pp.parseMessage(requestMessage)
+
+		CSMessageResponseData rd = pp.genAutomaticRenewCredentialResponse("SomeRelatedEndEntity", request, getRenewedCredentials(), null)
+		//printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.AutomaticRenewCredentialResponse
+
+		then:
+		messageContainsPayload rd.responseData, "credmanagement:AutomaticRenewCredentialResponse"
+
+		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, false, "AutomaticRenewCredentialResponse", "SomeRelatedEndEntity"
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","AutomaticRenewCredentialResponse", createOriginatorCredential(), csMessageParser)
+		verifySuccessfulBasePayload(payloadObject, TEST_ID)
+
+		payloadObject.renewedCredential.size() == 2
+		payloadObject.renewedCredential[0].originalCredentialId == "originalCredentialId1"
+		payloadObject.renewedCredential[0].credential != null
+		payloadObject.renewedCredential[1].originalCredentialId == "originalCredentialId2"
+		payloadObject.renewedCredential[1].credential != null
+
+		expect:
+		pp.parseMessage(rd.responseData)
+
+	}
+
 	def "Verify that 2.0 version GetUsersRequest doesn't populate startIndex and totalMatching and that users doesn't have departmentname in response"(){
 		when:
 		CSMessage request = pp.parseMessage(validGetUsersRequestV2_0)
@@ -824,7 +869,7 @@ class CredManagementPayloadParserSpec extends Specification {
 		pp.parseMessage(issueTokenCredentialWithRenewandInvalidVersion,false, false)
 		then:
 		def e = thrown(MessageContentException)
-		e.message == "Error parsing payload of CS Message: cvc-complex-type.2.4.d: Invalid content was found starting with element 'cs:regenerateToken'. No child element is expected at this point."
+		e.message == "Error parsing payload of CS Message: Problems occurred generating pay load schema for http://certificateservices.org/xsd/credmanagement2_0, version 2.2, error: src-resolve: Cannot resolve the name 'cs:AutomationLevel' to a(n) 'type definition' component."
 	}
 
 
@@ -995,7 +1040,7 @@ class CredManagementPayloadParserSpec extends Specification {
 	}
 	
 	
-	private TokenRequest createTokenRequest(boolean includeDepartment=false, String renewCredentialId= null){
+	private TokenRequest createTokenRequest(boolean includeDepartment=false, String renewTokenSerial= null, AutomationLevel automationLevel = null){
 		TokenRequest retval = csMessageOf.createTokenRequest()
 		retval.user = "someuser";
 		retval.tokenContainer = "SomeTokenContainer"
@@ -1004,24 +1049,28 @@ class CredManagementPayloadParserSpec extends Specification {
 		if(includeDepartment) {
 			retval.departmentName = "SomeDepartment"
 		}
+		if(renewTokenSerial != null) {
+			retval.regenerateToken = new TokenRequest.RegenerateToken()
+			retval.regenerateToken.value = renewTokenSerial
+			retval.regenerateToken.action = RegenerateActionType.RENEW
+		}
+		if(automationLevel != null){
+			retval.automationLevel = automationLevel
+		}
 
 		retval.setCredentialRequests(new TokenRequest.CredentialRequests())
-		retval.getCredentialRequests().getCredentialRequest().add(createCredentialRequest(renewCredentialId))
+		retval.getCredentialRequests().getCredentialRequest().add(createCredentialRequest())
 
 		return retval
 	}
 
-	private static CredentialRequest createCredentialRequest(String renewCredentialId= null){
+	private static CredentialRequest createCredentialRequest(){
 		CredentialRequest cr = csMessageOf.createCredentialRequest()
 		cr.credentialRequestId = 123
 		cr.credentialType = "SomeCredentialType"
 		cr.credentialSubType = "SomeCredentialSubType"
 		cr.x509RequestType = "SomeX509RequestType"
 		cr.credentialRequestData = "12345ABC"
-		if(renewCredentialId != null) {
-			cr.regenerateCredential = of.createCredentialRequestRegenerateCredential()
-			cr.regenerateCredential.setValue(renewCredentialId)
-		}
 		return cr
 	}
 
@@ -1139,6 +1188,16 @@ class CredManagementPayloadParserSpec extends Specification {
 		retval << op2
 
 		return retval
+	}
+
+	private List<AutomaticRenewCredentialResponse.RenewedCredential> getRenewedCredentials(){
+		AutomaticRenewCredentialResponse.RenewedCredential rc1 = new AutomaticRenewCredentialResponse.RenewedCredential()
+		rc1.originalCredentialId = "originalCredentialId1"
+		rc1.credential = createCredential()
+		AutomaticRenewCredentialResponse.RenewedCredential rc2 = new AutomaticRenewCredentialResponse.RenewedCredential()
+		rc2.originalCredentialId = "originalCredentialId2"
+		rc2.credential = createCredential()
+		[rc1,rc2]
 	}
 
 
