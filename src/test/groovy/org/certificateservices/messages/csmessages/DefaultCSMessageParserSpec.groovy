@@ -648,6 +648,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		then:
 		request.version == "2.0"
 		when:
+		credManagementPayloadParser.setPayloadVersion("2.0")
 		request = requestMessageParser.parseMessage(credManagementPayloadParser.genGetCredentialRequest(TEST_ID,"somedest","someorg","somesubtype","someissuerid","someserialnumber",null,null))
 		then:
 		request.version == "2.0"
