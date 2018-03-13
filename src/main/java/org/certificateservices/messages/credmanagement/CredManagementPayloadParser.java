@@ -23,17 +23,12 @@ import org.certificateservices.messages.credmanagement.jaxb.*;
 import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsRequest.FieldValues;
 import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsResponse.Credentials;
 import org.certificateservices.messages.credmanagement.jaxb.IssueTokenCredentialsResponse.RevokedCredentials;
+import org.certificateservices.messages.credmanagement.jaxb.ObjectFactory;
 import org.certificateservices.messages.csmessages.BasePayloadParser;
 import org.certificateservices.messages.csmessages.CSMessageParser;
 import org.certificateservices.messages.csmessages.CSMessageResponseData;
 import org.certificateservices.messages.csmessages.PayloadParser;
-import org.certificateservices.messages.csmessages.jaxb.Credential;
-import org.certificateservices.messages.csmessages.jaxb.CredentialStatusList;
-import org.certificateservices.messages.csmessages.jaxb.CSMessage;
-import org.certificateservices.messages.csmessages.jaxb.Token;
-import org.certificateservices.messages.csmessages.jaxb.TokenRequest;
-import org.certificateservices.messages.csmessages.jaxb.User;
-import org.certificateservices.messages.csmessages.jaxb.RequestStatus;
+import org.certificateservices.messages.csmessages.jaxb.*;
 import org.certificateservices.messages.utils.MessageGenerateUtils;
 
 /**
@@ -982,6 +977,48 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		GetCredentialAvailableActionsResponse.Operations ops = of.createGetCredentialAvailableActionsResponseOperations();
 		ops.getOperation().addAll(operations);
 		response.setOperations(ops);
+
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
+	}
+
+	/**
+	 * Method to generate a AutomaticRenewCredentialRequest to renew a given credential with an identical
+	 * credential and used for automation steps.
+	 *
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param automationLevel The level of automation, AUTOMATIC if requesting system updates automatically, or MANUAL of manual
+	 *                        steps needs to be taked for renewal
+	 * @param renewalRequestData A list of request data. The request data is PKCS7 of PKCS10 data signed with original certificate.
+	 * @param originator the original requester of a message, null if not applicable.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genAutomaticRenewCredentialRequest(String requestId, String destinationId, String organisation, AutomationLevel automationLevel, List<byte[]> renewalRequestData, Credential originator, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		AutomaticRenewCredentialRequest payload = of.createAutomaticRenewCredentialRequest();
+		payload.setAutomationLevel(automationLevel);
+		payload.getRenewalRequestData().addAll(renewalRequestData);
+
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
+	}
+
+	/**
+	 * Method to generate a AutomaticRenewalResponse
+	 *
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the request this message is a response to.
+	 * @param renewedCredentials a list of renewed credential with a reference to the unique id of the original credential.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public CSMessageResponseData genAutomaticRenewCredentialResponse(String relatedEndEntity, CSMessage request, List<AutomaticRenewCredentialResponse.RenewedCredential> renewedCredentials, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		AutomaticRenewCredentialResponse response = of.createAutomaticRenewCredentialResponse();
+		response.getRenewedCredential().addAll(renewedCredentials);
 
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response);
 	}

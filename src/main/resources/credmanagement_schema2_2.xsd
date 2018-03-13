@@ -598,4 +598,39 @@
 		</xs:sequence>
 	</xs:complexType>
 
+	<xs:element name="AutomaticRenewCredentialRequest">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cs:CSRequest">
+					<xs:sequence>
+						<xs:element minOccurs="0" maxOccurs="1" name="automationLevel" default="MANUAL"
+									type="cs:AutomationLevel" />
+						<xs:element minOccurs="1" maxOccurs="100" name="renewalRequestData" type="xs:base64Binary" />
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="AutomaticRenewCredentialResponse">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cs:CSResponse">
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="100" name="renewedCredential">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element maxOccurs="1" minOccurs="1"
+												name="originalCredentialId" type="cs:notemptystring" />
+									<xs:element maxOccurs="1" minOccurs="1"
+												name="credential" type="cs:Credential" />
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
 </xs:schema>
