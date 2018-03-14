@@ -79,7 +79,8 @@ class CredManagementPayloadParserSpec extends Specification {
 
 		payloadObject.tokenRequest.user == "someuser"
 		payloadObject.tokenRequest.departmentName == "SomeDepartment"
-		payloadObject.tokenRequest.regenerateToken == "1234"
+		payloadObject.tokenRequest.previousSerialNumber == "1234"
+		payloadObject.tokenRequest.renewAction == "RENEW"
 		payloadObject.tokenRequest.automationLevel == "AUTOMATIC"
 		payloadObject.fieldValues.size() == 0
 		payloadObject.hardTokenData.size() == 0
@@ -1050,9 +1051,8 @@ class CredManagementPayloadParserSpec extends Specification {
 			retval.departmentName = "SomeDepartment"
 		}
 		if(renewTokenSerial != null) {
-			retval.regenerateToken = new TokenRequest.RegenerateToken()
-			retval.regenerateToken.value = renewTokenSerial
-			retval.regenerateToken.action = RegenerateActionType.RENEW
+			retval.previousSerialNumber = renewTokenSerial
+			retval.renewAction = RegenerateActionType.RENEW
 		}
 		if(automationLevel != null){
 			retval.automationLevel = automationLevel
