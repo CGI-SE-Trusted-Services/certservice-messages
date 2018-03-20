@@ -12,6 +12,8 @@
 *************************************************************************/
 package org.certificateservices.messages.receipts;
 
+import java.util.Date;
+
 /**
  * Value object containing all the information about a receipt message.
  * 
@@ -23,6 +25,7 @@ public class ReceiptMessage {
 	private String messageId;
 	private ReceiptStatus status;
 	private String errorDescription;
+	private Date timeStamp;
 	
 	/**
 	 * Default constructor for a receipt message.
@@ -36,6 +39,23 @@ public class ReceiptMessage {
 		this.status = status;
 		this.errorDescription = errorDescription;
 	}
+
+	/**
+	 * Default constructor for a receipt message.
+	 *
+	 * @param messageId the id of the message, never null
+	 * @param status
+	 * @param errorDescription optional error description, or null if not applicable.
+	 * @param timeStamp the timestamp when the reciept was sent, optional can be null
+	 */
+	public ReceiptMessage(String messageId, ReceiptStatus status, String errorDescription, Date timeStamp){
+		this.messageId = messageId;
+		this.status = status;
+		this.errorDescription = errorDescription;
+		this.timeStamp = timeStamp;
+	}
+
+
 	
 	/**
 	 * 
@@ -84,10 +104,27 @@ public class ReceiptMessage {
 	public void setErrorDescription(String errorDescription) {
 		this.errorDescription = errorDescription;
 	}
+
+	/**
+	 *
+	 * @return the timestamp when the reciept was sent, optional can be null
+	 */
+	public Date getTimeStamp() {
+		return timeStamp;
+	}
+
+	/**
+	 *
+	 * @param timeStamp the timestamp when the reciept was sent, optional can be null
+	 */
+	public void setTimeStamp(Date timeStamp) {
+		this.timeStamp = timeStamp;
+	}
+
 	@Override
 	public String toString() {
 		return "ReceiptMessage [messageId=" + messageId + ", status=" + status
-				+ ", errorDescription=" + errorDescription + "]";
+				+ ", errorDescription=" + errorDescription + ", timeStamp=" + timeStamp + "]";
 	}
 	
 	
