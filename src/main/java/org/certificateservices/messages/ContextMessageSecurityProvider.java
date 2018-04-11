@@ -14,6 +14,7 @@ package org.certificateservices.messages;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -125,7 +126,7 @@ public interface ContextMessageSecurityProvider extends MessageSecurityProvider{
 
 		private String usage;
 		private String relatedOrganisation;
-		private Map<String,String> properties;
+		private Map<String,Object> properties;
 
 		/**
 		 * Class representing a context in which a ContextMessageSecurityProvider should
@@ -164,7 +165,7 @@ public interface ContextMessageSecurityProvider extends MessageSecurityProvider{
          * @param properties a map of provider specific properties which is up to the calling application
 		 *                   and provider implementation to define.
          */
-		public Context(String usage, String relatedOrganisation, Map<String, String> properties) {
+		public Context(String usage, String relatedOrganisation, Map<String, Object> properties) {
 			this.usage = usage;
 			this.relatedOrganisation = relatedOrganisation;
 			this.properties = properties;
@@ -212,7 +213,10 @@ public interface ContextMessageSecurityProvider extends MessageSecurityProvider{
 		 *                   and provider implementation to define. can be null if no properties
 		 *                   is defined.
          */
-		public Map<String, String> getProperties() {
+		public Map<String, Object> getProperties() {
+			if(properties == null){
+				properties = new HashMap<String, Object>();
+			}
 			return properties;
 		}
 
@@ -221,7 +225,7 @@ public interface ContextMessageSecurityProvider extends MessageSecurityProvider{
 		 * @param properties a map of provider specific properties which is up to the calling application
 		 *                   and provider implementation to define.
          */
-		public void setProperties(Map<String, String> properties) {
+		public void setProperties(Map<String, Object> properties) {
 			this.properties = properties;
 		}
 
