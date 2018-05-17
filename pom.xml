@@ -493,10 +493,10 @@
             </executions>
             <configuration>
               <keystore>/home/bamboo/codesign.jks</keystore>
-              <storepass>{xuMwDBggK/cHXMoR3I1DWjJcaX2SPzxvgYbDX2QjB1IvfIohS3PPsMiVAmYrcn1D}</storepass>
-              <alias>codesigning</alias>
+              <storepass>{vMtaRMHLTvkHxnv4XcAEk0Z37c1rP+XKSVJm3l3k05g8t+1kx9QIO9j56ss8GN8f}</storepass>
+              <alias>secgicertificateservicecodesigning</alias>
               <processMainArtifact>true</processMainArtifact>
-              <tsa>http://timestamp.digicert.com</tsa>
+              <tsa>http://timestamp.entrust.net/TSS/RFC3161sha2TS</tsa>
               <removeExistingSignatures>false</removeExistingSignatures>
               <verbose>true</verbose>
               <parameters>
