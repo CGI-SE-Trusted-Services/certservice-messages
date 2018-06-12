@@ -2,12 +2,18 @@ package org.certificateservices.messages.utils
 
 import org.apache.xml.security.Init
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.util.encoders.Base64
 import org.certificateservices.messages.ContextMessageSecurityProvider
+import org.certificateservices.messages.DummyMessageSecurityProvider
 import org.certificateservices.messages.MessageContentException
+import org.certificateservices.messages.MessageProcessingException
 import org.certificateservices.messages.MessageSecurityProvider
 import org.certificateservices.messages.SigningAlgorithmScheme
 import org.certificateservices.messages.TestUtils
 import org.certificateservices.messages.assertion.AssertionPayloadParser
+import org.certificateservices.messages.csmessages.CSMessageParser
+import org.certificateservices.messages.csmessages.DefaultCSMessageParser
+import org.certificateservices.messages.csmessages.jaxb.CSMessage
 import org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory
 import org.certificateservices.messages.csmessages.CSMessageParserManager
 import org.certificateservices.messages.csmessages.PayloadParserRegistry
@@ -16,10 +22,16 @@ import org.w3c.dom.Element
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import java.security.KeyFactory
+import java.security.PrivateKey
 import java.security.Security
+import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
+import java.security.spec.PKCS8EncodedKeySpec
 
+import static org.certificateservices.messages.TestUtils.printXML
 import static org.certificateservices.messages.TestUtils.setupRegisteredPayloadParser
+import static org.certificateservices.messages.SigningAlgorithmScheme.*
 
 public class XMLSignerSpec extends Specification {
 	
@@ -244,7 +256,82 @@ public class XMLSignerSpec extends Specification {
 		1 * securityProvider.getSigningKey() >> xmlSigner.messageSecurityProvider.getSigningKey()
 
 	}
-	
+
+	@Unroll
+	def "Verify that signing and verification of sign algorithm #signAlg is supported"(){
+		setup:
+		useAlgorithm(signAlg)
+		CSMessageParser p = CSMessageParserManager.getCSMessageParser()
+		when:
+		byte[] msgData = p.generateIsApprovedRequest(MessageGenerateUtils.generateRandomUUID(),"someDest","SomeOrg","SomeApprovalId", null,null)
+		CSMessage msg = p.parseMessage(msgData)
+		then:
+		msg.signature.signedInfo.signatureMethod.algorithm == signAlg.signatureAlgorithmURI
+
+		cleanup:
+		resetAlgorithm()
+
+		where:
+		signAlg << SigningAlgorithmScheme.values()
+
+
+	}
+
+	private void useAlgorithm(SigningAlgorithmScheme algo){
+		ContextMessageSecurityProvider secProv = new TestAlgoMessageSecurityProvider(algo)
+		DefaultCSMessageParser parser = CSMessageParserManager.getCSMessageParser()
+		parser.securityProvider = secProv
+		parser.xmlSigner.messageSecurityProvider = secProv
+		xmlSigner.messageSecurityProvider = secProv
+	}
+
+	private void resetAlgorithm(){
+		ContextMessageSecurityProvider secProv = new DummyMessageSecurityProvider()
+		DefaultCSMessageParser parser = CSMessageParserManager.getCSMessageParser()
+		parser.securityProvider = secProv
+		parser.xmlSigner.messageSecurityProvider = secProv
+		xmlSigner.messageSecurityProvider = secProv
+	}
+
+	private class TestAlgoMessageSecurityProvider extends DummyMessageSecurityProvider{
+
+		SigningAlgorithmScheme signAlg
+		TestAlgoMessageSecurityProvider(SigningAlgorithmScheme signAlg){
+			this.signAlg = signAlg
+		}
+
+		@Override
+		PrivateKey getSigningKey(ContextMessageSecurityProvider.Context context) throws MessageProcessingException {
+			if(signAlg.name().contains("ECDSA")) {
+				PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(Base64.decode(ecKey))
+				KeyFactory factory = KeyFactory.getInstance("ECDSA")
+				PrivateKey privateKey = factory.generatePrivate(spec)
+				return privateKey
+			}
+			super.getSigningKey(context)
+		}
+
+		@Override
+		X509Certificate getSigningCertificate(ContextMessageSecurityProvider.Context context) throws MessageProcessingException {
+			if(signAlg.name().contains("EC")) {
+				CertificateFactory cf = CertificateFactory.getInstance("X509")
+				return cf.generateCertificate(new ByteArrayInputStream(Base64.decode(ecCert)))
+			}
+			super.getSigningCertificate(context)
+		}
+
+		@Override
+		SigningAlgorithmScheme getSigningAlgorithmScheme(ContextMessageSecurityProvider.Context context) throws MessageProcessingException {
+			return signAlg
+		}
+
+		@Override
+		boolean isValidAndAuthorized(ContextMessageSecurityProvider.Context context, X509Certificate signCertificate, String organisation) throws IllegalArgumentException, MessageProcessingException {
+			return true
+		}
+
+	}
+
 	private Element findSignature(byte[] message){
 		return xmlSigner.documentBuilder.parse(new ByteArrayInputStream(message)).getElementsByTagNameNS(XMLSigner.XMLDSIG_NAMESPACE, "Signature").item(0)
 	}
@@ -392,4 +479,16 @@ HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
 WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
 ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
 ZLCP64EJEfE1mGxCJg==</X509Certificate></X509Data></KeyInfo></ds:Signature></cs:CSMessage>""".getBytes("UTF-8")
+
+	def ecCert = """MIIBDTCBtAIJALqOTIKfSF+iMAoGCCqGSM49BAMCMA8xDTALBgNVBAMMBFRlc3Qw
+HhcNMTgwNjEyMTIzMTA4WhcNMzgwNjA3MTIzMTA4WjAPMQ0wCwYDVQQDDARUZXN0
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEf+oCECV53U2580NTExF2/QlEoL+p
+3/mOnGC0qb3UhUowlo+f94Y5WH8HcuY9U+cv44udHM0jlJZwMo/QoTsEVjAKBggq
+hkjOPQQDAgNIADBFAiEA2Y2viDHBsNbA+5slq24M2kcc190lgBTvcmfQhZgZKccC
+IBGY9uX1A4fDvb1/ygBj7X+Mh5jU2CTkUWnkH6xjtYGK"""
+
+	def ecKey = """MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgw6qZY9/fbuup4bZQ
+U/LfB7N9/NKeMEz0cBYPW57veEGhRANCAAR/6gIQJXndTbnzQ1MTEXb9CUSgv6nf
++Y6cYLSpvdSFSjCWj5/3hjlYfwdy5j1T5y/ji50czSOUlnAyj9ChOwRW"""
+
 }
