@@ -20,12 +20,16 @@ package org.certificateservices.messages;
  */
 public enum SigningAlgorithmScheme {
 	
-	RSAWithSHA256("http://www.w3.org/2001/04/xmlenc#sha256", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256");
+	RSAWithSHA256("http://www.w3.org/2001/04/xmlenc#sha256", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"),
+	RSAWithSHA512("http://www.w3.org/2001/04/xmlenc#sha512", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"),
+
+	ECDSAWithSHA256("http://www.w3.org/2001/04/xmlenc#sha256", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"),
+	ECDSAWithSHA512("http://www.w3.org/2001/04/xmlenc#sha512", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512");
 	
 	String hashAlgorithmURI;
 	String signatureAlgorithmURI;
 	
-	private SigningAlgorithmScheme(String hashAlgorithmURI, String signatureAlgorithmURI){
+	SigningAlgorithmScheme(String hashAlgorithmURI, String signatureAlgorithmURI){
 		this.hashAlgorithmURI = hashAlgorithmURI;
 		this.signatureAlgorithmURI = signatureAlgorithmURI;
 	}
