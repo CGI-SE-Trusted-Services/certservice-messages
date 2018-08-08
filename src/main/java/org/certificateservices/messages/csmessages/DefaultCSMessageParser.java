@@ -892,7 +892,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * @return the CS Message Version used.
 	 */
 	public String getCSMessageVersion(){
-		return csMessageVersion;
+		return DefaultCSMessageParser.csMessageVersion;
 	}
 
 	/**
