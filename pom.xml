@@ -64,6 +64,12 @@
       <version>1.0-groovy-2.4</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+      <version>9.3.9.v20160517</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
