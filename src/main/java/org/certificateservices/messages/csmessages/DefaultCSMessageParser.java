@@ -138,10 +138,10 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	private String sourceId = null;
 	private XMLSigner xmlSigner;
 
-	private String csMessageVersion = DEFAULT_CSMESSAGE_PROTOCOL;
-	
 	public static final String DEFAULT_CSMESSAGE_PROTOCOL = CSMESSAGE_VERSION_2_2;
-	
+
+	private static String csMessageVersion = DEFAULT_CSMESSAGE_PROTOCOL;
+
 	private CSMessageSignatureLocationFinder cSMessageSignatureLocationFinder = new CSMessageSignatureLocationFinder();
 	/**
 	 * @see org.certificateservices.messages.csmessages.CSMessageParser#init(org.certificateservices.messages.MessageSecurityProvider, java.util.Properties)
@@ -892,7 +892,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * @return the CS Message Version used.
 	 */
 	public String getCSMessageVersion(){
-		return csMessageVersion;
+		return DefaultCSMessageParser.csMessageVersion;
 	}
 
 	/**
@@ -905,7 +905,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * @return the CS Message Version used.
 	 */
 	public void setCSMessageVersion(String csMessageVersion){
-		this.csMessageVersion = csMessageVersion;
+		DefaultCSMessageParser.csMessageVersion = csMessageVersion;
 	}
 	
 	/**
