@@ -160,7 +160,7 @@ class XMLEncrypterSpec extends Specification {
 		when:
 		Document encDoc = xmlEncrypter.encryptElement(DEFAULT_CONTEXT,genSAMLAttribute("SomeAttribute","Hej Svejs" ), threeReceipients, XMLEncrypter.KeyInfoType.KEYVALUE)
 		String encXML = docToString(encDoc)
-		println encXML
+		//println encXML
 
 		def xml = new XmlSlurper().parse(new StringReader(encXML))
 		then:
