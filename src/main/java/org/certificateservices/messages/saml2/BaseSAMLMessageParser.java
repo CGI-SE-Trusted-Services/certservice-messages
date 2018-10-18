@@ -574,7 +574,7 @@ public abstract class BaseSAMLMessageParser {
 		if(message == null){
 			throw new MessageProcessingException("Error marshalling assertion, message cannot be null.");
 		}
-		Document doc = documentBuilder.newDocument();
+		Document doc = getDocumentBuilder().newDocument();
 		try {
 			getMarshaller().marshal(message, doc);
 		} catch (JAXBException e) {
@@ -604,10 +604,13 @@ public abstract class BaseSAMLMessageParser {
 	 * @return the Document object.
 	 * @throws MessageContentException if message was malformed.
 	 */
-	public Document unmarshallDoc(byte[] message) throws MessageContentException{
+	public Document unmarshallDoc(byte[] message) throws MessageContentException, MessageProcessingException{
 		try{
-			return documentBuilder.parse(new ByteArrayInputStream(message));
+			return getDocumentBuilder().parse(new ByteArrayInputStream(message));
 		}catch(Exception e){
+			if(e instanceof MessageProcessingException){
+				throw (MessageProcessingException) e;
+			}
 			throw new MessageContentException("Error converting message into Document: " + e.getMessage(),e);
 		}
 	}
@@ -626,7 +629,7 @@ public abstract class BaseSAMLMessageParser {
 		if(message == null){
 			throw new MessageProcessingException("Error marshalling assertion, message cannot be null.");
 		}
-		Document doc = documentBuilder.newDocument();		
+		Document doc = getDocumentBuilder().newDocument();
 		try {
 			getMarshaller().marshal(message, doc);
 		} catch (JAXBException e) {
@@ -647,17 +650,13 @@ public abstract class BaseSAMLMessageParser {
 
 
 	
-	private DocumentBuilder documentBuilder = null;
+
 	protected DocumentBuilder getDocumentBuilder() throws MessageProcessingException {
 		try {
-			if (documentBuilder == null) {
-				DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-				dbf.setNamespaceAware(true);
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			dbf.setNamespaceAware(true);
 
-				documentBuilder = dbf.newDocumentBuilder();
-			}
-
-			return documentBuilder;
+			return dbf.newDocumentBuilder();
 		}catch(ParserConfigurationException e){
 			throw new MessageProcessingException("Internal error creating Documentbuilder, ParserConfigurationException: " + e.getMessage());
 		}
