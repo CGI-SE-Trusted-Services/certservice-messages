@@ -335,17 +335,12 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
 			throws MessageContentException, MessageProcessingException {
 		throw new IllegalStateException("Error EncryptedCSMessagePayloadParser doesn't support metod getPayload");
 	}
-	
-	private DocumentBuilder documentBuilder = null;
+
 	private DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
-		if(documentBuilder == null){
-			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-			dbf.setNamespaceAware(true);
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		dbf.setNamespaceAware(true);
 
-			documentBuilder = dbf.newDocumentBuilder();
-		}
-
-		return documentBuilder;
+		return dbf.newDocumentBuilder();
 	}
 	
 	private Marshaller marshaller = null;
