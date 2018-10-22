@@ -254,27 +254,23 @@ public class CSExportDataParser {
 		if(csExport == null){
 			throw new MessageProcessingException("Error marshalling cs export data, message cannot be null.");
 		}
-		Document doc = documentBuilder.newDocument();
+
 		try {
+			Document doc = getDocumentBuilder().newDocument();
 			getMarshaller().marshal(csExport, doc);
+			return xmlSigner.marshallAndSign(ContextMessageSecurityProvider.DEFAULT_CONTEXT,doc, csExportDataSignatureLocationFinder);
 		} catch (JAXBException e) {
 			throw new MessageProcessingException("Error marshalling message " + e.getMessage(), e);
+		} catch (ParserConfigurationException e) {
+			throw new MessageProcessingException("Error generating document builder " + e.getMessage(), e);
 		}
-
-		return xmlSigner.marshallAndSign(ContextMessageSecurityProvider.DEFAULT_CONTEXT,doc, csExportDataSignatureLocationFinder);
 	}
-	
 
-	private DocumentBuilder documentBuilder = null;
 	private DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
-		if(documentBuilder == null){
-			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-			dbf.setNamespaceAware(true);
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		dbf.setNamespaceAware(true);
 
-			documentBuilder = dbf.newDocumentBuilder();
-		}
-
-		return documentBuilder;
+		return dbf.newDocumentBuilder();
 	}
 	
 	private Marshaller marshaller = null;
