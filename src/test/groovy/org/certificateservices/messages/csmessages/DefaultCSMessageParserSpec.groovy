@@ -432,13 +432,6 @@ public class DefaultCSMessageParserSpec extends Specification{
 		
 	}
 	
-	def "Verify that DocumentBuilder is create and cached"(){
-		when:
-		DocumentBuilder db = mp.getDocumentBuilder()
-		then:
-		mp.documentBuilder == db
-	}
-	
 	def "Verify that getVersionFromMessage parses version and payload version from message"(){
 		when:
 		CSMessageVersion v = mp.getVersionFromMessage(simpleCSMessagePayloadVersion2_1)

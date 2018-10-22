@@ -998,16 +998,12 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		}
 	}
 	
-	private DocumentBuilder documentBuilder = null;
+
 	private DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
-		if(documentBuilder == null){
-			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-			dbf.setNamespaceAware(true);
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		dbf.setNamespaceAware(true);
 
-			documentBuilder = dbf.newDocumentBuilder();
-		}
-
-		return documentBuilder;
+		return dbf.newDocumentBuilder();
 	}
 	
 	
