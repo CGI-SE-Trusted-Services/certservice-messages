@@ -792,29 +792,23 @@ public class AssertionPayloadParser extends BasePayloadParser {
 		if(message == null){
 			throw new MessageProcessingException("Error marshalling assertion, message cannot be null.");
 		}
-		Document doc = documentBuilder.newDocument();		
+
 		try {
+			Document doc = getDocumentBuilder().newDocument();
 			getAssertionMarshaller().marshal(message, doc);
+			return xmlSigner.marshallAndSign(ContextMessageSecurityProvider.DEFAULT_CONTEXT,doc,  assertionSignatureLocationFinder);
 		} catch (JAXBException e) {
 			throw new MessageProcessingException("Error marshalling message " + e.getMessage(), e);
+		} catch (ParserConfigurationException e) {
+			throw new MessageProcessingException("Error generating document builder " + e.getMessage(), e);
 		}
-
-		return xmlSigner.marshallAndSign(ContextMessageSecurityProvider.DEFAULT_CONTEXT,doc,  assertionSignatureLocationFinder);
 	}
 
-	
-
-	
-	private DocumentBuilder documentBuilder = null;
 	private DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
-		if(documentBuilder == null){
-			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-			dbf.setNamespaceAware(true);
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		dbf.setNamespaceAware(true);
 
-			documentBuilder = dbf.newDocumentBuilder();
-		}
-
-		return documentBuilder;
+		return dbf.newDocumentBuilder();
 	}
 	
 	private Marshaller assertionMarshaller = null;
