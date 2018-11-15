@@ -18,7 +18,21 @@ class SigningAlgorithmSchemeSpec extends Specification{
 		RSAWithSHA512               | "http://www.w3.org/2001/04/xmlenc#sha512"               | "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"
 		ECDSAWithSHA256             | "http://www.w3.org/2001/04/xmlenc#sha256"               | "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"
 		ECDSAWithSHA512             | "http://www.w3.org/2001/04/xmlenc#sha512"               | "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512"
-		
+	}
+
+	@Unroll
+	def "Verify getByName #name"() {
+		expect:
+		SigningAlgorithmScheme.getByName(name) == expectedScheme
+
+		where:
+		name				| expectedScheme
+		"RSAWithSHA256"		| SigningAlgorithmScheme.RSAWithSHA256
+		"RSAWithSHA512"		| SigningAlgorithmScheme.RSAWithSHA512
+		"ECDSAWithSHA256"	| SigningAlgorithmScheme.ECDSAWithSHA256
+		"ECDSAWithSHA512"	| SigningAlgorithmScheme.ECDSAWithSHA512
+		"UnknownWithABC256"	| null
+		null				| null
 	}
 
 }

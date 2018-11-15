@@ -32,7 +32,7 @@ public enum EncryptionAlgorithmScheme {
 	String dataEncryptionAlgorithmURI;
 	String keyEncryptionAlgorithmURI;
 	
-	private EncryptionAlgorithmScheme(String dataEncryptionAlgorithmURI,
+	EncryptionAlgorithmScheme(String dataEncryptionAlgorithmURI,
 	                             String keyEncryptionAlgorithmURI){
 		this.dataEncryptionAlgorithmURI = dataEncryptionAlgorithmURI;
 		this.keyEncryptionAlgorithmURI = keyEncryptionAlgorithmURI;
@@ -44,5 +44,16 @@ public enum EncryptionAlgorithmScheme {
 
 	public String getKeyEncryptionAlgorithmURI(){
 		return keyEncryptionAlgorithmURI;
+	}
+
+	public static EncryptionAlgorithmScheme getByName(String name){
+		if(name != null) {
+			for (EncryptionAlgorithmScheme e : values()) {
+				if (e.name().equalsIgnoreCase(name.trim())) {
+					return e;
+				}
+			}
+		}
+		return null;
 	}
 }

@@ -65,6 +65,18 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>cglib</groupId>
+      <artifactId>cglib-nodep</artifactId>
+      <version>3.2.9</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.objenesis</groupId>
+      <artifactId>objenesis</artifactId>
+      <version>3.0.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-server</artifactId>
       <version>9.3.9.v20160517</version>
