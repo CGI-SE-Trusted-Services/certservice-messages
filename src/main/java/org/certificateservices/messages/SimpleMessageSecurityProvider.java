@@ -186,10 +186,16 @@ public class SimpleMessageSecurityProvider implements
 		if(decryptionKeys.get(defaultDecryptionKeyId) == null){
 			throw new MessageProcessingException("Error no default decryption key with id (alias) :" + defaultDecryptionAlias + " found in decryption keystore: " + decKeystorePath);
 		}
-		
-		signingAlgorithmScheme = (SigningAlgorithmScheme) findAlgorithm(SigningAlgorithmScheme.values(), config, SETTING_SIGNATURE_ALGORITHM_SCHEME, DEFAULT_SIGNATURE_ALGORITHM_SCHEME);
-		encryptionAlgorithmScheme = (EncryptionAlgorithmScheme) findAlgorithm(EncryptionAlgorithmScheme.values(), config, SETTING_ENCRYPTION_ALGORITHM_SCHEME, DEFAULT_ENCRYPTION_ALGORITHM_SCHEME);
 
+		signingAlgorithmScheme = SigningAlgorithmScheme.getByName(config.getProperty(SETTING_SIGNATURE_ALGORITHM_SCHEME));
+		if(signingAlgorithmScheme == null){
+			signingAlgorithmScheme = DEFAULT_SIGNATURE_ALGORITHM_SCHEME;
+		}
+
+		encryptionAlgorithmScheme = EncryptionAlgorithmScheme.getByName(config.getProperty(SETTING_ENCRYPTION_ALGORITHM_SCHEME));
+		if(encryptionAlgorithmScheme == null){
+			encryptionAlgorithmScheme = DEFAULT_ENCRYPTION_ALGORITHM_SCHEME;
+		}
 	}
 	
 
@@ -495,29 +501,4 @@ public class SimpleMessageSecurityProvider implements
 		}
 		
 	}
-
-	
-	protected Object findAlgorithm(Enum<?>[] algorithms, Properties config, String setting, Object defaultValue) throws MessageProcessingException{
-		String settingValue = config.getProperty(setting);
-		if(settingValue == null || settingValue.trim().equals("")){
-			return defaultValue;
-		}
-		
-		settingValue = settingValue.trim();
-		
-		for(Enum<?> next : algorithms){
-			if(next.name().equalsIgnoreCase(settingValue)){
-				return next;
-			}
-		}
-		
-		throw new MessageProcessingException("Error finding supported cryptographic algorithm, check setting: " + setting + ", unsupported value is: " + settingValue);
-	}
-
-
-
-
-
-
-
 }
