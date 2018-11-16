@@ -1,3 +1,15 @@
+/************************************************************************
+ *                                                                       *
+ *  Certificate Service - Messages                                       *
+ *                                                                       *
+ *  This software is free software; you can redistribute it and/or       *
+ *  modify it under the terms of the GNU Affero General Public License   *
+ *  License as published by the Free Software Foundation; either         *
+ *  version 3   of the License, or any later version.                    *
+ *                                                                       *
+ *  See terms of license at gnu.org.                                     *
+ *                                                                       *
+ *************************************************************************/
 package org.certificateservices.messages;
 
 import org.apache.xml.security.encryption.XMLCipher;
@@ -21,7 +33,22 @@ public class EncryptionAlgorithmSchemeSpec extends Specification{
 		RSA_OAEP_WITH_AES192        | "http://www.w3.org/2001/04/xmlenc#aes192-cbc"           | "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"
 		RSA_PKCS1_5_WITH_AES256     | "http://www.w3.org/2001/04/xmlenc#aes256-cbc"           | "http://www.w3.org/2001/04/xmlenc#rsa-1_5"
 		RSA_OAEP_WITH_AES256        | "http://www.w3.org/2001/04/xmlenc#aes256-cbc"           | "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"
-			
 	}
 
+	@Unroll
+	def "Verify getByName #name"() {
+		expect:
+		EncryptionAlgorithmScheme.getByName(name) == expectedScheme
+
+		where:
+		name						| expectedScheme
+		"RSA_PKCS1_5_WITH_AES128"	| EncryptionAlgorithmScheme.RSA_PKCS1_5_WITH_AES128
+		"RSA_OAEP_WITH_AES128"		| EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES128
+		"RSA_PKCS1_5_WITH_AES192"	| EncryptionAlgorithmScheme.RSA_PKCS1_5_WITH_AES192
+		"RSA_OAEP_WITH_AES192"		| EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES192
+		"RSA_PKCS1_5_WITH_AES256"	| EncryptionAlgorithmScheme.RSA_PKCS1_5_WITH_AES256
+		"RSA_OAEP_WITH_AES256"		| EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256
+		"RSA_Unknown_WITH_ABC256"	| null
+		null						| null
+	}
 }
