@@ -17,6 +17,10 @@ import java.io.InputStream;
 import java.security.*;
 import java.security.cert.CertificateException;
 
+/**
+ * Interface to support a PKCS#11 provider manager in charge of creating, adding and loading
+ * a java PKCS#11 keystore.
+ */
 public interface PKCS11ProviderManager {
     /**
      * Create and add a PKCS#11 provider to the system
