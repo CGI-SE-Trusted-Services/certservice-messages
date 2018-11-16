@@ -40,7 +40,7 @@ class PKCS11MessageSecurityProviderSpec extends Specification {
         testCertWithKeyUsage = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(TestData.base64CertWithKeyUsage)))
 
         config = new Properties();
-        config.setProperty(SETTING_PKCS11_LIBRARY, "/usr/lib/libeToken.so")
+        config.setProperty(SETTING_PKCS11_LIBRARY, "src/test/resources/dummyp11.jks")
         config.setProperty(SETTING_PKCS11_SLOT, "0")
         config.setProperty(SETTING_PKCS11_SLOT_PASSWORD, "foo123")
         config.setProperty(SETTING_TRUSTSTORE_PATH, this.getClass().getResource("/testtruststore.jks").getPath())
@@ -57,7 +57,7 @@ class PKCS11MessageSecurityProviderSpec extends Specification {
 
             // Verify provider is initialized with correct configuration.
             assert providerConfig.getProperty("name") == "CSMsgSecProv"
-            assert providerConfig.getProperty("library") == "/usr/lib/libeToken.so"
+            assert providerConfig.getProperty("library") == "src/test/resources/dummyp11.jks"
             assert providerConfig.getProperty("slot") == "0"
         }
         mockedProviderManager.loadPKCS11Keystore(_) >> {List<Character> password ->
