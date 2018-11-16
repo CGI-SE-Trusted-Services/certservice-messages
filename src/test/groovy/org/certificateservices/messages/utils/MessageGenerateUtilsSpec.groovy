@@ -1,15 +1,21 @@
+/************************************************************************
+ *                                                                       *
+ *  Certificate Service - Messages                                       *
+ *                                                                       *
+ *  This software is free software; you can redistribute it and/or       *
+ *  modify it under the terms of the GNU Affero General Public License   *
+ *  License as published by the Free Software Foundation; either         *
+ *  version 3   of the License, or any later version.                    *
+ *                                                                       *
+ *  See terms of license at gnu.org.                                     *
+ *                                                                       *
+ *************************************************************************/
 package org.certificateservices.messages.utils
 
-import java.io.File;
+import org.junit.Test
+import spock.lang.Specification
 
-import javax.xml.datatype.XMLGregorianCalendar;
-
-
-import org.junit.Test;
-
-import spock.lang.Shared;
-import spock.lang.Specification;
-import spock.lang.Unroll;
+import javax.xml.datatype.XMLGregorianCalendar
 
 class MessageGenerateUtilsSpec extends Specification{
 		
