@@ -275,7 +275,7 @@ public class SimpleMessageSecurityProvider implements
 		try{
 			Enumeration<String> aliases = trustStore.aliases();
 			while(aliases.hasMoreElements()){
-				if(isTrusted(signCertificate, (X509Certificate) trustStore.getCertificate(aliases.nextElement()))){
+				if(PKCS11MessageSecurityProvider.isEqual(signCertificate, (X509Certificate) trustStore.getCertificate(aliases.nextElement()))){
 					foundMatching = true;
 					break;
 				}
@@ -288,15 +288,6 @@ public class SimpleMessageSecurityProvider implements
 
 		return foundMatching;
 	}
-	
-	/**
-	 * Checks that the two certificate is exactly the same.
-	 * 
-	 */
-	protected boolean isTrusted(X509Certificate signCertificate, X509Certificate trustedCertificate) throws CertificateEncodingException{
-		return Arrays.equals(signCertificate.getEncoded(), trustedCertificate.getEncoded());
-	}
-	
 
 	/**
 	 * @see org.certificateservices.messages.MessageSecurityProvider#getDecryptionKey(String)

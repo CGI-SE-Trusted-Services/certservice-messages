@@ -451,7 +451,7 @@ public class PKCS11MessageSecurityProvider implements ContextMessageSecurityProv
      * @return true if both certificates are equal, otherwise false.
      * @throws CertificateEncodingException If an encoding error occurs while processing certificates.
      */
-    protected boolean isEqual(X509Certificate certificate, X509Certificate anotherCertificate) throws CertificateEncodingException{
+    static boolean isEqual(X509Certificate certificate, X509Certificate anotherCertificate) throws CertificateEncodingException{
         return certificate != null && anotherCertificate != null && Arrays.equals(certificate.getEncoded(), anotherCertificate.getEncoded());
     }
 
