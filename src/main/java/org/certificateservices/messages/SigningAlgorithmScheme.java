@@ -41,5 +41,15 @@ public enum SigningAlgorithmScheme {
 	public String getSignatureAlgorithmURI(){
 		return signatureAlgorithmURI;
 	}
-	
+
+	public static SigningAlgorithmScheme getByName(String name){
+		if(name != null) {
+			for (SigningAlgorithmScheme s : values()) {
+				if (s.name().equalsIgnoreCase(name.trim())) {
+					return s;
+				}
+			}
+		}
+		return null;
+	}
 }
