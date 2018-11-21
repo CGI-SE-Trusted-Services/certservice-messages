@@ -75,7 +75,7 @@ public class CSMessageParserManagerSpec extends Specification{
 	
 	def "Verify that uninitialized CSMessageParser throws MessageProcessingException when calling getCSMessageParser"(){
 		setup:
-		CSMessageParserManager.parsers.clear()
+		CSMessageParserManager.parser = null
 		when:
 		CSMessageParserManager.getCSMessageParser()
 		then:
@@ -108,7 +108,7 @@ public class CSMessageParserManagerSpec extends Specification{
 		p1 == p2
 	}
 
-	def "Verify that another instance is returned when another thread is calling"(){
+	def "Verify that same instance is returned when another thread is calling"(){
 		setup:
 		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID")
 		CSMessageParserManager.initCSMessageParser(secprov, config)
@@ -129,7 +129,7 @@ public class CSMessageParserManagerSpec extends Specification{
 
 		then:
 		p2 != null
-		p1 != p2
+		p1 == p2
 	}
 
 	def "Verify that several threads can parse CS Messages without SAX Parse Exception is thrown."(){
