@@ -84,16 +84,16 @@ public class CSMessageParserManagerSpec extends Specification{
 	
 	def "Verify that isInitialized() returns false for uninitialized and true for initialized CSMessageParserManger"(){
 		setup:
-		CSMessageParserManager.parsers.clear()
+		CSMessageParserManager.parser = null
 		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID")
 		
 		expect:
-		CSMessageParserManager.isInitialized() == false
+		!CSMessageParserManager.isInitialized()
 		
 		when:
 		CSMessageParserManager.initCSMessageParser(secprov, config)
 		then:
-		CSMessageParserManager.isInitialized() == true
+		CSMessageParserManager.isInitialized()
 	}
 
 	def "Verify that same instance is returned when same thread is calling"(){
