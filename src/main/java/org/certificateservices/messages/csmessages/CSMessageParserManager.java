@@ -35,8 +35,8 @@ public class CSMessageParserManager {
 	public static final String SETTING_CSMESSAGEPARSER_IMPL = "csmessage.parser.impl";
 	
 	private static final String DEFAULT_IMPLEMENTATION = DefaultCSMessageParser.class.getName();
-	
-	private static Map<Thread,CSMessageParser> parsers = new HashMap<Thread,CSMessageParser>();
+
+	private static CSMessageParser parser;
 	private static MessageSecurityProvider securityProvider;
 	private static Properties config;
 
@@ -50,12 +50,10 @@ public class CSMessageParserManager {
 	 * @throws MessageProcessingException if problems occurred creating a message parser.
 	 */
 	public static CSMessageParser initCSMessageParser(MessageSecurityProvider securityProvider, Properties config) throws MessageProcessingException{
-		parsers.clear();
 		CSMessageParserManager.securityProvider = securityProvider;
 		CSMessageParserManager.config = config;
 
-		CSMessageParser parser = newCSMessageParser();
-		parsers.put(Thread.currentThread(),parser);
+		parser = newCSMessageParser();
 
 		return parser;
 	}
@@ -65,9 +63,9 @@ public class CSMessageParserManager {
 	 * @return true if CSMessageParser have been initialized.
 	 */
 	public static boolean isInitialized(){
-		return parsers.size() > 0;
+		return parser != null;
 	}
-	
+
 	/**
 	 * Method to fetch an initialized CSMessageParser.
 	 * 
@@ -79,10 +77,8 @@ public class CSMessageParserManager {
 			throw new MessageProcessingException("Error CS Message parser haven't been initialized, make sure initCSMessageParser() is called before getCSMessageParser");
 		}
 
-		CSMessageParser parser = parsers.get(Thread.currentThread());
 		if(parser == null){
 			parser = newCSMessageParser();
-			parsers.put(Thread.currentThread(),parser);
 		}
 		return parser;
 	}
