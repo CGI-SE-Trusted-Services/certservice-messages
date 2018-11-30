@@ -64,7 +64,7 @@ public class KerberosUtils {
             c.setCredentialType(credentialType);
             c.setCredentialSubType(credentialSubType);
             c.setIssuerId(issuerId);
-            c.setUniqueId("kb:" + randomId);
+            c.setUniqueId("kb:" + userUniqueId);
             c.setSerialNumber(randomId);
             c.setDisplayName(gssCredential.getName().toString());
             c.setIssueDate(now);
@@ -115,9 +115,9 @@ public class KerberosUtils {
         c.setCredentialType(credentialType);
         c.setCredentialSubType(credentialSubType);
         c.setIssuerId(issuerId);
-        c.setUniqueId("kb:" + randomId);
+        c.setUniqueId("kb:" + userUniqueId);
         c.setSerialNumber(randomId);
-        c.setDisplayName(userUniqueId);
+        c.setDisplayName(userDisplayname);
         c.setIssueDate(now);
         c.setExpireDate(MessageGenerateUtils.dateToXMLGregorianCalendar(new Date(systemTime.getSystemTimeMS() + lifeTime)));
         c.setValidFromDate(now);
