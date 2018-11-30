@@ -29,6 +29,7 @@ public abstract class BasePayloadParser implements PayloadParser {
 
 	protected Properties config;
 	protected MessageSecurityProvider secProv;
+	protected CSMessageParser customCSMessageParser;
 	
 	protected ObjectFactory csMessageObjectFactory = new ObjectFactory();
 
@@ -45,7 +46,23 @@ public abstract class BasePayloadParser implements PayloadParser {
 		this.secProv = secProv;
 	}
 
+	/**
+	 * Alternativ initializer setting the parser and config properties and custom CSMessageParser.
+	 * Usen mainly during testing.
+	 *
+	 * @see org.certificateservices.messages.csmessages.PayloadParser#init(java.util.Properties, MessageSecurityProvider)
+	 */
+	public void init(Properties config, MessageSecurityProvider secProv, CSMessageParser customCSMessageParser)
+			throws MessageProcessingException {
+		this.config = config;
+		this.secProv = secProv;
+		this.customCSMessageParser = customCSMessageParser;
+	}
+
 	protected CSMessageParser getCSMessageParser() throws MessageProcessingException {
+		if(customCSMessageParser != null){
+			return customCSMessageParser;
+		}
 		return CSMessageParserManager.getCSMessageParser();
 	}
 
