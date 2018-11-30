@@ -76,9 +76,8 @@ class KerberosUtilsSpec extends Specification{
 		def xml = slurpXml(req)
 		def c = xml.originator.credential
 		then:
-		c.uniqueId.toString().startsWith("kb:")
+		c.uniqueId == "kb:SomeUserUniqueId"
 		c.displayName == "SomeGSSName"
-		"kb:" + c.serialNumber.toString() == c.uniqueId.toString()
 		c.issuerId == "SomeIssuerId"
 		c.status == 100
 		c.credentialType == "KERBEROSTYPE"
@@ -111,9 +110,8 @@ class KerberosUtilsSpec extends Specification{
 		def xml = slurpXml(req)
 		def c = xml.originator.credential
 		then:
-		c.uniqueId.toString().startsWith("kb:")
-		c.displayName == "SomeUserUniqueId"
-		"kb:" + c.serialNumber.toString() == c.uniqueId.toString()
+		c.uniqueId == "kb:SomeUserUniqueId"
+		c.displayName== "SomeUserDisplayName"
 		c.issuerId == "SomeIssuerId"
 		c.status == 100
 		c.credentialType == "kerberostype"
