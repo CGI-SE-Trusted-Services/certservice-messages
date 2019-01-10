@@ -42,7 +42,7 @@ The default CS Message Parser have the following setting (pkimessage variants of
 
 | Key                                    | Description                                                        | Default value |
 |----------------------------------------|--------------------------------------------------------------------|---------------|
-| csmessage.sourceid                     | Source Id system sending messages, (Required)                      | No Default    |
+| csmessage.sourceid                     | Source Id system sending messages, *(Required)*                      | No Default    |
 | csmessage.sign                         | If generated messages should be signed.                            | true          |
 | csmessage.requiresignature             | If parsed message has to have a valid signature.                   | true          |
 | csmessage.messagenamecatalogue.impl    | If custom message name catalogue should be used.                   | See below     |
@@ -56,16 +56,32 @@ the following settings.
 
 | Key                                              | Description                                                                    | Default value |
 |--------------------------------------------------|--------------------------------------------------------------------------------|---------------|
-| simplesecurityprovider.signingkeystore.path      | Setting indicating the path to the signing JKS key store (Required)            | No Default    |
-| simplesecurityprovider.signingkeystore.password  | Setting indicating the password to the signing key store (Required)            | No Default    |
-| simplesecurityprovider.signingkeystore.alias     | The alias of the certificate to use in the signing key store (Required)        | No Default    |
+| simplesecurityprovider.signingkeystore.path      | Setting indicating the path to the signing JKS key store *(Required)*            | No Default    |
+| simplesecurityprovider.signingkeystore.password  | Setting indicating the password to the signing key store *(Required)*            | No Default    |
+| simplesecurityprovider.signingkeystore.alias     | The alias of the certificate to use in the signing key store *(Required)*        | No Default    |
 | simplesecurityprovider.decryptkeystore.path      | The path to the decrypt JKS key store (optional, if not set is signing keystore used for both signing and encryption) | No Default    |
 | simplesecurityprovider.decryptkeystore.password  | The password to the decrypt JKS key store (optional, if not set is signing keystore used for both signing and encryption) | No Default    |
 | simplesecurityprovider.decryptkeystore.defaultkey.alias | the alias of the decryption key to use if no specific key is known. (optional, if not set is same as signing keystore alias used.) | No Default    |
-| simplesecurityprovider.trustkeystore.path      | The path to the trust JKS key store (Required)            | No Default    |
-| simplesecurityprovider.trustkeystore.password  | The password to the trust JKS key store (Required)            | No Default    |
-| simplesecurityprovider.signature.algorithm     | Signature algorithm scheme to use, possible values are: RSAWithSHA256            | RSAWithSHA256    |
-| simplesecurityprovider.encryption.algorithm    | Encryption algorithm scheme to use, possible values are: RSA_OAEP_WITH_AES256, RSA_PKCS1_5_WITH_AES256 | RSA_OAEP_WITH_AES256 |
+| simplesecurityprovider.trustkeystore.path      | The path to the trust JKS key store *(Required)*            | No Default    |
+| simplesecurityprovider.trustkeystore.password  | The password to the trust JKS key store *(Required)*            | No Default    |
+| simplesecurityprovider.signature.algorithm     | Signature algorithm scheme to use, possible values are: RSAWithSHA256, RSAWithSHA512, ECDSAWithSHA256, ECDSAWithSHA512 | RSAWithSHA256 |
+| simplesecurityprovider.encryption.algorithm    | Encryption algorithm scheme to use, possible values are: RSA_PKCS1_5_WITH_AES128, RSA_OAEP_WITH_AES128, RSA_PKCS1_5_WITH_AES192, RSA_OAEP_WITH_AES192, RSA_PKCS1_5_WITH_AES256, RSA_OAEP_WITH_AES256 | RSA_OAEP_WITH_AES256 |
+
+## PKCS11MessageSecurityProvider Settings.
+
+PKCS#11 message security provider supports the use of a hardware security module or smartcard to store cryptographic material and to perform cryptographic operations. The following settings can be used to configure the provider.
+
+| Key                                              | Description                                                                    | Default value |
+|--------------------------------------------------|--------------------------------------------------------------------------------|---------------|
+| pkcs11securityprovider.library.path              | Path to PKCS#11 library to use when communicating with the hardware token. *(Required)* | No default |
+| pkcs11securityprovider.slot                      | PKCS#11 Slot to use when connecting to the token. *(Required)* | No default |
+| pkcs11securityprovider.slot.password             | Password that is used when logging in to token. *(Required)* | No default |
+| pkcs11securityprovider.signingkey.alias          | Alias of key to use for signature operations. If not specified the first key found will be used. | No default |
+| pkcs11securityprovider.decryptkey.default.alias  | Alias of default key to use for decryption operations. If not specified the signing key will be used. | *Sign key alias* |
+| pkcs11securityprovider.truststore.path           | Path to separate truststore to use when validating certificates. If not specified the PKCS#11 token is used as truststore. | No default |
+| pkcs11securityprovider.truststore.password       | Password that is used when loading separate truststore. | No default |
+| pkcs11securityprovider.signature.algorithm       | Signature algorithm scheme to use, possible values are: RSAWithSHA256, RSAWithSHA512, ECDSAWithSHA256, ECDSAWithSHA512 | RSAWithSHA256 |
+| pkcs11securityprovider.encryption.algorithm      | Encryption algorithm scheme to use, possible values are: RSA_PKCS1_5_WITH_AES128, RSA_OAEP_WITH_AES128, RSA_PKCS1_5_WITH_AES192, RSA_OAEP_WITH_AES192, RSA_PKCS1_5_WITH_AES256, RSA_OAEP_WITH_AES256 | RSA_OAEP_WITH_AES256 |
 
 ## Generating CS 2.0 Messages using payload parser.
 
@@ -109,7 +125,7 @@ For the DefaultPKIMessageParser also exists the following settings:
 
 | Key                                    | Description                                                        | Default value |
 |----------------------------------------|--------------------------------------------------------------------|---------------|
-| pkimessage.sourceid                    | Source Id system sending messages, (Required)                      | No Default    |
+| pkimessage.sourceid                    | Source Id system sending messages, *(Required)*                      | No Default    |
 | pkimessage.sign                        | If generated messages should be signed.                            | true          |
 | pkimessage.requiresignature            | If parsed message has to have a valid signature.                   | true          |
 | pkimessage.messagenamecatalogue.impl   | If custom message name catalogue should be used.                   | See below     |
