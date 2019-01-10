@@ -15,6 +15,7 @@ import org.certificateservices.messages.credmanagement.jaxb.HardTokenData
 import org.certificateservices.messages.credmanagement.jaxb.Key
 import org.certificateservices.messages.credmanagement.jaxb.ObjectFactory
 import org.certificateservices.messages.credmanagement.jaxb.RecoverableKey
+import org.certificateservices.messages.csmessages.CSMessageParser
 import org.certificateservices.messages.csmessages.CSMessageParserManager
 import org.certificateservices.messages.csmessages.CSMessageResponseData
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser
@@ -60,7 +61,16 @@ class CredManagementPayloadParserSpec extends Specification {
 		pp.getDefaultPayloadVersion() == "2.2"
 		pp.getSupportedVersions() == ["2.0","2.1","2.2"] as String[]
 	}
-	
+
+	def "Verify that init using customCSMessageParser returns custom message parser with getCSMessageParser"(){
+		setup:
+		CredManagementPayloadParser customPP = new CredManagementPayloadParser()
+		CSMessageParser customParser = Mock(CSMessageParser)
+		when:
+		customPP.init(null,null,customParser)
+		then:
+		customPP.getCSMessageParser() == customParser
+	}
 	
 	def "Verify that genIssueTokenCredentialsRequest() generates a valid xml message and genIssueTokenCredentialsResponse() generates a valid CSMessageResponseData"(){
 		

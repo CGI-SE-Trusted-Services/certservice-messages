@@ -2,7 +2,7 @@
 <xs:schema xmlns:tns="http://certificateservices.org/xsd/csexport_data_1_0"
 		   xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
 		   elementFormDefault="qualified" targetNamespace="http://certificateservices.org/xsd/csexport_data_1_0"
-		   version="1.2">
+		   version="1.4">
 
 	<xs:import namespace="http://www.w3.org/2000/09/xmldsig#"
 			   schemaLocation="xmldsig-core-schema.xsd" />
@@ -20,6 +20,12 @@
 			<xs:minLength value="1"/>
 			<xs:maxLength value="15"/>
 			<xs:pattern value="[a-zA-Z0-9_\-]+"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="FieldConstraintKey">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[a-z0-9_\-\. ]+"/>
 		</xs:restriction>
 	</xs:simpleType>
 
@@ -96,6 +102,16 @@
 			<xs:element name="domainNameValue" minOccurs="1" maxOccurs="1" type="xs:string" />
 			<xs:element name="allowSubDomains" minOccurs="1" maxOccurs="1" type="xs:boolean"/>
 			<xs:element name="allowWildCard" minOccurs="1" maxOccurs="1" type="xs:boolean"/>
+			<xs:element name="comment" minOccurs="0" maxOccurs="1" type="xs:string" />
+			<xs:element name="customRegexp" minOccurs="0" maxOccurs="1" type="xs:string" />
+			<xs:element name="editable" minOccurs="0" maxOccurs="1" type="xs:boolean" default="true"/>
+			<xs:element name="attributes" minOccurs="0" maxOccurs="1">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="attribute" minOccurs="0" maxOccurs="unbounded" type="tns:DepartmentDomainNameAttribute"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
 
@@ -134,13 +150,8 @@
 
 	<xs:complexType name="FieldConstraint">
 		<xs:sequence>
-			<xs:element name="key" minOccurs="1" maxOccurs="1">
-				<xs:simpleType>
-					<xs:restriction base="xs:string">
-						<xs:pattern value="[a-z0-9_\-\.]+"/>
-					</xs:restriction>
-				</xs:simpleType>
-			</xs:element>
+			<xs:element name="key" minOccurs="1" maxOccurs="1" type="tns:FieldConstraintKey"/>
+
 			<xs:element name="displayName" minOccurs="0" maxOccurs="1" type="xs:string"/>
 			<xs:element name="description" minOccurs="0" maxOccurs="1" type="xs:string"/>
 			<xs:element name="type" minOccurs="1" maxOccurs="1" type="xs:string"/>
@@ -270,24 +281,8 @@
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
-			<xs:element name="fieldUsedAsUserUniqueId" minOccurs="0" maxOccurs="1">
-				<xs:simpleType>
-					<xs:restriction base="xs:string">
-						<xs:minLength value="1"/>
-						<xs:maxLength value="255"/>
-						<xs:pattern value="[a-z0-9_\-\.]+"/>
-					</xs:restriction>
-				</xs:simpleType>
-			</xs:element>
-			<xs:element name="fieldUsedAsUserDisplayName" minOccurs="0" maxOccurs="1">
-				<xs:simpleType>
-					<xs:restriction base="xs:string">
-						<xs:minLength value="1"/>
-						<xs:maxLength value="32"/>
-						<xs:pattern value="[a-z0-9_\-\.]+"/>
-					</xs:restriction>
-				</xs:simpleType>
-			</xs:element>
+			<xs:element name="fieldUsedAsUserUniqueId" minOccurs="0" maxOccurs="1" type="tns:FieldConstraintKey"/>
+			<xs:element name="fieldUsedAsUserDisplayName" minOccurs="0" maxOccurs="1" type="tns:FieldConstraintKey"/>
 			<xs:element name="organisations" minOccurs="0" maxOccurs="1">
 				<xs:complexType>
 					<xs:sequence>
@@ -379,6 +374,7 @@
 		</xs:sequence>
 	</xs:complexType>
 
+
 	<xs:complexType name="DepartmentAttribute">
 		<xs:sequence>
 			<xs:element name="key" minOccurs="1" maxOccurs="1">
@@ -399,6 +395,13 @@
 				</xs:simpleType>
 			</xs:element>
 		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="DepartmentDomainNameAttribute">
+		<xs:complexContent>
+			<xs:extension base="tns:DepartmentAttribute">
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 	<xs:complexType name="Department">
@@ -426,20 +429,19 @@
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
+			<xs:element name="domainNameRestrictions" minOccurs="0" maxOccurs="1">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="restriction" minOccurs="0" maxOccurs="unbounded" type="tns:DomainNameRestriction"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
 
 	<xs:complexType name="Organisation">
 		<xs:sequence>
-			<xs:element name="shortName" minOccurs="1" maxOccurs="1">
-				<xs:simpleType>
-					<xs:restriction base="xs:string">
-						<xs:minLength value="1"/>
-						<xs:maxLength value="15"/>
-						<xs:pattern value="[a-z0-9_\-]+"/>
-					</xs:restriction>
-				</xs:simpleType>
-			</xs:element>
+			<xs:element name="shortName" minOccurs="1" maxOccurs="1" type="tns:OrganisationName"/>
 			<xs:element name="displayName" minOccurs="1" maxOccurs="1">
 				<xs:simpleType>
 					<xs:restriction base="xs:string">
