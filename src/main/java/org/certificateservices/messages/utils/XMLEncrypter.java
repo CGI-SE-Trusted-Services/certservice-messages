@@ -44,10 +44,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.*;
 
 
@@ -480,8 +482,6 @@ public class XMLEncrypter {
 				availableKeyIds = securityProvider.getDecryptionKeyIds();
 			}
 
-
-
 			NodeList keyNameList = encryptedElement.getElementsByTagNameNS(XMLDSIG_NAMESPACE, "KeyName");
 			for(int i=0; i<keyNameList.getLength();i++){
 				Node keyName = keyNameList.item(i);
@@ -507,6 +507,36 @@ public class XMLEncrypter {
 				}
 			}
 
+			NodeList rsaKeyValueList = encryptedElement.getElementsByTagNameNS(XMLDSIG_NAMESPACE, "RSAKeyValue");
+			for(int i=0;i<rsaKeyValueList.getLength();i++){
+				String modValue = null;
+				String expValue = null;
+				Node rsaKeyNode = rsaKeyValueList.item(i);
+
+				NodeList modValueList = ((Element)rsaKeyNode).getElementsByTagNameNS(XMLDSIG_NAMESPACE, "Modulus");
+				if(modValueList != null && modValueList.getLength() > 0) {
+					modValue = modValueList.item(0).getFirstChild().getNodeValue();
+				}
+
+				NodeList expValueList = ((Element)rsaKeyNode).getElementsByTagNameNS(XMLDSIG_NAMESPACE, "Exponent");
+				if(expValueList != null && expValueList.getLength() > 0) {
+					expValue = expValueList.item(0).getFirstChild().getNodeValue();
+				}
+
+				if(modValue != null && expValue != null){
+					BigInteger modulus = new BigInteger(1, Base64.decode(modValue));
+					BigInteger exponent = new BigInteger(1, Base64.decode(expValue));
+					RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
+					KeyFactory factory = KeyFactory.getInstance("RSA");
+					PublicKey publicKey = factory.generatePublic(spec);
+
+					String keyId = generateKeyId(publicKey);
+					if(availableKeyIds.contains(keyId)){
+						return getDecryptionKey(context,keyId);
+					}
+				}
+			}
+
 			KeyInfo keyInfo = new KeyInfo(encryptedElement,encryptedElement.getBaseURI());
 			PublicKey publicKey = keyInfo.getPublicKey();
 			if(publicKey != null){
@@ -516,9 +546,7 @@ public class XMLEncrypter {
 				}
 			}
 
-
-
-		}catch(Exception e){
+		} catch(Exception e){
 			throw new NoDecryptionKeyFoundException("Error finding encryption public key in XML message: " + e.getMessage(), e);
 		}
 
@@ -567,10 +595,12 @@ public class XMLEncrypter {
 				break;
 			case KEYVALUE:
 				keyInfo.add(receipient.getPublicKey());
+				break;
 			case X509CERTIFICATE:
 				X509Data x509Data = new X509Data(doc);
 				x509Data.addCertificate(receipient.getEncoded());
 				keyInfo.add(x509Data);
+				break;
 		}
 		retval.setKeyInfo(keyInfo);
 		return retval;
