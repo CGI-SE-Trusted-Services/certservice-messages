@@ -205,7 +205,23 @@ class XMLEncrypterSpec extends Specification {
 		where:
 		encScheme << EncryptionAlgorithmScheme.values()
 	}
-	
+
+	@Unroll
+	def "Verify that decryptDocument decrypts document encrypted with rsa key value as keyinfo using encryption scheme: #encScheme"() {
+		setup:
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(encScheme.getDataEncryptionAlgorithmURI())
+		def encDoc = docToStringToDoc(xmlEncrypter.encryptElement(DEFAULT_CONTEXT, genSAMLAttribute("SomeAttribute","Hej Svejs" ), twoReceiptiensValidFirst, XMLEncrypter.KeyInfoType.KEYVALUE))
+		when:
+		JAXBElement<AttributeType> decryptedAttribute = xmlEncrypter.decryptDocument(DEFAULT_CONTEXT,encDoc)
+		AttributeType attributeType = decryptedAttribute.getValue()
+		then:
+		attributeType.getName() == "SomeAttribute"
+		attributeType.getAttributeValue().get(0) == "Hej Svejs"
+		where:
+		encScheme << EncryptionAlgorithmScheme.values()
+
+	}
 	
 	@Unroll
 	def "Verify that decryptDocument decrypts document encrypted with keyname as keyinfo using encryption scheme: #encScheme"(){
