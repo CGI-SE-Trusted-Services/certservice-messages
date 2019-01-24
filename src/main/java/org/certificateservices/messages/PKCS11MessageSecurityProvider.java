@@ -45,7 +45,7 @@ public class PKCS11MessageSecurityProvider implements ContextMessageSecurityProv
     /**
      * Setting indicating the PKCS#11 pin/password for given slot (required)
      */
-    static final String SETTING_PKCS11_SLOT_PASSWORD = "pkcs11securityprovider.slot.password";
+    static final String SETTING_PKCS11_SLOT_PASSWORD = "pkcs11securityprovider.password";
 
     /**
      * Setting indicating the alias of signing key to use (optional, if not set the first key entry found will be used)
