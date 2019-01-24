@@ -149,9 +149,9 @@ public class SAMLAssertionMessageParser extends BaseSAMLMessageParser{
         try {
             Document doc = getDocumentBuilder().parse(new ByteArrayInputStream(assertion));
             Document encDoc = xmlEncrypter.encryptElement(context,doc,reciepients,useKeyId);
-            JAXBElement<EncryptedDataType> encryptedData = (JAXBElement<EncryptedDataType>) getUnmarshaller().unmarshal(encDoc);
+            JAXBElement<?> encryptedData = (JAXBElement<?>) getUnmarshaller().unmarshal(encDoc);
             EncryptedElementType encryptedElement = of.createEncryptedElementType();
-            encryptedElement.setEncryptedData(encryptedData.getValue());
+            encryptedElement.setEncryptedData((EncryptedDataType) encryptedData.getValue());
             return of.createEncryptedAssertion(encryptedElement);
 
         } catch(JAXBException e ){
