@@ -116,14 +116,23 @@ public class SimpleMessageSecurityProvider implements
 	private EncryptionAlgorithmScheme encryptionAlgorithmScheme;
 
 
+	/**
+	 * Configures and set's up the security provider with truststore from configuration.
+	 *
+	 * @param config provider configuration.
+	 * @throws MessageProcessingException if not all required settings were set correctly.
+	 */
+	public SimpleMessageSecurityProvider(Properties config) throws MessageProcessingException {
+		this(config, getKeyStore(config, SETTING_TRUSTKEYSTORE_PATH, SETTING_TRUSTKEYSTORE_PASSWORD));
+	}
 	
 	/**
-	 * Configures and set's up the security provider.
+	 * Configures and set's up the security provider with a given truststore.
 	 * 
 	 * @param config provider configuration.
-	 * @throws MessageException if not all required settings were set correctly.
+	 * @throws MessageProcessingException if not all required settings were set correctly.
 	 */
-	public SimpleMessageSecurityProvider(Properties config) throws MessageProcessingException{
+	public SimpleMessageSecurityProvider(Properties config, final KeyStore trustStore) throws MessageProcessingException{
 			
 		String signKeystorePath = SettingsUtils.getRequiredProperty(config, SETTING_SIGNINGKEYSTORE_PATH);
 		String signKeystoreAlias = SettingsUtils.getRequiredProperty(config, SETTING_SIGNINGKEYSTORE_ALIAS);
@@ -134,7 +143,7 @@ public class SimpleMessageSecurityProvider implements
 			signCertificate = (X509Certificate) signKeystore.getCertificate(signKeystoreAlias);
 			signPrivateKey = (PrivateKey) signKeystore.getKey(signKeystoreAlias, signKeystorePassword.toCharArray());
 
-		}catch(Exception e){
+		} catch(Exception e){
 			if(e instanceof MessageProcessingException){
 				throw (MessageProcessingException) e;
 			}
@@ -144,8 +153,8 @@ public class SimpleMessageSecurityProvider implements
 		if(signCertificate == null || signPrivateKey == null){
 			throw new MessageProcessingException("Error finding signing certificate and key for alias : " + signKeystoreAlias + ", in key store: " + signKeystorePath);
 		}
-				
-		trustStore = getKeyStore(config, SETTING_TRUSTKEYSTORE_PATH, SETTING_TRUSTKEYSTORE_PASSWORD);
+
+		this.trustStore = trustStore;
 
 		String decKeystorePath = SettingsUtils.getRequiredProperty(config, SETTING_DECRYPTKEYSTORE_PATH, SETTING_SIGNINGKEYSTORE_PATH);
 		KeyStore decKS = getDecryptionKeyStore(config);
@@ -465,10 +474,10 @@ public class SimpleMessageSecurityProvider implements
 	/**
 	 * Help method reading a JKS keystore from configuration and specified settings.
 	 */
-	protected KeyStore getKeyStore(Properties config, String pathSetting, String passwordSetting) throws MessageProcessingException {
+	protected static KeyStore getKeyStore(Properties config, String pathSetting, String passwordSetting) throws MessageProcessingException {
 		String keyStorePath = SettingsUtils.getRequiredProperty(config, pathSetting);
 		
-		InputStream keyStoreInputStream = this.getClass().getClassLoader().getResourceAsStream(keyStorePath);
+		InputStream keyStoreInputStream = SimpleMessageSecurityProvider.class.getClassLoader().getResourceAsStream(keyStorePath);
 		if(keyStoreInputStream == null){
 			File keyStoreFile = new File(keyStorePath);
 			if(!keyStoreFile.canRead() || !keyStoreFile.exists() || !keyStoreFile.isFile()){
