@@ -42,6 +42,9 @@ class CredManagementPayloadParserSpec extends Specification {
 	def setupSpec(){
 		Security.addProvider(new BouncyCastleProvider())
 		Init.init()
+
+		// Use english - make test locale independent.
+		Locale.setDefault(new Locale("en", "US"));
 	}
 
 
