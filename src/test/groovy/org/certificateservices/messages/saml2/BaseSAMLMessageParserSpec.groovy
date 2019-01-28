@@ -19,6 +19,7 @@ import org.certificateservices.messages.utils.MessageGenerateUtils
 import org.certificateservices.messages.utils.SystemTime
 import org.certificateservices.messages.xenc.jaxb.EncryptedDataType
 import org.w3c.dom.Document
+import spock.lang.IgnoreIf
 
 import javax.xml.bind.JAXBElement
 
@@ -327,6 +328,7 @@ class BaseSAMLMessageParserSpec extends CommonSAMLMessageParserSpecification {
 
 	}
 
+	@IgnoreIf({ System.properties['os.name'].toLowerCase().startsWith('windows') })
 	def "Verify marshallDoc and unmarshallDoc works correctly"(){
 		when:
 		Document doc = samp.unmarshallDoc(csMessageData)

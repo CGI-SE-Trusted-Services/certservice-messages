@@ -56,9 +56,8 @@ public class DefaultMessageNameCatalogue implements MessageNameCatalogue {
 	 * Method that looks up the name for a specific setting used to populate the 'name' attribute
 	 * in the header, the name is equivalent to the settings starting with "pkimessage.name.'messagename'"
 	 *   
-	 * @param request name
-	 * @param payLoadObject the setting to look-up the name for. 
-	 * @param defaultName the default name of the message.
+	 * @param requestName name
+	 * @param payLoadObject the setting to look-up the name for.
 	 * @return the name of the message to use.
 	 * @throws MessageException if name lookup failed etc.
 	 */
