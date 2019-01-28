@@ -9,6 +9,13 @@ task zipSrc(type: Zip) {
         include('*.gradle')
         include('README.adoc')
         include('LICENSE.txt')
+        exclude('/.gradle')
+        into(projectBaseName)
+    }
+    from('/') {
+        include('gradlew')
+        include('gradlew.bat')
+        fileMode = 0755
         into(projectBaseName)
     }
     from('build/docs/html5') {

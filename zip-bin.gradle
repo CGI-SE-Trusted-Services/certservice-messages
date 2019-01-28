@@ -4,7 +4,6 @@ task zipBin(type: Zip) {
     destinationDir = file('build/')
 
     from('/') {
-        include('/gradle/**')
         include('README.adoc')
         include('LICENSE.txt')
         into(projectBaseName)
