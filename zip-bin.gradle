@@ -1,19 +1,18 @@
 task zipBin(type: Zip) {
     String projectBaseName = rootProject.name + "-" + rootProject.version
     archiveName = projectBaseName + '-bin.zip'
-    destinationDir = file('build/')
 
-    from('/') {
+    from(projectDir) {
         include('README.adoc')
         include('LICENSE.txt')
         into(projectBaseName)
     }
-    from('src/main/resources') {
+    from('src/main/resources/') {
         include('requestcertificate.properties')
         include('*.jks')
         into(projectBaseName)
     }
-    from('src/main/resources') {
+    from('src/main/resources/') {
         include('requestcertificate.sh')
         fileMode = 0755
         into(projectBaseName)
@@ -33,6 +32,6 @@ task zipBin(type: Zip) {
         into(projectBaseName + '/lib/')
     }
     from('build/assemblepom') {
-        into(projectBaseName + '/repository')
+        into(projectBaseName + '/repository/')
     }
 }
