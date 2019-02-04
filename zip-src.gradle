@@ -1,18 +1,17 @@
 task zipSrc(type: Zip) {
     String projectBaseName = rootProject.name + "-" + rootProject.version
     archiveName = projectBaseName + '-src.zip'
-    destinationDir = file('build/')
 
-    from('/') {
-        include('/src/**')
-        include('/gradle/**')
+    from(projectDir) {
+        include('src/**')
+        include('gradle/**')
         include('*.gradle')
         include('README.adoc')
         include('LICENSE.txt')
-        exclude('/.gradle')
+        exclude('.gradle/**')
         into(projectBaseName)
     }
-    from('/') {
+    from(projectDir) {
         include('gradlew')
         include('gradlew.bat')
         fileMode = 0755
