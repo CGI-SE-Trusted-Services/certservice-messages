@@ -17,7 +17,6 @@ import org.apache.xml.security.encryption.EncryptedKey;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.encryption.XMLEncryptionException;
 import org.apache.xml.security.keys.KeyInfo;
-import org.apache.xml.security.keys.KeyUtils;
 import org.apache.xml.security.keys.content.KeyName;
 import org.apache.xml.security.keys.content.X509Data;
 import org.apache.xml.security.utils.Base64;
@@ -40,10 +39,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
@@ -51,6 +47,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.*;
+
+import static org.certificateservices.messages.utils.XMLSigner.XMLDSIG_NAMESPACE;
 
 
 /**
@@ -60,8 +58,7 @@ import java.util.*;
  *
  */
 public class XMLEncrypter {
-
-	private static String XMLDSIG_NAMESPACE = XMLSigner.XMLDSIG_NAMESPACE;
+	private static String XMLENC_NAMESPACE = "http://www.w3.org/2001/04/xmlenc#";
 
 	private MessageSecurityProvider securityProvider;
 	private DocumentBuilder documentBuilder;
@@ -295,7 +292,7 @@ public class XMLEncrypter {
 	 * @throws NoDecryptionKeyFoundException if no related decryption key could be found with the message.
 	 */
 	public Object decryptDocument(Context context, Document doc, DecryptedXMLConverter converter) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
-		try{			
+		try{
 			return unmarshaller.unmarshal(decryptDoc(doc,converter));
 		}catch(Exception e){
 			if(e instanceof NoDecryptionKeyFoundException){
@@ -343,6 +340,7 @@ public class XMLEncrypter {
 			while(nodeList.getLength() > 0){
 				Element encryptedElement = (Element) nodeList.item(0);
 				verifyCiphers(encryptedElement);
+				verifyKeyInfo(encryptedElement);
 				decChiper.init(XMLCipher.DECRYPT_MODE,null);
 				decChiper.setKEK(findKEK(context,encryptedElement));
 				doc = decChiper.doFinal(doc, encryptedElement);
@@ -462,7 +460,38 @@ public class XMLEncrypter {
 		
 	}
 
+	/**
+	 * Method to verify KeyInfo of an encrypted element and perform any required
+	 * processing to it (i.e. retrieve entrypted key references).
+	 * @param encryptedElement The encrypted element to verify.
+	 * @throws MessageContentException If error occurred when processing encrypted element.
+	 */
+	private void verifyKeyInfo(Element encryptedElement) throws MessageContentException {
+		NodeList keyInfoList = encryptedElement.getElementsByTagNameNS(XMLDSIG_NAMESPACE, "KeyInfo");
+		if (keyInfoList.getLength() == 0) {
+			throw new MessageContentException("No KeyInfo found in encrypted element");
+		}
 
+		// Check for RetrievalMethod elements and resolve them by replacing the element
+		// with the references URI element (currently only EncryptedKey are supported).
+		NodeList childs = keyInfoList.item(0).getChildNodes();
+		for (int i=0; i < childs.getLength(); i++) {
+			if (childs.item(i).getLocalName() != null && childs.item(i).getLocalName().equals("RetrievalMethod")) {
+				Element retrievalMethodElement = (Element)childs.item(i);
+				if (!retrievalMethodElement.getAttribute("Type").equals("http://www.w3.org/2001/04/xmlenc#EncryptedKey")) {
+					throw new MessageContentException("RetrievalMethod not supported: " + retrievalMethodElement.getAttribute("Type"));
+				}
+
+				String uri = retrievalMethodElement.getAttribute("URI").substring(1);
+				NodeList encryptedKeyList = ((Element) encryptedElement.getParentNode()).getElementsByTagNameNS(XMLENC_NAMESPACE, "EncryptedKey");
+				for (int j=0; j < encryptedKeyList.getLength(); j++) {
+					if (((Element)encryptedKeyList.item(j)).getAttribute("Id").equals(uri)) {
+						keyInfoList.item(0).replaceChild(encryptedKeyList.item(j), childs.item(i));
+					}
+				}
+			}
+		}
+	}
 
 	/**
 	 * Help method that looks through all key info and tries to find all Key Info elements of type KeyName or X509Certificate
@@ -682,6 +711,4 @@ public class XMLEncrypter {
 		 */
 		Document convert(Document doc) throws MessageContentException;
 	}
-	
-
 }
