@@ -83,7 +83,6 @@ public class XMLEncrypter {
 		X509CERTIFICATE
 	}
 
-
 	/**
 	 * Contsructor of a xml XML Encrypter.
 	 *
@@ -114,7 +113,6 @@ public class XMLEncrypter {
 		} catch (Exception e) {
 			throw new MessageProcessingException("Error instanciating XML chipers: " + e.getMessage(), e);
 		}
-
 	}
 
 	/**
@@ -322,6 +320,7 @@ public class XMLEncrypter {
 	public Document decryptDoc(Document doc, DecryptedXMLConverter converter) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
 		return decryptDoc(ContextMessageSecurityProvider.DEFAULT_CONTEXT, doc, converter);
 	}
+
 	/**
 	 * Method to decrypt all encrypted structures in the related message.
 	 * 
@@ -336,11 +335,12 @@ public class XMLEncrypter {
 	 */
 	public Document decryptDoc(Context context, Document doc, DecryptedXMLConverter converter) throws MessageProcessingException, MessageContentException, NoDecryptionKeyFoundException{
 		try{
+			verifyKeyInfo(doc);
 			NodeList nodeList = doc.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_ENCRYPTEDDATA);
+
 			while(nodeList.getLength() > 0){
 				Element encryptedElement = (Element) nodeList.item(0);
 				verifyCiphers(encryptedElement);
-				verifyKeyInfo(encryptedElement);
 				decChiper.init(XMLCipher.DECRYPT_MODE,null);
 				decChiper.setKEK(findKEK(context,encryptedElement));
 				doc = decChiper.doFinal(doc, encryptedElement);
@@ -365,8 +365,6 @@ public class XMLEncrypter {
 			throw new MessageProcessingException("Internal error occurred when decrypting XML: " + e.getMessage(),e);
 		}
 	}
-
-
 
 	/**
 	 * Method to encrypt java.util.Properties in XML-format
@@ -403,7 +401,6 @@ public class XMLEncrypter {
 
 		return encDocument;
 	}
-
 
 	/**
 	 * Method to decrypt document containing properties in XML-format.
@@ -461,32 +458,36 @@ public class XMLEncrypter {
 	}
 
 	/**
-	 * Method to verify KeyInfo of an encrypted element and perform any required
-	 * processing to it (i.e. retrieve entrypted key references).
-	 * @param encryptedElement The encrypted element to verify.
+	 * Method to verify KeyInfo of an encrypted document and perform any required
+	 * processing to it (i.e. resolve entrypted key references).
+	 * @param document The encrypted document to verify
 	 * @throws MessageContentException If error occurred when processing encrypted element.
 	 */
-	private void verifyKeyInfo(Element encryptedElement) throws MessageContentException {
-		NodeList keyInfoList = encryptedElement.getElementsByTagNameNS(XMLDSIG_NAMESPACE, "KeyInfo");
+	private void verifyKeyInfo(Document document) throws MessageContentException {
+		NodeList keyInfoList = document.getElementsByTagNameNS(XMLDSIG_NAMESPACE, "KeyInfo");
 		if (keyInfoList.getLength() == 0) {
 			throw new MessageContentException("No KeyInfo found in encrypted element");
 		}
 
+		NodeList encryptedKeyList = document.getElementsByTagNameNS(XMLENC_NAMESPACE, "EncryptedKey");
+
 		// Check for RetrievalMethod elements and resolve them by replacing the element
 		// with the references URI element (currently only EncryptedKey are supported).
-		NodeList childs = keyInfoList.item(0).getChildNodes();
-		for (int i=0; i < childs.getLength(); i++) {
-			if (childs.item(i).getLocalName() != null && childs.item(i).getLocalName().equals("RetrievalMethod")) {
-				Element retrievalMethodElement = (Element)childs.item(i);
-				if (!retrievalMethodElement.getAttribute("Type").equals("http://www.w3.org/2001/04/xmlenc#EncryptedKey")) {
-					throw new MessageContentException("RetrievalMethod not supported: " + retrievalMethodElement.getAttribute("Type"));
-				}
+		for(int i=0; i<keyInfoList.getLength(); i++) {
+			Node keyInfo = keyInfoList.item(i);
+			NodeList keyInfoChildren = keyInfo.getChildNodes();
+			for (int j = 0; j < keyInfoChildren.getLength(); j++) {
+				if (keyInfoChildren.item(j).getLocalName() != null && keyInfoChildren.item(j).getLocalName().equals("RetrievalMethod")) {
+					Element retrievalMethodElement = (Element) keyInfoChildren.item(j);
+					if (!retrievalMethodElement.getAttribute("Type").equals("http://www.w3.org/2001/04/xmlenc#EncryptedKey")) {
+						throw new MessageContentException("RetrievalMethod not supported: " + retrievalMethodElement.getAttribute("Type"));
+					}
 
-				String uri = retrievalMethodElement.getAttribute("URI").substring(1);
-				NodeList encryptedKeyList = ((Element) encryptedElement.getParentNode()).getElementsByTagNameNS(XMLENC_NAMESPACE, "EncryptedKey");
-				for (int j=0; j < encryptedKeyList.getLength(); j++) {
-					if (((Element)encryptedKeyList.item(j)).getAttribute("Id").equals(uri)) {
-						keyInfoList.item(0).replaceChild(encryptedKeyList.item(j), childs.item(i));
+					String uri = retrievalMethodElement.getAttribute("URI").substring(1);
+					for (int k = 0; k < encryptedKeyList.getLength(); k++) {
+						if (((Element) encryptedKeyList.item(k)).getAttribute("Id").equals(uri)) {
+							keyInfo.replaceChild(encryptedKeyList.item(k), keyInfoChildren.item(j));
+						}
 					}
 				}
 			}
