@@ -459,7 +459,7 @@ public class XMLEncrypter {
 
 	/**
 	 * Method to verify KeyInfo of an encrypted document and perform any required
-	 * processing to it (i.e. resolve entrypted key references).
+	 * processing to it (i.e. resolve EncryptedKey references).
 	 * @param document The encrypted document to verify
 	 * @throws MessageContentException If error occurred when processing encrypted element.
 	 */
