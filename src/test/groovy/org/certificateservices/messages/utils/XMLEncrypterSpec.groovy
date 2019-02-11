@@ -16,10 +16,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.ContextMessageSecurityProvider
 import org.certificateservices.messages.MessageSecurityProvider
 import org.certificateservices.messages.csmessages.CSMessageParserManager
-import org.certificateservices.messages.xmldsig.jaxb.KeyInfoType
-import org.certificateservices.messages.xmldsig.jaxb.RSAKeyValueType
+import org.w3c.dom.NodeList
 
 import javax.crypto.KeyGenerator
+import java.security.MessageDigest
 import java.security.Security
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
@@ -54,6 +54,7 @@ import spock.lang.Specification
 import spock.lang.Unroll
 import static org.certificateservices.messages.TestUtils.*
 import static org.certificateservices.messages.ContextMessageSecurityProvider.DEFAULT_CONTEXT
+import static org.certificateservices.messages.utils.XMLSigner.XMLDSIG_NAMESPACE
 
 class XMLEncrypterSpec extends Specification {
 	
@@ -298,13 +299,12 @@ class XMLEncrypterSpec extends Specification {
 		thrown NoDecryptionKeyFoundException
 		
 	}
-	
-	
+
 	def "Verify that decryptDocument can decrypt Assertion containing multiple encrypted SAMLAttributes with the same reciepients"(){
 		setup:
 		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI())
 		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI())
-		def encDoc = genComplexSAMLWithToEncryptedData()
+		def encDoc = genComplexSAMLWithToEncryptedData(XMLEncrypter.KeyInfoType.KEYVALUE)
 		when:
 		JAXBElement<AttributeType> assertion = xmlEncrypter.decryptDocument(DEFAULT_CONTEXT, encDoc, new EncryptedAttributeXMLConverter())
 		AssertionType assertionType = assertion.getValue()
@@ -316,6 +316,22 @@ class XMLEncrypterSpec extends Specification {
 		attr1.getName() == "SomeAttribute1"
 		attr2.getName() == "SomeAttribute2"
 	}
+
+	def "Verify that decryptDocument can decrypt Assertion with KeyInfo containing RetrievalMethod"() {
+		setup:
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI())
+		def encDoc = updateKeyInfoWithRetrievalMethod(genComplexSAMLWithToEncryptedData(XMLEncrypter.KeyInfoType.KEYVALUE))
+		when:
+		JAXBElement<AttributeType> assertion = xmlEncrypter.decryptDocument(DEFAULT_CONTEXT, encDoc, new EncryptedAttributeXMLConverter())
+		AssertionType assertionType = assertion.getValue()
+		AttributeStatementType attributeStatement = assertionType.getStatementOrAuthnStatementOrAuthzDecisionStatement().get(0)
+		AttributeType attr1 = attributeStatement.getAttributeOrEncryptedAttribute().get(0)
+		AttributeType attr2 = attributeStatement.getAttributeOrEncryptedAttribute().get(1)
+		then:
+		attributeStatement.getAttributeOrEncryptedAttribute().size() == 2
+		attr1.getName() == "SomeAttribute1"
+		attr2.getName() == "SomeAttribute2"	}
 
 	def "Verify that decryptDocument doesn't break signature of encrypted element"(){
 		setup:
@@ -335,8 +351,6 @@ class XMLEncrypterSpec extends Specification {
 		Document decryptedDoc = xmlEncrypter.decryptDoc(DEFAULT_CONTEXT,encryptedDoc,null)
 		then: // Verify that decrypted element still verifies
 		assertionPayloadParser.xmlSigner.verifyEnvelopedSignature(DEFAULT_CONTEXT,decryptedDoc,false)
-
-
 	}
 	
 	def "Verify encryption and decryption of properties"() {
@@ -546,18 +560,62 @@ class XMLEncrypterSpec extends Specification {
 				
 	}
 	
-
-	
 	private Document docToStringToDoc(Document doc) throws Exception{
 		return xmlEncrypter.documentBuilder.parse(new ByteArrayInputStream(docToString(doc).getBytes("UTF-8")))
 	}
-	
-	private Document genComplexSAMLWithToEncryptedData(){
+
+    private Document updateKeyInfoWithRetrievalMethod(Document document){
+		NodeList keyInfoList = document.getElementsByTagNameNS(XMLDSIG_NAMESPACE, "KeyInfo")
+		if (keyInfoList.getLength() == 0) {
+			throw new MessageContentException("No KeyInfo found in encrypted element")
+		}
+
+		for(int i=0;i<keyInfoList.length;i++){
+			Element keyInfoElement = keyInfoList.item(i)
+			NodeList encryptedKeyList = keyInfoElement.getElementsByTagNameNS(XMLEncrypter.XMLENC_NAMESPACE, "EncryptedKey")
+			int listsize = encryptedKeyList.getLength()
+			List elementsToBeMoved = []
+			for (int j=0; j < encryptedKeyList.getLength(); j++) {
+				String keyId = genRandomId()
+
+				// Mark EncryptedKey to be moved.
+				Element encryptedKeyElement = (Element)encryptedKeyList.item(j)
+				encryptedKeyElement.setAttribute("Id", "${keyId}")
+				elementsToBeMoved.add(encryptedKeyElement)
+
+				// Add RetrievalMethod to KeyInfo with reference to the EncryptedKey.
+				Element retrievalMethodElement = document.createElementNS(XMLDSIG_NAMESPACE, "ds:RetrievalMethod")
+				retrievalMethodElement.setAttribute("Type", "http://www.w3.org/2001/04/xmlenc#EncryptedKey")
+				retrievalMethodElement.setAttribute("URI", "#${keyId}")
+				keyInfoElement.appendChild(retrievalMethodElement)
+			}
+
+			// Move all EncryptedKey elements from KeyInfo and make them
+			// siblings of EncryptedData.
+			elementsToBeMoved.each {
+				Element encryptedDataElement = keyInfoElement.parentNode
+				Element sharedParentElement = encryptedDataElement.parentNode
+				sharedParentElement.appendChild(it)
+			}
+		}
+
+		return document
+    }
+
+	private String genRandomId() {
+		return "_${MessageDigest.getInstance("MD5").digest(UUID.randomUUID().toString().bytes).encodeHex()}"
+	}
+
+    private Document genComplexSAMLWithToEncryptedData(){
+        return genComplexSAMLWithToEncryptedData(XMLEncrypter.KeyInfoType.KEYNAME)
+    }
+
+	private Document genComplexSAMLWithToEncryptedData(XMLEncrypter.KeyInfoType keyInfoType){
 		NameIDType nameIdType = of.createNameIDType()
 		nameIdType.setValue("SomeIssuer")
 		
-		JAXBElement<EncryptedDataType> encDataElement1 = xmlEncrypter.unmarshaller.unmarshal(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute1","Hej Svejs1" ), twoReceiptiensValidLast, true))
-		JAXBElement<EncryptedDataType> encDataElement2 = xmlEncrypter.unmarshaller.unmarshal(xmlEncrypter.encryptElement(genSAMLAttribute("SomeAttribute2","Hej Svejs2" ), twoReceiptiensValidLast, true))
+		JAXBElement<EncryptedDataType> encDataElement1 = xmlEncrypter.unmarshaller.unmarshal(xmlEncrypter.encryptElement(DEFAULT_CONTEXT, genSAMLAttribute("SomeAttribute1","Hej Svejs1" ), twoReceiptiensValidLast, keyInfoType))
+		JAXBElement<EncryptedDataType> encDataElement2 = xmlEncrypter.unmarshaller.unmarshal(xmlEncrypter.encryptElement(DEFAULT_CONTEXT, genSAMLAttribute("SomeAttribute2","Hej Svejs2" ), twoReceiptiensValidLast, keyInfoType))
 		
 		EncryptedElementType encryptedElementType1 = of.createEncryptedElementType()
 		encryptedElementType1.setEncryptedData(encDataElement1.getValue())
@@ -620,13 +678,13 @@ sSRjPxCeBd7arAgZv72PriiqxvvFCGoXrX5Prng8euS/gIeDQZBNEWC3MzbLty8QwMqKFd0+V2fz
 LaRMArYLp0nS3TwF24KdgaKuSyA0nq1j/ZNyi/TowrNPA4FLE2f/1akjn3mvgpn62XQoPO1BfZCq
 utkUJrOx5P7ZIr91erXUfsQbPDsQkcjAi3IPJFAr"""
 	
-   def testchipherdata1 = """DOFOukwwk3Xj0J0LJ3op/MLQh/HeeGj4KkKKUchLOKc6LJvGfLIpN1QqT9DAY1rmpMQYu0H7JOPu
+	def testchipherdata1 = """DOFOukwwk3Xj0J0LJ3op/MLQh/HeeGj4KkKKUchLOKc6LJvGfLIpN1QqT9DAY1rmpMQYu0H7JOPu
         JRAX63XUD5XV5KXfSXS2G23/oQcVelRbUjtdDa9RivbkNZo2SjkgsNxyhj2kVkUDok7yT5Qxrg85
         eHRIWoTVzjuwzS4duHzkje0wS7oc/Iuq7Rb1W1D2/l1YWOSKmThBh1GafmHaDLzxcgFdmn3dfVp7
         wfnYQU96dseWUgBUHfZKLewQCZOwz2IywrHuHdxjGEc4dOgHw4mV/ePLxiJAeCPjxkg4+ZgBaiZH
         JhkQQOYbPIcTvePsleUVfc2hq2RWCd9rpsHjZA=="""
 	
-	public static byte[] base64Cert =("MIIDLTCCAhWgAwIBAgIIYmVP6xQ/t3QwDQYJKoZIhvcNAQEFBQAwJDETMBEGA1UE" +
+	static byte[] base64Cert =("MIIDLTCCAhWgAwIBAgIIYmVP6xQ/t3QwDQYJKoZIhvcNAQEFBQAwJDETMBEGA1UE" +
 		"AwwKVGVzdCBlSURDQTENMAsGA1UECgwEVGVzdDAeFw0xMTEwMjExNDM2MzlaFw0z" +
 		"MTEwMjExNDM2MzlaMCQxEzARBgNVBAMMClRlc3QgZUlEQ0ExDTALBgNVBAoMBFRl" +
 		"c3QwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDecUf5if2UdWbV/HIj" +
