@@ -22,7 +22,7 @@ import org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory
 import org.certificateservices.messages.saml2.protocol.jaxb.ResponseType
 import org.certificateservices.messages.utils.MessageGenerateUtils
 import org.certificateservices.messages.utils.SystemTime
-import org.certificateservices.messages.utils.XMLEncrypter
+import org.certificateservices.messages.utils.XMLSigner
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.NodeList
@@ -553,7 +553,7 @@ class AssertionPayloadParserSpec extends Specification {
 			}
 			
 			X509Certificate signerCert = null
-			NodeList certList = signature.getElementsByTagNameNS(XMLEncrypter.XMLDSIG_NAMESPACE, "X509Certificate");
+			NodeList certList = signature.getElementsByTagNameNS(XMLSigner.XMLDSIG_NAMESPACE, "X509Certificate");
 			if(certList.getLength() > 0){
 				String certData = certList.item(0).getFirstChild().getNodeValue();
 				if(certData != null){
