@@ -4,6 +4,10 @@ description = 'certservice-messages'
 
 apply plugin: 'org.certificateservices.gradle.certservice-gradle-plugin'
 
+certserviceSettings {
+    signjar = true
+}
+
 dependencies {
     compile "org.bouncycastle:bcprov-jdk15on:${bcprovJdk15onVersion}"
     compile "log4j:log4j:${log4jVersion}"
