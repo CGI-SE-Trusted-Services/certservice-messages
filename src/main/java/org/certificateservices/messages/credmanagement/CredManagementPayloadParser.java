@@ -45,6 +45,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	public static final String CREDMANAGEMENT_XSD_SCHEMA_2_0_RESOURCE_LOCATION = "/credmanagement_schema2_0.xsd";
 	public static final String CREDMANAGEMENT_XSD_SCHEMA_2_1_RESOURCE_LOCATION = "/credmanagement_schema2_1.xsd";
 	public static final String CREDMANAGEMENT_XSD_SCHEMA_2_2_RESOURCE_LOCATION = "/credmanagement_schema2_2.xsd";
+	public static final String CREDMANAGEMENT_XSD_SCHEMA_2_3_RESOURCE_LOCATION = "/credmanagement_schema2_3.xsd";
 
 	private ObjectFactory of = new ObjectFactory();
 
@@ -52,10 +53,11 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 	private static final String CREDMANAGEMENT_VERSION_2_0 = "2.0";
 	private static final String CREDMANAGEMENT_VERSION_2_1 = "2.1";
 	private static final String CREDMANAGEMENT_VERSION_2_2 = "2.2";
+	private static final String CREDMANAGEMENT_VERSION_2_3 = "2.3";
 
-	private static final String[] SUPPORTED_CREDMANAGEMENT_VERSIONS = {CREDMANAGEMENT_VERSION_2_0,CREDMANAGEMENT_VERSION_2_1,CREDMANAGEMENT_VERSION_2_2};
+	private static final String[] SUPPORTED_CREDMANAGEMENT_VERSIONS = {CREDMANAGEMENT_VERSION_2_0,CREDMANAGEMENT_VERSION_2_1,CREDMANAGEMENT_VERSION_2_2,CREDMANAGEMENT_VERSION_2_3};
 
-	private static final String DEFAULT_CREDMANAGEMENT_VERSION = CREDMANAGEMENT_VERSION_2_2;
+	private static final String DEFAULT_CREDMANAGEMENT_VERSION = CREDMANAGEMENT_VERSION_2_3;
 	
 	
 	/**
@@ -85,6 +87,9 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		}
 		if(payLoadVersion.equals("2.2")){
 			return getClass().getResourceAsStream(CREDMANAGEMENT_XSD_SCHEMA_2_2_RESOURCE_LOCATION);
+		}
+		if(payLoadVersion.equals("2.3")){
+			return getClass().getResourceAsStream(CREDMANAGEMENT_XSD_SCHEMA_2_3_RESOURCE_LOCATION);
 		}
     	
     	throw new MessageContentException("Error unsupported Credential Management Payload version: " + payLoadVersion);
@@ -250,7 +255,98 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 		response.setRevocationDate(MessageGenerateUtils.dateToXMLGregorianCalendar(revocationDate));
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, true);
 	}
-	
+
+	/**
+	 * Method to generate a ChangeUserStatusRequest
+	 *
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param userUniqueId The unique id of the user to revoke credentials for.
+	 * @param tokenFilter The token filter specifying a filter for a which credentials in the users token that should
+	 *                    be revoked. Optional if null is all credentials for all tokens revoked (matching credential filter).
+	 * @param credentialFilter The credential filter used to specify which matching credentials that should be revoked.
+	 *                         Optional if null is all credentials for all tokens revoked (matching optional token filter).
+	 * @param newCredentialStatus The new credential status to set.
+	 * @param reasonInformation More detailed information about the revocation status
+	 * @param originator the original requester of a message, null if not applicable
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genChangeUserStatusRequest(String requestId, String destinationId, String organisation, String userUniqueId, TokenFilter tokenFilter, CredentialFilter credentialFilter, int newCredentialStatus, String reasonInformation, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
+		ChangeUserStatusRequest payload = of.createChangeUserStatusRequest();
+		payload.setUserUniqueId(userUniqueId);
+		payload.setTokenFilter(tokenFilter);
+		payload.setCredentialFilter(credentialFilter);
+		payload.setNewCredentialStatus(newCredentialStatus);
+		payload.setReasonInformation(reasonInformation);
+
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
+	}
+
+	/**
+	 * Method to generate a ChangeUserStatusResponse
+	 *
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the request to populate the response with
+	 * @param user The related user with updated token and credential information.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public CSMessageResponseData genChangeUserStatusResponse(String relatedEndEntity, CSMessage request, User user, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		ChangeUserStatusResponse response = of.createChangeUserStatusResponse();
+		response.setUser(user);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, true);
+	}
+
+	/**
+	 * Method to generate a ChangeTokenStatusRequest
+	 *
+	 * @param requestId the id of the request
+	 * @param destinationId the destinationId used in the CSMessage.
+	 * @param organisation the related organisation
+	 * @param tokenSerialNumber The unique serial number within the organisation.
+	 * @param credentialFilter The credential filter used to specify which matching credentials that should be revoked.
+	 *                         Optional if null is all credentials for all tokens revoked (matching optional token filter).
+	 * @param newCredentialStatus The new credential status to set.
+	 * @param reasonInformation More detailed information about the revocation status
+	 * @param originator the original requester of a message, null if not applicable
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public byte[] genChangeTokenStatusRequest(String requestId, String destinationId, String organisation, String tokenSerialNumber,  CredentialFilter credentialFilter, int newCredentialStatus, String reasonInformation, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
+		ChangeTokenStatusRequest payload = of.createChangeTokenStatusRequest();
+		payload.setTokenSerialNumber(tokenSerialNumber);
+		payload.setCredentialFilter(credentialFilter);
+		payload.setNewCredentialStatus(newCredentialStatus);
+		payload.setReasonInformation(reasonInformation);
+
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
+	}
+
+	/**
+	 * Method to generate a ChangeTokenStatusResponse
+	 *
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the request to populate the response with
+	 * @param token The related token with updated credential information.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return a generated message.
+	 * @throws MessageContentException if CS message contained invalid data not conforming to the standard.
+	 * @throws MessageProcessingException if internal state occurred when processing the CSMessage
+	 */
+	public CSMessageResponseData genChangeTokenStatusResponse(String relatedEndEntity, CSMessage request, Token token, List<Object> assertions)  throws MessageContentException, MessageProcessingException{
+		ChangeTokenStatusResponse response = of.createChangeTokenStatusResponse();
+		response.setToken(token);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), response, true);
+	}
+
 	/**
 	 * Method to generate a GetCredentialRequest
 	 * 
