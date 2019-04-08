@@ -223,6 +223,7 @@
 										<xs:element minOccurs="1" maxOccurs="1" name="serialNumber"
 													type="cs:notemptystring" />
 									</xs:sequence>
+									<xs:attribute name="isNot" type="xs:boolean" default="false"/>
 								</xs:complexType>
 							</xs:element>
 						</xs:sequence>
