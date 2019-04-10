@@ -376,6 +376,16 @@ public class XMLEncrypter {
 		}
 	}
 
+	/**
+	 * Method to resolve (unwrap) a symmetric key using a specific provider.
+	 * This must be used in some cases when unwrapping is performed using
+	 * a HSM and with a specific Java Security Provider (JSP).
+	 *
+	 * @param element Element containing encrypted symmetric key
+	 * @param kekKey Key-encryption key
+	 * @param provider Provider to use for unwrap operation.
+	 * @return Unwrapped symmetric encryption key or null if an error occurred.
+	 */
 	Key resolveKey(Element element, Key kekKey, String provider) {
 		try {
 			Element keyInfoElement = (Element) element.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "KeyInfo").item(0);
