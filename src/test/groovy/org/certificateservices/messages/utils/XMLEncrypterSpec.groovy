@@ -14,6 +14,7 @@ package org.certificateservices.messages.utils
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.certificateservices.messages.ContextMessageSecurityProvider
+import org.certificateservices.messages.HSMMessageSecurityProvider
 import org.certificateservices.messages.MessageSecurityProvider
 import org.certificateservices.messages.csmessages.CSMessageParserManager
 import org.w3c.dom.NodeList
@@ -455,6 +456,26 @@ class XMLEncrypterSpec extends Specification {
 		2 * securityProvider.getDecryptionKeyIds() >> xmlEncrypter.securityProvider.getDecryptionKeyIds()
 		2 * securityProvider.getDecryptionKey(!null) >> xmlEncrypter.securityProvider.getDecryptionKey(null)
 
+	}
+
+	def "Verify that getHSMProvider is called if message security provider is HSMMessageSecurityProvider"() {
+		setup:
+		MessageSecurityProvider	 securityProvider = Mock(HSMMessageSecurityProvider)
+
+		xmlEncrypter.encKeyXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getKeyEncryptionAlgorithmURI())
+		xmlEncrypter.encDataXMLCipherMap[ContextMessageSecurityProvider.DEFAULT_CONTEXT]  = XMLCipher.getInstance(EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256.getDataEncryptionAlgorithmURI())
+		def encDoc = genComplexSAMLWithToEncryptedData()
+
+		when:
+		XMLEncrypter x = new XMLEncrypter(securityProvider, assertionPayloadParser.getDocumentBuilder(),
+				assertionPayloadParser.getAssertionMarshaller(),
+				assertionPayloadParser.getAssertionUnmarshaller())
+
+		x.decryptDoc(encDoc,new EncryptedAttributeXMLConverter())
+		then:
+		2 * securityProvider.getDecryptionKeyIds(_) >> xmlEncrypter.securityProvider.getDecryptionKeyIds()
+		2 * securityProvider.getDecryptionKey(_,!null) >> xmlEncrypter.securityProvider.getDecryptionKey(null)
+		2 * securityProvider.getHSMProvider() >> "BC"
 	}
 
 	def "Verify getScheme() calls correct method in message security provider"(){
