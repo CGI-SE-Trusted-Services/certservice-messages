@@ -15,9 +15,7 @@ package org.certificateservices.messages.utils;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -597,6 +595,17 @@ public class XMLSigner {
 					KeyInfo ki = kif.newKeyInfo(Collections.singletonList(x509Data));
 
 					XMLSignature signature = fac.newXMLSignature(signedInfo, ki);
+
+					// Check if we are using a HSMMessageSecurityProvider. If this is the case we
+					// explicitly specify tha Java Security Provider to use that should handle the
+					// signature operation.
+					if(messageSecurityProvider instanceof HSMMessageSecurityProvider){
+						Provider hsmProvider = Security.getProvider(((HSMMessageSecurityProvider) messageSecurityProvider).getHSMProvider());
+						if(hsmProvider != null){
+							signContext.setProperty("org.jcp.xml.dsig.internal.dom.SignatureProvider", hsmProvider);
+						}
+					}
+
 					signature.sign(signContext);
 				}
 			}

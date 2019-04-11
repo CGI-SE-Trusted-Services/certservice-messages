@@ -17,6 +17,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.util.encoders.Base64
 import org.certificateservices.messages.ContextMessageSecurityProvider
 import org.certificateservices.messages.DummyMessageSecurityProvider
+import org.certificateservices.messages.HSMMessageSecurityProvider
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.MessageProcessingException
 import org.certificateservices.messages.MessageSecurityProvider
@@ -267,6 +268,23 @@ public class XMLSignerSpec extends Specification {
 		1 * securityProvider.getSigningCertificate() >> xmlSigner.messageSecurityProvider.getSigningCertificate()
 		1 * securityProvider.getSigningKey() >> xmlSigner.messageSecurityProvider.getSigningKey()
 
+	}
+
+	def "Verify that getHSMProvider is called if message security provider is HSMMessageSecurityProvider"(){
+		setup:
+		MessageSecurityProvider securityProvider = Mock(HSMMessageSecurityProvider)
+		when:
+
+		XMLSigner x = new XMLSigner(securityProvider, assertionPayloadParser.getDocumentBuilder(), true,
+				xmlSigner.defaultSignatureLocationFinder,
+				xmlSigner.defaultOrganisationLookup)
+		Document doc = xmlSigner.documentBuilder.parse(new ByteArrayInputStream(sAMLPWithNoSignature))
+		x.sign(null, doc, xmlSigner.defaultSignatureLocationFinder)
+		then:
+		1 * securityProvider.getSigningAlgorithmScheme(_) >> SigningAlgorithmScheme.RSAWithSHA256
+		1 * securityProvider.getSigningCertificate(_) >> xmlSigner.messageSecurityProvider.getSigningCertificate()
+		1 * securityProvider.getSigningKey(_) >> xmlSigner.messageSecurityProvider.getSigningKey()
+		1 * securityProvider.getHSMProvider() >> "BC"
 	}
 
 	@Unroll
