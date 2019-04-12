@@ -31,6 +31,7 @@ import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.Marshaller;
@@ -341,8 +342,17 @@ public class XMLEncrypter {
 			while(nodeList.getLength() > 0){
 				Element encryptedElement = (Element) nodeList.item(0);
 				verifyCiphers(encryptedElement);
-				decChiper.init(XMLCipher.DECRYPT_MODE,null);
-				decChiper.setKEK(findKEK(context,encryptedElement));
+				Key kekKey = findKEK(context,encryptedElement);
+
+				if(securityProvider instanceof HSMMessageSecurityProvider){
+					String provider = ((HSMMessageSecurityProvider) securityProvider).getHSMProvider();
+					Key encKey = resolveKey(encryptedElement, kekKey, provider);
+					decChiper.init(XMLCipher.DECRYPT_MODE, encKey);
+				} else {
+					decChiper.init(XMLCipher.DECRYPT_MODE, null);
+					decChiper.setKEK(kekKey);
+				}
+
 				doc = decChiper.doFinal(doc, encryptedElement);
 				nodeList = doc.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_ENCRYPTEDDATA);
 			}
@@ -364,6 +374,29 @@ public class XMLEncrypter {
 			}
 			throw new MessageProcessingException("Internal error occurred when decrypting XML: " + e.getMessage(),e);
 		}
+	}
+
+	/**
+	 * Method to resolve (unwrap) a symmetric key using a specific provider.
+	 * This must be used in some cases when unwrapping is performed using
+	 * a HSM and with a specific Java Security Provider (JSP).
+	 *
+	 * @param element Element containing encrypted symmetric key
+	 * @param kekKey Key-encryption key
+	 * @param provider Provider to use for unwrap operation.
+	 * @return Unwrapped symmetric encryption key or null if an error occurred.
+	 */
+	Key resolveKey(Element element, Key kekKey, String provider) {
+		try {
+			Element keyInfoElement = (Element) element.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "KeyInfo").item(0);
+			XMLCipher cipher = XMLCipher.getProviderInstance(provider);
+			cipher.init(Cipher.UNWRAP_MODE, kekKey);
+			EncryptedKey ek = cipher.loadEncryptedKey(keyInfoElement);
+			return cipher.decryptKey(ek, XMLCipher.AES_256);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	/**
