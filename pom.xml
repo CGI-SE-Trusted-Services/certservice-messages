@@ -499,8 +499,8 @@
             </executions>
             <configuration>
               <keystore>/home/bamboo/codesign.jks</keystore>
-              <storepass>{vMtaRMHLTvkHxnv4XcAEk0Z37c1rP+XKSVJm3l3k05g8t+1kx9QIO9j56ss8GN8f}</storepass>
-              <alias>secgicertificateservicecodesigning</alias>
+              <storepass>{6xHlF/sy7oAHimjH8h90IK1EIQ8AvcrWok+CRh1ydr8Dv0D2JXsqzI1KPG65Hm0k}</storepass>
+              <alias>cgisverigeabcertificateservice</alias>
               <processMainArtifact>true</processMainArtifact>
               <tsa>http://timestamp.entrust.net/TSS/RFC3161sha2TS</tsa>
               <removeExistingSignatures>false</removeExistingSignatures>
