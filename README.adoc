@@ -26,11 +26,11 @@ Framework for generating and parsing Receipt Messages (but no actual message imp
 
 Framework for generating and parsing Heartbeat Messages (but no actual message implementation exists in this project. See org.certificateservices.messages.heartbeat package for details. To implement a custom kind of receipt message used by certservice-ejbcacomponents or certservice-ejbcaproviders implement a custom HeartBeatParser, add the jar to the main applications classpath and use settings defined in certservice-ejbcacomponents or certservice-ejbcaproviders to specify your implementation.
 
-= Message Specification Documentation
+== Message Specification Documentation
 
 For detailed documentation of each available message and its content see directory src/site/resources.
 
-= Using CS Message 2.0 Framework to generate or parse messages.
+== Using CS Message 2.0 Framework to generate or parse messages.
 
 Before you start generating or parsing a CS Message 2.0 you need to initialize it once using a call to org.certificateservices.messages.csmessages.initCSMessageParser(MessageSecurityProvider securityProvider, Properties config). You can later retrieve the CSMessageParser using the getCSMessageParser() metod. As security provider you can either implement your own of use the org.certificateservices.messages.SimpleMessageSecurityProvider.
 
@@ -129,7 +129,7 @@ Assertion Payload Parser to generate assertions inserted into other payload mess
 
 Encrypted CS Message Payload Parser, not actually a payload but encrypts an entire CS Message into an Encrypted variant, see org.certificateservices.messages.encryptedcsmessage.EncryptedCSMessagePayloadParser
 
-= Generating older PKI Messages
+== Generating older PKI Messages
 
 PKI Message was the first generation messages sent between clients and CA, mainly for requesting certificates.
 
@@ -160,7 +160,7 @@ For the DefaultPKIMessageParser also exists the following settings:
 |pkimessage.messagenamecatalogue.impl |If custom message name catalogue should be used. |See below 
 |===
 
-= For Developers of this API
+== For Developers of this API
 
 This is a maven project, just check-it out and build with mvn 2 and java 6 +:
 
