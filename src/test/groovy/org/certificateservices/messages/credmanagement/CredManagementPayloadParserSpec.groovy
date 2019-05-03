@@ -3,10 +3,12 @@ package org.certificateservices.messages.credmanagement
 import org.apache.xml.security.Init
 import org.apache.xml.security.utils.Base64
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.util.encoders.Hex
 import org.certificateservices.messages.MessageContentException
 import org.certificateservices.messages.credmanagement.jaxb.AutomaticRenewCredentialResponse
 import org.certificateservices.messages.credmanagement.jaxb.CredentialAvailableActionType
 import org.certificateservices.messages.credmanagement.jaxb.CredentialAvailableActionsOperation
+import org.certificateservices.messages.credmanagement.jaxb.CredentialFilter
 import org.certificateservices.messages.credmanagement.jaxb.FieldValue
 import org.certificateservices.messages.credmanagement.jaxb.GetTokensResponse
 import org.certificateservices.messages.credmanagement.jaxb.GetUsersRequest
@@ -15,11 +17,13 @@ import org.certificateservices.messages.credmanagement.jaxb.HardTokenData
 import org.certificateservices.messages.credmanagement.jaxb.Key
 import org.certificateservices.messages.credmanagement.jaxb.ObjectFactory
 import org.certificateservices.messages.credmanagement.jaxb.RecoverableKey
+import org.certificateservices.messages.credmanagement.jaxb.TokenFilter
 import org.certificateservices.messages.csmessages.CSMessageParser
 import org.certificateservices.messages.csmessages.CSMessageParserManager
 import org.certificateservices.messages.csmessages.CSMessageResponseData
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser
 import org.certificateservices.messages.csmessages.PayloadParserRegistry
+import org.certificateservices.messages.csmessages.constants.AvailableCredentialTypes
 import org.certificateservices.messages.csmessages.jaxb.*
 import org.certificateservices.messages.utils.CSMessageUtils
 import org.certificateservices.messages.utils.MessageGenerateUtils
@@ -42,6 +46,9 @@ class CredManagementPayloadParserSpec extends Specification {
 	def setupSpec(){
 		Security.addProvider(new BouncyCastleProvider())
 		Init.init()
+
+		// Use english - make test locale independent.
+		Locale.setDefault(new Locale("en", "US"));
 	}
 
 
@@ -58,8 +65,9 @@ class CredManagementPayloadParserSpec extends Specification {
 		pp.getSchemaAsInputStream("2.0") != null
 		pp.getSchemaAsInputStream("2.1") != null
 		pp.getSchemaAsInputStream("2.2") != null
-		pp.getDefaultPayloadVersion() == "2.2"
-		pp.getSupportedVersions() == ["2.0","2.1","2.2"] as String[]
+		pp.getSchemaAsInputStream("2.3") != null
+		pp.getDefaultPayloadVersion() == "2.3"
+		pp.getSupportedVersions() == ["2.0","2.1","2.2","2.3"] as String[]
 	}
 
 	def "Verify that init using customCSMessageParser returns custom message parser with getCSMessageParser"(){
@@ -254,6 +262,94 @@ class CredManagementPayloadParserSpec extends Specification {
 		payloadObject.revocationDate  =~ "2014-12-01"
 		payloadObject.reasonInformation == "someReasonInformation"
 		
+		expect:
+		pp.parseMessage(rd.responseData)
+
+	}
+
+	def "Verify that genChangeTokenStatusRequest() generates a valid xml message and genChangeTokenStatusResponse() generates a valid CSMessageResponseData"(){
+		when:
+		csMessageParser.sourceId = "SOMEREQUESTER"
+		byte[] requestMessage = pp.genChangeTokenStatusRequest(TEST_ID, "SOMESOURCEID", "someorg", "someTokenSerial", genCredentialFilter(), 100, "someReasonInformation",  createOriginatorCredential(), null)
+		//printXML(requestMessage)
+		def xml = slurpXml(requestMessage)
+		def payloadObject = xml.payload.ChangeTokenStatusRequest
+
+		then:
+		messageContainsPayload requestMessage, "credmanagement:ChangeTokenStatusRequest"
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","ChangeTokenStatusRequest", createOriginatorCredential(), csMessageParser)
+
+		payloadObject.tokenSerialNumber == "someTokenSerial"
+		payloadObject.credentialFilter.credentialTypeFilters.credentialTypeFilter[0].credentialType == AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE
+		payloadObject.credentialFilter.credentialTypeFilters.credentialTypeFilter[0].credentialSubType == "SomeCredSubType1"
+		payloadObject.credentialFilter.credentialTypeFilters.credentialTypeFilter[1].credentialType == AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE
+		payloadObject.credentialFilter.credentialTypeFilters.credentialTypeFilter[1].credentialSubType == "SomeCredSubType2"
+		payloadObject.newCredentialStatus == "100"
+		payloadObject.reasonInformation == "someReasonInformation"
+
+		when:
+		csMessageParser.sourceId = "SOMESOURCEID"
+		CSMessage request = pp.parseMessage(requestMessage)
+
+		CSMessageResponseData rd = pp.genChangeTokenStatusResponse("SomeRelatedEndEntity", request,createToken("someTokenSerial"), null)
+		//printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.ChangeTokenStatusResponse
+
+		then:
+		messageContainsPayload rd.responseData, "credmanagement:ChangeTokenStatusResponse"
+
+		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, true, "ChangeTokenStatusResponse", "SomeRelatedEndEntity"
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","ChangeTokenStatusResponse", createOriginatorCredential(), csMessageParser)
+		verifySuccessfulBasePayload(payloadObject, TEST_ID)
+
+		payloadObject.token.serialNumber == "someTokenSerial"
+
+		expect:
+		pp.parseMessage(rd.responseData)
+
+	}
+
+	def "Verify that genChangeUserStatusRequest() generates a valid xml message and genChangeUserStatusResponse() generates a valid CSMessageResponseData"(){
+		when:
+		csMessageParser.sourceId = "SOMEREQUESTER"
+		byte[] requestMessage = pp.genChangeUserStatusRequest(TEST_ID, "SOMESOURCEID", "someorg", "someUserId", genTokenFilter(), genCredentialFilter(), 100, "someReasonInformation",  createOriginatorCredential(), null)
+		//printXML(requestMessage)
+		def xml = slurpXml(requestMessage)
+		def payloadObject = xml.payload.ChangeUserStatusRequest
+
+		then:
+		messageContainsPayload requestMessage, "credmanagement:ChangeUserStatusRequest"
+		verifyCSHeaderMessage(requestMessage, xml, "SOMEREQUESTER", "SOMESOURCEID", "someorg","ChangeUserStatusRequest", createOriginatorCredential(), csMessageParser)
+
+		payloadObject.userUniqueId == "someUserId"
+		payloadObject.tokenFilter.tokenTypes.tokenType[0] == "TokenType1"
+		payloadObject.tokenFilter.tokenTypes.tokenType[1] == "TokenType2"
+		payloadObject.credentialFilter.credentialTypeFilters.credentialTypeFilter[0].credentialType == AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE
+		payloadObject.credentialFilter.credentialTypeFilters.credentialTypeFilter[0].credentialSubType == "SomeCredSubType1"
+		payloadObject.credentialFilter.credentialTypeFilters.credentialTypeFilter[1].credentialType == AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE
+		payloadObject.credentialFilter.credentialTypeFilters.credentialTypeFilter[1].credentialSubType == "SomeCredSubType2"
+		payloadObject.newCredentialStatus == "100"
+		payloadObject.reasonInformation == "someReasonInformation"
+
+		when:
+		csMessageParser.sourceId = "SOMESOURCEID"
+		CSMessage request = pp.parseMessage(requestMessage)
+
+		CSMessageResponseData rd = pp.genChangeUserStatusResponse("SomeRelatedEndEntity", request,createUser("someUserId"), null)
+		//printXML(rd.responseData)
+		xml = slurpXml(rd.responseData)
+		payloadObject = xml.payload.ChangeUserStatusResponse
+
+		then:
+		messageContainsPayload rd.responseData, "credmanagement:ChangeUserStatusResponse"
+
+		verifyCSMessageResponseData  rd, "SOMEREQUESTER", TEST_ID, true, "ChangeUserStatusResponse", "SomeRelatedEndEntity"
+		verifyCSHeaderMessage(rd.responseData, xml, "SOMESOURCEID", "SOMEREQUESTER", "someorg","ChangeUserStatusResponse", createOriginatorCredential(), csMessageParser)
+		verifySuccessfulBasePayload(payloadObject, TEST_ID)
+
+		payloadObject.user.uniqueId == "someUserId"
+
 		expect:
 		pp.parseMessage(rd.responseData)
 
@@ -909,6 +1005,14 @@ class CredManagementPayloadParserSpec extends Specification {
 		thrown MessageContentException
 	}
 
+	def "Verify that 2.2 ChangeTokenStatusRequest with 2.3 data throws MessageContentException"(){
+		when:
+		pp.parseMessage(changeTokenStatusRequestV2_2_With2_3Data)
+		then:
+		def e = thrown MessageContentException
+		e.message == "Error parsing payload of CS Message: cvc-elt.1: Cannot find the declaration of element 'credmanagement:ChangeTokenStatusRequest'."
+	}
+
 
 	def "Verify that genRecoverKeyRequest() generates a valid xml message and genRecoverKeyResponse() generates a valid CSMessageResponseData"(){
 		when:
@@ -1210,6 +1314,28 @@ class CredManagementPayloadParserSpec extends Specification {
 		[rc1,rc2]
 	}
 
+	private TokenFilter genTokenFilter(){
+		TokenFilter tokenFilter = new TokenFilter()
+		tokenFilter.tokenTypes = new TokenFilter.TokenTypes()
+		tokenFilter.tokenTypes.tokenType.add("TokenType1")
+		tokenFilter.tokenTypes.tokenType.add("TokenType2")
+		return tokenFilter
+	}
+
+	private CredentialFilter genCredentialFilter(){
+		CredentialFilter credFilter = new CredentialFilter()
+		credFilter.credentialTypeFilters = new CredentialFilter.CredentialTypeFilters()
+		CredentialFilter.CredentialTypeFilters.CredentialTypeFilter f1 = new CredentialFilter.CredentialTypeFilters.CredentialTypeFilter()
+		f1.credentialType = AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE
+		f1.credentialSubType = "SomeCredSubType1"
+		CredentialFilter.CredentialTypeFilters.CredentialTypeFilter f2 = new CredentialFilter.CredentialTypeFilters.CredentialTypeFilter()
+		f2.credentialType = AvailableCredentialTypes.CREDENTIAL_TYPE_X509CERTIFICATE
+		f2.credentialSubType = "SomeCredSubType2"
+		credFilter.credentialTypeFilters.credentialTypeFilter.add(f1)
+		credFilter.credentialTypeFilters.credentialTypeFilter.add(f2)
+
+		return credFilter
+	}
 
 	byte[] ver2_0IssueTokenCredentialMessage = """<?xml version="1.0" encoding="UTF-8" standalone="no"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:ae="http://certificateservices.org/xsd/autoenroll2_x" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:key="http://certificateservices.org/xsd/sensitivekeys" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.0" timeStamp="2017-03-02T15:51:57.225+01:00" version="2.0" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd"><cs:name>IssueTokenCredentialsRequest</cs:name><cs:sourceId>SOMEREQUESTER</cs:sourceId><cs:destinationId>SOMESOURCEID</cs:destinationId><cs:organisation>someorg</cs:organisation><cs:originator><cs:credential><cs:credentialRequestId>123</cs:credentialRequestId><cs:uniqueId>SomeOriginatorUniqueId</cs:uniqueId><cs:displayName>SomeOrignatorDisplayName</cs:displayName><cs:serialNumber>SomeSerialNumber</cs:serialNumber><cs:issuerId>SomeIssuerId</cs:issuerId><cs:status>100</cs:status><cs:credentialType>SomeCredentialType</cs:credentialType><cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType><cs:attributes><cs:attribute><cs:key>someattrkey</cs:key><cs:value>someattrvalue</cs:value></cs:attribute></cs:attributes><cs:usages><cs:usage>someusage</cs:usage></cs:usages><cs:credentialData>MTIzNDVBQkNFRg==</cs:credentialData><cs:issueDate>1970-01-01T01:00:01.234+01:00</cs:issueDate><cs:expireDate>1970-01-01T01:00:02.234+01:00</cs:expireDate><cs:validFromDate>1970-01-01T01:00:03.234+01:00</cs:validFromDate></cs:credential></cs:originator><cs:payload><credmanagement:IssueTokenCredentialsRequest><credmanagement:tokenRequest><cs:credentialRequests><cs:credentialRequest><cs:credentialRequestId>123</cs:credentialRequestId><cs:credentialType>SomeCredentialType</cs:credentialType><cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType><cs:x509RequestType>SomeX509RequestType</cs:x509RequestType><cs:credentialRequestData>MTIzNDVBQkM=</cs:credentialRequestData></cs:credentialRequest></cs:credentialRequests><cs:user>someuser</cs:user><cs:tokenContainer>SomeTokenContainer</cs:tokenContainer><cs:tokenType>SomeTokenType</cs:tokenType><cs:tokenClass>SomeTokenClass</cs:tokenClass></credmanagement:tokenRequest><credmanagement:fieldValues><credmanagement:fieldValue><credmanagement:key>someKey1</credmanagement:key><credmanagement:value>someValue1</credmanagement:value></credmanagement:fieldValue><credmanagement:fieldValue><credmanagement:key>someKey2</credmanagement:key><credmanagement:value>someValue2</credmanagement:value></credmanagement:fieldValue></credmanagement:fieldValues><credmanagement:hardTokenData><credmanagement:relatedCredentialIssuerId>CN=SomeIssuerId</credmanagement:relatedCredentialIssuerId><credmanagement:encryptedData>MTIz</credmanagement:encryptedData></credmanagement:hardTokenData></credmanagement:IssueTokenCredentialsRequest></cs:payload><ds:Signature><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#12345678-1234-4444-8000-123456789012"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>4N+Z5XCfsbvalSY8j3zug/TnHLFBEDqcOOTlmMGxAJ4=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>IG6UqeRGFX0TbozQ5wAOstfQp3bqlP+t5qqOtvuSLANIX9D5kA3Y3F5g9H3WkHR4wB0pdczO9DUJ
 kkOVk2CiQ/y1wsshtiAgPM3qBAGnSxvNaEWyLRM4GkgBU7eGnzBV0Hpcnug2HbO0MH3dk5cCsvXV
@@ -1414,6 +1540,29 @@ XTsdWrmz2NhG9sNme4VR3enKrkWDlOrhw/23oWjBmkka51qy/N2hjl9TGCyZacUeAwG1Hu9coUSx
 Nw4xVtq4SW80/Tgwj02FLekDM+nf4ThD6OvFLYLmRyOEkaJa0XBjDobuq+kttHq5xEF+CXCfOIhJ
 zfMrVwdWQ0RngWpmzGyNGU/DLe6XCC6JBqs7CrHHU7fiKshHaSwCmZ1F624Aax4I+skikIoVFaGc
 53UJtWkIlkWFsUrqTphQteZKr3wnQSOXiJ1tsA==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBD
+dXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAx
+MDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBD
+dXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/
+y3i/mT7WwtpW18/QfyUGpYPPxQ4bvPPn61y3jJg/dAbGHvnyQSHfIvrIJUN83q6evvk0bNZNVSEN
+UEP29isE4D+KjD3PFtAzQq18P8m/8mSXMva5VTooEUSDX+VJ/6el6tnyZdc85AlIJkkkvyiDKcjh
+f10yllaiVCHLunGMDXAec4DapPi5GdmSMMXyPOhRx5e+oy6b5q9XmT3C29VNVFf+tkAt3ew3BoQb
+d+VrlBI4oRYq+mfbgkXU6dSKr9DRqhsbu5rU4Jdst2KClXsxaxvC0rVeKQ8iXCDKFH5glzhSYoeW
+l7CI15CdQM6/so7EisSvAgMBAAGjgeMwgeAwHQYDVR0OBBYEFLpidyp0Pc46cUpJf1neFnq/rLJB
+MAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUgEn+Hp9+Yxe4lOhaIPmf++Wu7SYwGAYDVR0gBBEw
+DzANBgsrBgEEAYH1fgMDCTBABgNVHR8EOTA3MDWgM6Axhi9odHRwOi8vYXQtY3JsLndtLm5ldC9k
+ZW1vY3VzdG9tZXIxX3NlcnZlcmNhLmNybDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYB
+BQUHAwEwDwYDVR0RBAgwBoIEdGVzdDANBgkqhkiG9w0BAQUFAAOCAQEAZxGls/mNT4GyAf9u9lg7
+8sSA27sc3xFvHNogrT4yUCbYAOhLXO4HJ9XuKaFyz4bKz6JGdLaQDknDI1GUvpJLpiPTXk4cq1pp
+HVt5/2QVeDCGtite4CH/YrAe4gufBqWo9q7XQeQbjil0mOUsSp1ErrcSadyT+KZoD4GXJBIVFcOI
+WKL7aCHzSLpw/+DY1sEiAbStmhz0K+UrFK+FVdZn1RIWGeVClhJklLb2vNjQgPYGdd5nKyLrlA4z
+ekPDDWdmmxwv4A3MG8KSnl8VBU5CmAZLR1YRaioK6xL1QaH0a16FTkn3y6GVeYUGsTeyLvLlfhgA
+ZLCP64EJEfE1mGxCJg==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></cs:CSMessage>""".getBytes("UTF-8")
+
+	byte[] changeTokenStatusRequestV2_2_With2_3Data = """<?xml version="1.0" encoding="UTF-8" standalone="no"?><cs:CSMessage xmlns:cs="http://certificateservices.org/xsd/csmessages2_0" xmlns:a="http://certificateservices.org/xsd/cs_agent_protocol2_0" xmlns:ae="http://certificateservices.org/xsd/autoenroll2_x" xmlns:auth="http://certificateservices.org/xsd/authorization2_0" xmlns:credmanagement="http://certificateservices.org/xsd/credmanagement2_0" xmlns:csexd="http://certificateservices.org/xsd/csexport_data_1_0" xmlns:csexp="http://certificateservices.org/xsd/cs_export_protocol2_0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:key="http://certificateservices.org/xsd/sensitivekeys" xmlns:keystoremgmt="http://certificateservices.org/xsd/keystoremgmt2_0" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:sysconfig="http://certificateservices.org/xsd/sysconfig2_0" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="12345678-1234-4444-8000-123456789012" payLoadVersion="2.2" timeStamp="2019-04-03T13:11:16.785+02:00" version="2.2" xsi:schemaLocation="http://certificateservices.org/xsd/csmessages2_0 csmessages_schema2_0.xsd"><cs:name>ChangeTokenStatusRequest</cs:name><cs:sourceId>SOMEREQUESTER</cs:sourceId><cs:destinationId>SOMESOURCEID</cs:destinationId><cs:organisation>someorg</cs:organisation><cs:originator><cs:credential><cs:credentialRequestId>123</cs:credentialRequestId><cs:uniqueId>SomeOriginatorUniqueId</cs:uniqueId><cs:displayName>SomeOrignatorDisplayName</cs:displayName><cs:serialNumber>SomeSerialNumber</cs:serialNumber><cs:issuerId>SomeIssuerId</cs:issuerId><cs:status>100</cs:status><cs:credentialType>SomeCredentialType</cs:credentialType><cs:credentialSubType>SomeCredentialSubType</cs:credentialSubType><cs:attributes><cs:attribute><cs:key>someattrkey</cs:key><cs:value>someattrvalue</cs:value></cs:attribute></cs:attributes><cs:usages><cs:usage>someusage</cs:usage></cs:usages><cs:credentialData>MTIzNDVBQkNFRg==</cs:credentialData><cs:issueDate>1970-01-01T01:00:01.234+01:00</cs:issueDate><cs:expireDate>1970-01-01T01:00:02.234+01:00</cs:expireDate><cs:validFromDate>1970-01-01T01:00:03.234+01:00</cs:validFromDate></cs:credential></cs:originator><cs:payload><credmanagement:ChangeTokenStatusRequest><credmanagement:tokenSerialNumber>someTokenSerial</credmanagement:tokenSerialNumber><credmanagement:credentialFilter><credmanagement:credentialTypeFilters><credmanagement:credentialTypeFilter><credmanagement:credentialType>x509certificate</credmanagement:credentialType><credmanagement:credentialSubType>SomeCredSubType1</credmanagement:credentialSubType></credmanagement:credentialTypeFilter><credmanagement:credentialTypeFilter><credmanagement:credentialType>x509certificate</credmanagement:credentialType><credmanagement:credentialSubType>SomeCredSubType2</credmanagement:credentialSubType></credmanagement:credentialTypeFilter></credmanagement:credentialTypeFilters></credmanagement:credentialFilter><credmanagement:newCredentialStatus>100</credmanagement:newCredentialStatus><credmanagement:reasonInformation>someReasonInformation</credmanagement:reasonInformation></credmanagement:ChangeTokenStatusRequest></cs:payload><ds:Signature><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#12345678-1234-4444-8000-123456789012"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>3acJRey3S2rxvfUz5Sz+2twEF2uK8lwaxOpDc0cLPOk=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>IKjJ5Sx/IcFDnL7mNw+B3EA11/JQO+GRf36vEXyo9pk5IkRaAAIQ4LbEo3H8yA/fJVEewOSTK1PA
+W35htGJQfViUPUtAKycGL/DBZj04dfgUb6LHiDvXzWF3DW8URYIz7z3W4F83k286spODYjsrY8zE
+V8lFTL1jwC9yCJ6lqVBLqkwpdzMSd2UdiJ4fvzkXaxZNR3csyH9SvxbYzGJMlkOENW5gPrhLnA0q
+W6Zg9YL8DF8G9+RXWTEA+IMjF6lBkiJPEeqdr1tA8t3t9Gy8Bghdbwt2Kq9DVThH4scq3TePJNIw
+qbIivgxAV+VknTg+v+GwuZpqdBrSf3kaYtDd0A==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIID0jCCArqgAwIBAgIIJFd3fZe2b/8wDQYJKoZIhvcNAQEFBQAwQTEjMCEGA1UEAwwaRGVtbyBD
 dXN0b21lcjEgQVQgU2VydmVyQ0ExGjAYBgNVBAoMEURlbW8gQ3VzdG9tZXIxIEFUMB4XDTEyMTAx
 MDE0NDQwNFoXDTE0MTAxMDE0NDQwNFowKzENMAsGA1UEAwwEdGVzdDEaMBgGA1UECgwRRGVtbyBD
 dXN0b21lcjEgQVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbDqmR4e8sgxw2Afi/
