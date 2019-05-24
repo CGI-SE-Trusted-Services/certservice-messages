@@ -884,7 +884,7 @@ public class SAMLMetaDataMessageParser extends BaseSAMLMessageParser {
      * the mdui:listOfStrings schema type with the following attribute.
      *
      * @param keywords a "list" of strings in the XML Schema [Schema2] sense, which means the keyword strings are
-     *                 space-delimited. Spaces within individual keywords are encoded with a “plus” (+) character; as
+     *                 space-delimited. Spaces within individual keywords are encoded with a {@literal "}plus{@literal "} (+) character; as
      *                 a consequence, keywords may not contain that character.
      * @param lang required language specifier.
      * @return a JAXBElement containing the key words
