@@ -69,16 +69,6 @@ public class CertUtils {
 	public static final String KRB5PRINCIPAL_OBJECTID = "1.3.6.1.5.2.2";
 	public static final String UPN_OBJECTID = "1.3.6.1.4.1.311.20.2.3";
 
-	//    public static CertificateFactory getCertificateFactory() {
-	//        try {
-	//            return CertificateFactory.getInstance("X.509", "BC");
-	//        } catch (NoSuchProviderException nspe) {
-	//            log.error("NoSuchProvider: ", nspe);
-	//        } catch (CertificateException ce) {
-	//            log.error("CertificateException: ", ce);
-	//        }
-	//        return null;
-	//    }
 
 	private static CertificateFactory certFact = null;
 	public static CertificateFactory getCertificateFactory() throws NoSuchProviderException {
@@ -361,6 +351,15 @@ public class CertUtils {
 	}
 
 	/**
+	 * Returns the issuer distinguished name in a strict, comparable X500 format format.
+	 * @param crl the CRL to fetch the issuer DN for
+	 * @return the strict comparable X500 format format of the issuer.
+	 */
+	public static String getIssuer(X509CRL crl){
+		return new X500Name(BCStyle.INSTANCE, crl.getIssuerDN().toString()).toString();
+	}
+
+	/**
 	 * Returns the subject distinguished name in a strict, comparable X500 format format.
 	 * @param certificate the certificate to fetch the subject DN for
 	 * @return the strict comparable X500 format format of the subject.
@@ -541,29 +540,28 @@ public class CertUtils {
 	}
 
 
+
 	/**
-	 * Gets the Microsoft specific UPN altName (altName, OtherName).
-	 * 
-	 * @param cert certificate containing the extension
-	 * @return String with the UPN name or null if the altName does not exist
+	 * Help method that fetches the first email address subject alternative name from
+	 * the certificate or null of no email address could be found.
+	 * @param certificate the certificate to find email address from subject alternative name.
+	 * @return the email address or null if no found.
 	 */
-	public static String getUPNFromAlternativeName(X509Certificate cert) throws IOException, CertificateParsingException {
-		String ret = null;
-		if (cert instanceof X509Certificate) {
-			X509Certificate x509cert = (X509Certificate) cert;
-			Collection<?> altNames = x509cert.getSubjectAlternativeNames();
-			if (altNames != null) {
-				Iterator<?> i = altNames.iterator();
-				while (i.hasNext()) {
-					ASN1Sequence seq = getAltnameSequence((List<?>)i.next());
-					ret = getUPNStringFromSequence(seq);
-					if (ret != null) {
-						break;
+	public static String getEmailFromAlternativeName(X509Certificate certificate) throws CertificateParsingException {
+		if (certificate != null) {
+			if (certificate.getSubjectAlternativeNames() != null) {
+				Iterator iter = certificate.getSubjectAlternativeNames().iterator();
+
+				while (iter.hasNext()) {
+					List<?> item = (List) iter.next();
+					Integer type = (Integer) item.get(0);
+					if (type == 1) {
+						return (String) item.get(1);
 					}
 				}
 			}
 		}
-		return ret;
+		return null;
 	}
 
 	/**
@@ -601,28 +599,6 @@ public class CertUtils {
 			throw new CRLException("bad encoding of CRL number in CRL.");
 		}
 	}
-
-	/** 
-	 * Helper method for fetching the UPN alternative name.
-	 * @param seq the OtherName sequence
-	 */
-	private static String getUPNStringFromSequence(ASN1Sequence seq) {
-		if ( seq != null) {                    
-			DERObjectIdentifier id = DERObjectIdentifier.getInstance(seq.getObjectAt(0));
-			if (id.getId().equals(UPN_OBJECTID)) {
-				ASN1TaggedObject obj = (ASN1TaggedObject) seq.getObjectAt(1);
-				if(obj.getObject() instanceof ASN1TaggedObject){
-					obj =  (ASN1TaggedObject) obj.getObject();
-				}
-				DERUTF8String str = DERUTF8String.getInstance(obj.getObject());
-				return str.getString(); 
-
-			}
-		}
-		return null;
-	}
-
-
 
 
 	/**
