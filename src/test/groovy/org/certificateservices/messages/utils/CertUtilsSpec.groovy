@@ -98,12 +98,20 @@ class CertUtilsSpec extends Specification{
 		CertUtils.getX509CertificateFromPEMorDER(null) == null
 	}
 
-	def "test GetIssuer"() {
+	def "test GetIssuer for certificate"() {
 		when:
 		X509Certificate cert = CertUtils.getX509CertificateFromPEMorDER(Base64.decode(base64Cert))
 		String issuerDN = CertUtils.getIssuer(cert)
 		then:
 		issuerDN.equals("CN=Test eIDCA,O=Test")
+	}
+
+	def "test GetIssuer for crl"() {
+		when:
+		def crl = CertUtils.getCRLfromByteArray(cRLData)
+		String issuerDN = CertUtils.getIssuer(crl)
+		then:
+		issuerDN.equals("CN=Logica SE IM Certificate Service ST ServerCA,O=Logica SE IM Certificate Service ST")
 	}
 
 	def "test GetSubject"() {
@@ -199,23 +207,24 @@ class CertUtilsSpec extends Specification{
 		CertUtils.getCertificateUniqueId(cert) == "62654feb143fb774;CN=Test eIDCA,O=Test"
 	}
 
-
-	def "test GetUPNFromAlternativeName" (){
-		expect:
-		CertUtils.getUPNFromAlternativeName(CertUtils.getX509CertificateFromPEMorDER(Base64.decode(base64Cert))) == null
-		CertUtils.getUPNFromAlternativeName(CertUtils.getX509CertificateFromPEMorDER(Base64.decode(base64LotOfExtensitonsCert))) == "ankaka@kalle.com"
-	}
-
 	def "test GetGUIDFromAlternativeName"() {
 		expect:
 		CertUtils.getGUIDFromAlternativeName(CertUtils.getX509CertificateFromPEMorDER(Base64.decode(base64Cert))) == null
 		when:
 		X509Certificate certWithGuid = CertUtils.getX509CertificateFromPEMorDER(Base64.decode(base64LotOfExtensitonsCert))
-		String guid = CertUtils.getGUIDFromAlternativeName(certWithGuid)
 		then:
-		guid.equals("123654123654123654")
+		CertUtils.getGUIDFromAlternativeName(certWithGuid) == "123654123654123654"
 	}
 
+	def "test getEmailFromAlternativeName"() {
+		expect:
+		CertUtils.getEmailFromAlternativeName(null) == null
+		when:
+		X509Certificate certWithEmail= CertUtils.getX509CertificateFromPEMorDER(pemWithEmailSAN)
+		then:
+		CertUtils.getEmailFromAlternativeName(certWithEmail) == "test@test.com"
+		CertUtils.getEmailFromAlternativeName(certWithFewExtenstions) == null
+	}
 
 	def "test GetCertSerialnumberAsString"()  {
 		when:
@@ -435,6 +444,30 @@ class CertUtilsSpec extends Specification{
 			"Some bag attributes\n").getBytes()
 
 
+	public static byte[] pemWithEmailSAN = """-----BEGIN CERTIFICATE-----
+MIIDvzCCAqegAwIBAgIJAJ1nAJoRZXX3MA0GCSqGSIb3DQEBCwUAMEwxCzAJBgNV
+BAYTAkdCMRYwFAYDVQQIDA1XZXN0IE1pZGxhbmRzMRMwEQYDVQQHDApCaXJtaW5n
+aGFtMRAwDgYDVQQKDAdFeGFtcGxlMB4XDTE5MDgwNzA5MTk1NVoXDTE5MDkwNjA5
+MTk1NVowTDELMAkGA1UEBhMCR0IxFjAUBgNVBAgMDVdlc3QgTWlkbGFuZHMxEzAR
+BgNVBAcMCkJpcm1pbmdoYW0xEDAOBgNVBAoMB0V4YW1wbGUwggEiMA0GCSqGSIb3
+DQEBAQUAA4IBDwAwggEKAoIBAQCl0Els1e7JP80H5BfWz9NDVT/IUXB+5hqEYTsU
+A1HnoUcc9e9WT5P7mHS46kR3vU4wT+FAg3ExN8HeWkMH4/cL3TuT97GQ/Ms0EeAs
+1IQj++Jptfon5z1Hqbt9oJmewZx6zLe86M8AAz3k5cqvV1NbaYaStQIDrvXdjnWK
+ixu0sfNtjT9E7puGYE71h5GXAVVKfzd+gM6J4ukhf4xodF9O4rtjpui1EbzGQK7A
+Uw7s7YFxf8CRdRZFwW+c+Jja0BHJrp8iuUAzLVcJ8wlpPVKXwnG7F8ZHTRgSZ3UX
+JDtvNpEqOBWqt0e5tLVM5oVXcCKId1EGTtV5287xxiFO35fRAgMBAAGjgaMwgaAw
+HQYDVR0OBBYEFOpvvgpwOwMRyDEEGwsrUZcp8JgcMB8GA1UdIwQYMBaAFOpvvgpw
+OwMRyDEEGwsrUZcp8JgcMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgWgMBgGA1UdEQQR
+MA+BDXRlc3RAdGVzdC5jb20wLAYJYIZIAYb4QgENBB8WHU9wZW5TU0wgR2VuZXJh
+dGVkIENlcnRpZmljYXRlMA0GCSqGSIb3DQEBCwUAA4IBAQCYg+ypXf7O+2ndxAJv
+sklJ7vtBviRpegQkcB43OxpaJGgPfRRIJthJyCMLCsv4wmx0+Dl+WUTD41fB9kGl
+Kouhzztjbal/k2Td34I9knlOvOktlU8KjUJwe5iihZyQXVYADFuGW9jSJE6hE5gV
+coMELvnWXJuZ+nrTRoBd2PiA0MVZuwKRtmJVRyJ8S9yqkZmjJ7BKsF2UzDbDtVZD
+wOpwPB66eyZE5tPU/NC1dJjz4XyrCd1myfi5Kk7GBMrqUH6sObd3r/dh1cIefgRf
+yyaohdi0duCDIO45OTKn7a0gTFtKA4+2/9Hy1otiuhauxiBnFtuzb5xXIC63bP3D
+OMk7
+-----END CERTIFICATE-----""".bytes
+
 	public static byte[] base64LotOfExtensitonsCert = (
 			"MIIGlzCCBX+gAwIBAgIIUyeQwM56PyUwDQYJKoZIhvcNAQEFBQAwSDEoMCYGA1UE" +
 					"AwwfU21hcnQgQ2FyZCAyLjAgRGVtbyBTb2Z0VG9rZW5DQTEcMBoGA1UECgwTU21h" +
@@ -587,7 +620,6 @@ class CertUtilsSpec extends Specification{
 			"Otm6V/y6wiaKkXwy4JQf7hQ9YwmlGr2wqdd3k4S8D6JRmg8/PrLygGjSolRWLqhG\n"+
 			"UEWNN/cfUGMmG90qG2sY/aIEva0mPmTKYjiL9CdwSBiw3V95ZZ2SXJeM0j0lUg==\n"+
 			"-----END CERTIFICATE-----\n").getBytes()
-
 
 
 	static byte[] testReqData = Base64.decode("MIIC2jCCAcICAQAwgZQxCzAJBgNVBAYTAlNFMQ8wDQYDVQQIDAZTd2VkZW4xEjAQ\n" +
