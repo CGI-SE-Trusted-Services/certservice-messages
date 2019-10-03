@@ -25,6 +25,7 @@ import org.certificateservices.messages.csagent.CSAgentProtocolPayloadParser;
 import org.certificateservices.messages.csexport.protocol.CSExportProtocolPayloadParser;
 import org.certificateservices.messages.encryptedcsmessage.EncryptedCSMessagePayloadParser;
 import org.certificateservices.messages.keystoremgmt.KeystoreMgmtPayloadParser;
+import org.certificateservices.messages.signrequest.SignRequestPayloadParser;
 import org.certificateservices.messages.sysconfig.SysConfigPayloadParser;
 
 /**
@@ -67,6 +68,7 @@ public class PayloadParserRegistry {
 		  payloadParserRegistry.put(CSExportProtocolPayloadParser.NAMESPACE, CSExportProtocolPayloadParser.class);
 		  payloadParserRegistry.put(AutoEnrollPayloadParser.NAMESPACE, AutoEnrollPayloadParser.class);
 		  payloadParserRegistry.put(CSAgentProtocolPayloadParser.NAMESPACE, CSAgentProtocolPayloadParser.class);
+		  payloadParserRegistry.put(SignRequestPayloadParser.NAMESPACE, SignRequestPayloadParser.class);
 		}
 	}
 	
