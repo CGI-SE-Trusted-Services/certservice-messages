@@ -15,6 +15,7 @@ package org.certificateservices.messages
 import org.certificateservices.messages.csmessages.CSMessageParserManager
 import org.certificateservices.messages.csmessages.CSMessageResponseData
 import org.certificateservices.messages.csmessages.DefaultCSMessageParser
+import org.certificateservices.messages.csmessages.jaxb.Attribute
 import org.certificateservices.messages.utils.SystemTime
 
 import groovy.xml.XmlUtil
@@ -73,6 +74,13 @@ class TestUtils {
 		Properties config = new Properties()
 		config.setProperty(DefaultCSMessageParser.SETTING_SOURCEID, "SOMESOURCEID")
 		CSMessageParserManager.initCSMessageParser(secprov,config)
+	}
+
+	static Attribute createAttribute(String key, String value){
+		Attribute a = new Attribute()
+		a.key = key
+		a.value = value
+		return a
 	}
 	
 	/**

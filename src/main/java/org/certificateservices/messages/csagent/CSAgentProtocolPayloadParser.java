@@ -71,7 +71,7 @@ public class CSAgentProtocolPayloadParser extends BasePayloadParser {
     		return getClass().getResourceAsStream(CS_AGENT_PROTOCOL_XSD_SCHEMA_2_0_RESOURCE_LOCATION);
     	}
     	
-    	throw new MessageContentException("Error unsupported CS Export Protocol Payload version: " + payLoadVersion);
+    	throw new MessageContentException("Error unsupported CS Agent Protocol Payload version: " + payLoadVersion);
 	}
 	
 	/**
