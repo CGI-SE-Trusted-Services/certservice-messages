@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:tns="http://certificateservices.org/xsd/v2x_2_0"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+	xmlns:cs="http://certificateservices.org/xsd/csmessages2_0"
+	elementFormDefault="qualified" targetNamespace="http://certificateservices.org/xsd/v2x_2_0"
+	version="2.0">
+
+	<xs:import namespace="http://certificateservices.org/xsd/csmessages2_0"
+		schemaLocation="csmessages_schema2_2.xsd" />
+
+	<xs:simpleType name="ItsIdType">
+		<xs:restriction base="xs:base64Binary">
+			<xs:minLength value="1" />
+			<xs:maxLength value="1024" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="ProfileNameType">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1" />
+			<xs:maxLength value="1024" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="ITSStatusType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="REGISTERED"/>
+			<xs:enumeration value="ENROLLED"/>
+			<xs:enumeration value="INACTIVE"/>
+			<xs:enumeration value="NOTYETVALID"/>
+			<xs:enumeration value="EXPIRED"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="RegionsType">
+		<xs:choice>
+			<xs:element minOccurs="1" maxOccurs="1" name="identifiedRegions">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element minOccurs="0" maxOccurs="1024" name="countryOnly"
+									type="xs:int" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:choice>
+	</xs:complexType>
+
+	<xs:complexType name="InitECKeyType">
+		<xs:choice>
+			<xs:element minOccurs="1" maxOccurs="1" name="publicKeyInfos">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="1" name="publicVerificationKey" type="xs:base64Binary"/>
+						<xs:element minOccurs="0" maxOccurs="1" name="publicEncryptionKey" type="xs:base64Binary"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:choice>
+	</xs:complexType>
+
+	<xs:complexType name="BaseRegisterRequestType">
+		<xs:complexContent>
+			<xs:extension base="cs:CSRequest">
+				<xs:sequence>
+					<xs:element minOccurs="1" maxOccurs="1" name="itsId" type="tns:ItsIdType"/>
+					<xs:element minOccurs="0" maxOccurs="1" name="ecProfile" type="tns:ProfileNameType"/>
+					<xs:element minOccurs="0" maxOccurs="1" name="atProfile" type="tns:ProfileNameType"/>
+					<xs:element minOccurs="0" maxOccurs="1" name="itsValidFrom" type="xs:dateTime"/>
+					<xs:element minOccurs="0" maxOccurs="1" name="itsValidTo" type="xs:dateTime"/>
+					<xs:element minOccurs="0" maxOccurs="1" name="regions" type="tns:RegionsType"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="BaseV2XResponseType">
+		<xs:complexContent>
+			<xs:extension base="cs:CSResponse">
+				<xs:sequence>
+					<xs:element minOccurs="1" maxOccurs="1" name="itsId" type="tns:ItsIdType"/>
+					<xs:element minOccurs="1" maxOccurs="1" name="user" type="cs:notemptystring"/>
+					<xs:element minOccurs="1" maxOccurs="1" name="userDisplayName" type="cs:notemptystring"/>
+					<xs:element minOccurs="1" maxOccurs="1" name="ecuType"  type="cs:notemptystring" />
+					<xs:element minOccurs="1" maxOccurs="1" name="ecInitPublicKey" type="tns:InitECKeyType"/>
+					<xs:element minOccurs="0" maxOccurs="1" name="ecProfile" type="tns:ProfileNameType"/>
+					<xs:element minOccurs="0" maxOccurs="1" name="atProfile" type="tns:ProfileNameType"/>
+					<xs:element minOccurs="0" maxOccurs="1" name="itsValidFrom" type="xs:dateTime"/>
+					<xs:element minOccurs="0" maxOccurs="1" name="itsValidTo" type="xs:dateTime"/>
+					<xs:element minOccurs="0" maxOccurs="1" name="regions" type="tns:RegionsType"/>
+					<xs:element minOccurs="1" maxOccurs="1" name="itsStatus" type="tns:ITSStatusType"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:element name="RegisterITSRequest">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="tns:BaseRegisterRequestType">
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="1" name="user" type="cs:notemptystring"/>
+						<xs:element minOccurs="0" maxOccurs="1" name="userDisplayName" type="cs:notemptystring"/>
+						<xs:element minOccurs="1" maxOccurs="1" name="ecuType"  type="cs:notemptystring" />
+						<xs:element minOccurs="1" maxOccurs="1" name="ecInitPublicKey" type="tns:InitECKeyType"/>
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="RegisterITSResponse">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="tns:BaseV2XResponseType"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="UpdateITSRequest">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="tns:BaseRegisterRequestType">
+					<xs:sequence>
+						<xs:element minOccurs="0" maxOccurs="1" name="user" type="cs:notemptystring"/>
+						<xs:element minOccurs="0" maxOccurs="1" name="userDisplayName" type="cs:notemptystring"/>
+						<xs:element minOccurs="0" maxOccurs="1" name="ecInitPublicKey" type="tns:InitECKeyType"/>
+						<xs:element minOccurs="0" maxOccurs="1" name="itsStatus" type="tns:ITSStatusType"/>
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="UpdateITSResponse">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="tns:BaseV2XResponseType"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="GetITSDataRequest">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cs:CSRequest">
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="1" name="itsId" type="tns:ItsIdType"/>
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="GetITSDataResponse">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="tns:BaseV2XResponseType"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="DeactivateITSRequest">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cs:CSRequest">
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="1" name="itsId" type="tns:ItsIdType"/>
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="DeactivateITSResponse">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="tns:BaseV2XResponseType"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	
+</xs:schema>
