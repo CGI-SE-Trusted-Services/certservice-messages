@@ -27,6 +27,7 @@ import org.certificateservices.messages.encryptedcsmessage.EncryptedCSMessagePay
 import org.certificateservices.messages.keystoremgmt.KeystoreMgmtPayloadParser;
 import org.certificateservices.messages.signrequest.SignRequestPayloadParser;
 import org.certificateservices.messages.sysconfig.SysConfigPayloadParser;
+import org.certificateservices.messages.v2x.V2XPayloadParser;
 
 /**
  * Class in charge of maintaining available PayLoadParsers for different pay load content in CS Messages.
@@ -69,6 +70,7 @@ public class PayloadParserRegistry {
 		  payloadParserRegistry.put(AutoEnrollPayloadParser.NAMESPACE, AutoEnrollPayloadParser.class);
 		  payloadParserRegistry.put(CSAgentProtocolPayloadParser.NAMESPACE, CSAgentProtocolPayloadParser.class);
 		  payloadParserRegistry.put(SignRequestPayloadParser.NAMESPACE, SignRequestPayloadParser.class);
+		  payloadParserRegistry.put(V2XPayloadParser.NAMESPACE, V2XPayloadParser.class);
 		}
 	}
 	
@@ -84,7 +86,7 @@ public class PayloadParserRegistry {
 		if(retval == null){
 			Class<? extends PayloadParser> registeredClass = payloadParserRegistry.get(namespace);
 			if(registeredClass == null){
-				throw new MessageProcessingException("Error no parser registred for payload with namespace: " + namespace);
+				throw new MessageProcessingException("Error no parser registered for payload with namespace: " + namespace);
 			}
 			try {
 				retval = registeredClass.newInstance();
