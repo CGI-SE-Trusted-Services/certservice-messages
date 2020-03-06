@@ -9,9 +9,9 @@
 		schemaLocation="csmessages_schema2_2.xsd" />
 
 	<xs:simpleType name="ItsIdType">
-		<xs:restriction base="xs:base64Binary">
+		<xs:restriction base="xs:string">
 			<xs:minLength value="1" />
-			<xs:maxLength value="1024" />
+			<xs:maxLength value="256" />
 		</xs:restriction>
 	</xs:simpleType>
 
@@ -24,13 +24,35 @@
 
 	<xs:simpleType name="ITSStatusType">
 		<xs:restriction base="xs:string">
-			<xs:enumeration value="REGISTERED"/>
-			<xs:enumeration value="ENROLLED"/>
+			<xs:enumeration value="ACTIVE"/>
 			<xs:enumeration value="INACTIVE"/>
 			<xs:enumeration value="NOTYETVALID"/>
 			<xs:enumeration value="EXPIRED"/>
 		</xs:restriction>
 	</xs:simpleType>
+
+	<xs:simpleType name="PermissionType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="opaque"/>
+			<xs:enumeration value="bitmap"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="PermissionDataType">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1" />
+			<xs:maxLength value="5000" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="AppPermissionsType" >
+		<xs:simpleContent>
+			<xs:extension base="tns:PermissionDataType">
+				<xs:attribute name="psId" use="required" type="xs:int"/>
+				<xs:attribute name="type" default="bitmap" type="tns:PermissionType"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
 
 	<xs:complexType name="RegionsType">
 		<xs:choice>
@@ -45,16 +67,16 @@
 		</xs:choice>
 	</xs:complexType>
 
+	<xs:complexType name="ATAppPermissionsType">
+		<xs:sequence>
+			<xs:element minOccurs="1" maxOccurs="256" name="appPermission"
+						type="tns:AppPermissionsType" />
+		</xs:sequence>
+	</xs:complexType>
+
 	<xs:complexType name="InitECKeyType">
 		<xs:choice>
-			<xs:element minOccurs="1" maxOccurs="1" name="publicKeyInfos">
-				<xs:complexType>
-					<xs:sequence>
-						<xs:element minOccurs="1" maxOccurs="1" name="publicVerificationKey" type="xs:base64Binary"/>
-						<xs:element minOccurs="0" maxOccurs="1" name="publicEncryptionKey" type="xs:base64Binary"/>
-					</xs:sequence>
-				</xs:complexType>
-			</xs:element>
+			<xs:element minOccurs="1" maxOccurs="1" name="publicVerificationKey" type="xs:base64Binary"/>
 		</xs:choice>
 	</xs:complexType>
 
@@ -63,8 +85,8 @@
 			<xs:extension base="cs:CSRequest">
 				<xs:sequence>
 					<xs:element minOccurs="1" maxOccurs="1" name="itsId" type="tns:ItsIdType"/>
-					<xs:element minOccurs="0" maxOccurs="1" name="ecProfile" type="tns:ProfileNameType"/>
-					<xs:element minOccurs="0" maxOccurs="1" name="atProfile" type="tns:ProfileNameType"/>
+					<xs:element minOccurs="0" maxOccurs="1" name="ecProfile" type="tns:ProfileNameType" />
+					<xs:element minOccurs="0" maxOccurs="1" name="atProfile" type="tns:ProfileNameType" />
 					<xs:element minOccurs="0" maxOccurs="1" name="itsValidFrom" type="xs:dateTime"/>
 					<xs:element minOccurs="0" maxOccurs="1" name="itsValidTo" type="xs:dateTime"/>
 					<xs:element minOccurs="0" maxOccurs="1" name="regions" type="tns:RegionsType"/>
@@ -78,12 +100,11 @@
 			<xs:extension base="cs:CSResponse">
 				<xs:sequence>
 					<xs:element minOccurs="1" maxOccurs="1" name="itsId" type="tns:ItsIdType"/>
-					<xs:element minOccurs="1" maxOccurs="1" name="user" type="cs:notemptystring"/>
-					<xs:element minOccurs="1" maxOccurs="1" name="userDisplayName" type="cs:notemptystring"/>
 					<xs:element minOccurs="1" maxOccurs="1" name="ecuType"  type="cs:notemptystring" />
 					<xs:element minOccurs="1" maxOccurs="1" name="ecInitPublicKey" type="tns:InitECKeyType"/>
 					<xs:element minOccurs="0" maxOccurs="1" name="ecProfile" type="tns:ProfileNameType"/>
 					<xs:element minOccurs="0" maxOccurs="1" name="atProfile" type="tns:ProfileNameType"/>
+					<xs:element minOccurs="1" maxOccurs="1" name="atPermissions" type="tns:ATAppPermissionsType"/>
 					<xs:element minOccurs="0" maxOccurs="1" name="itsValidFrom" type="xs:dateTime"/>
 					<xs:element minOccurs="0" maxOccurs="1" name="itsValidTo" type="xs:dateTime"/>
 					<xs:element minOccurs="0" maxOccurs="1" name="regions" type="tns:RegionsType"/>
@@ -98,10 +119,9 @@
 			<xs:complexContent>
 				<xs:extension base="tns:BaseRegisterRequestType">
 					<xs:sequence>
-						<xs:element minOccurs="1" maxOccurs="1" name="user" type="cs:notemptystring"/>
-						<xs:element minOccurs="0" maxOccurs="1" name="userDisplayName" type="cs:notemptystring"/>
 						<xs:element minOccurs="1" maxOccurs="1" name="ecuType"  type="cs:notemptystring" />
 						<xs:element minOccurs="1" maxOccurs="1" name="ecInitPublicKey" type="tns:InitECKeyType"/>
+						<xs:element minOccurs="1" maxOccurs="1" name="atPermissions" type="tns:ATAppPermissionsType"/>
 					</xs:sequence>
 				</xs:extension>
 			</xs:complexContent>
@@ -121,10 +141,8 @@
 			<xs:complexContent>
 				<xs:extension base="tns:BaseRegisterRequestType">
 					<xs:sequence>
-						<xs:element minOccurs="0" maxOccurs="1" name="user" type="cs:notemptystring"/>
-						<xs:element minOccurs="0" maxOccurs="1" name="userDisplayName" type="cs:notemptystring"/>
 						<xs:element minOccurs="0" maxOccurs="1" name="ecInitPublicKey" type="tns:InitECKeyType"/>
-						<xs:element minOccurs="0" maxOccurs="1" name="itsStatus" type="tns:ITSStatusType"/>
+						<xs:element minOccurs="0" maxOccurs="1" name="atPermissions" type="tns:ATAppPermissionsType"/>
 					</xs:sequence>
 				</xs:extension>
 			</xs:complexContent>
@@ -172,6 +190,26 @@
 	</xs:element>
 
 	<xs:element name="DeactivateITSResponse">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="tns:BaseV2XResponseType"/>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="ReactivateITSRequest">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="cs:CSRequest">
+					<xs:sequence>
+						<xs:element minOccurs="1" maxOccurs="1" name="itsId" type="tns:ItsIdType"/>
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="ReactivateITSResponse">
 		<xs:complexType>
 			<xs:complexContent>
 				<xs:extension base="tns:BaseV2XResponseType"/>

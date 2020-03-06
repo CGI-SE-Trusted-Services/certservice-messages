@@ -9,41 +9,50 @@
 package org.certificateservices.messages.v2x.jaxb;
 
 import javax.xml.bind.annotation.XmlEnum;
+import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for ITSStatusType.
+ * <p>Java class for PermissionType.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * <p>
  * <pre>
- * &lt;simpleType name="ITSStatusType">
+ * &lt;simpleType name="PermissionType">
  *   &lt;restriction base="{http://www.w3.org/2001/XMLSchema}string">
- *     &lt;enumeration value="ACTIVE"/>
- *     &lt;enumeration value="INACTIVE"/>
- *     &lt;enumeration value="NOTYETVALID"/>
- *     &lt;enumeration value="EXPIRED"/>
+ *     &lt;enumeration value="opaque"/>
+ *     &lt;enumeration value="bitmap"/>
  *   &lt;/restriction>
  * &lt;/simpleType>
  * </pre>
  * 
  */
-@XmlType(name = "ITSStatusType")
+@XmlType(name = "PermissionType")
 @XmlEnum
-public enum ITSStatusType {
+public enum PermissionType {
 
-    ACTIVE,
-    INACTIVE,
-    NOTYETVALID,
-    EXPIRED;
+    @XmlEnumValue("opaque")
+    OPAQUE("opaque"),
+    @XmlEnumValue("bitmap")
+    BITMAP("bitmap");
+    private final String value;
 
-    public String value() {
-        return name();
+    PermissionType(String v) {
+        value = v;
     }
 
-    public static ITSStatusType fromValue(String v) {
-        return valueOf(v);
+    public String value() {
+        return value;
+    }
+
+    public static PermissionType fromValue(String v) {
+        for (PermissionType c: PermissionType.values()) {
+            if (c.value.equals(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
     }
 
 }
