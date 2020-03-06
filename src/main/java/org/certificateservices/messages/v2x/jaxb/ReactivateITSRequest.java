@@ -39,8 +39,8 @@ import org.certificateservices.messages.csmessages.jaxb.CSRequest;
 @XmlType(name = "", propOrder = {
     "itsId"
 })
-@XmlRootElement(name = "DeactivateITSRequest")
-public class DeactivateITSRequest
+@XmlRootElement(name = "ReactivateITSRequest")
+public class ReactivateITSRequest
     extends CSRequest
 {
 

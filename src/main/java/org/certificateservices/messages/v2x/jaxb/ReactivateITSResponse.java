@@ -32,8 +32,8 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "")
-@XmlRootElement(name = "DeactivateITSResponse")
-public class DeactivateITSResponse
+@XmlRootElement(name = "ReactivateITSResponse")
+public class ReactivateITSResponse
     extends BaseV2XResponseType
 {
 

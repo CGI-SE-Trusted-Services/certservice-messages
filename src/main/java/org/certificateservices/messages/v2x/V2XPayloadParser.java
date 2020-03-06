@@ -23,9 +23,8 @@ import org.certificateservices.messages.utils.MessageGenerateUtils;
 import org.certificateservices.messages.v2x.jaxb.*;
 
 import java.io.InputStream;
-import java.security.PublicKey;
-import java.util.List;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Payload Parser for generating V2X messages according to
@@ -98,18 +97,15 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 * @param requestId  id of request to send.
 	 * @param destinationId the destination Id to use.
 	 * @param organisation the related organisation (short name)
-	 * @param user Defines a group the ITS station will belong to. This can for instance be the chassi number of the
-	 *             vehicle in order to keep track of in which vehicle a specific ECU is located. (Required)
-	 * @param userDisplayName A human readable form of the user entry. If not set is the user value used. (Required)
 	 * @param ecuType Type of ECU used for the ITS station, used to verify against available values in profile and when
 	 *                defining assurance level. (Required)
-	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier in hostname format. (Required)
+	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier. (Required)
 	 * @param ecInitSignPubKey the initial ec sign public key as a COER encoded PublicVerificationKey from ETSI 103 097.
-	 * @param ecInitEncPubKey the initial ec enc public key as a COER encoded PublicEncryptionKey from ETSI 103 097.
 	 * @param ecProfile Name of profile to use for the enrollment credential. The profile determines Service Permissions,
 	 *                  default region and validity. If not set is default profile for default EA used.
 	 * @param atProfile Name of profile to use for the authorization ticket. The profile determines Service Permissions,
 	 *                  default region and validity. If not set is default profile for default AA used.
+	 * @param atAppPermissions list of app permissions to use in generate Authorization Tickets (Required).
 	 * @param itsValidFrom The date time when the related ITS station will have it’s initial EC certificate start date.
 	 *                     The start date of any EC or AT certificates cannot be before this date.
 	 * @param itsValidTo Field to define an end life of an ITS station, no certificate (EC or AT) can have a validity after this date.
@@ -123,18 +119,20 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public byte[] generateRegisterITSRequest(String requestId, String destinationId, String organisation, String user,
-											 String userDisplayName, String ecuType, byte[] itsId,
-											 byte[] ecInitSignPubKey, byte[] ecInitEncPubKey, String ecProfile,
-											 String atProfile, Date itsValidFrom, Date itsValidTo, RegionsType regions,
+	public byte[] generateRegisterITSRequest(String requestId, String destinationId, String organisation,
+											 String ecuType, String itsId,
+											 byte[] ecInitSignPubKey,  String ecProfile,
+											 String atProfile, List<AppPermissionsType> atAppPermissions,
+											 Date itsValidFrom, Date itsValidTo, RegionsType regions,
 											 Credential originator, List<Object> assertions)
 			throws MessageContentException, MessageProcessingException{
 		RegisterITSRequest payload = of.createRegisterITSRequest();
-		payload.setUser(user);
-		payload.setUserDisplayName(userDisplayName);
 		payload.setEcuType(ecuType);
 
-		payload.setEcInitPublicKey(createInitECKeyType(ecInitSignPubKey,ecInitEncPubKey));
+		payload.setEcInitPublicKey(createInitECKeyType(ecInitSignPubKey));
+		ATAppPermissionsType atAppPermissionsType = of.createATAppPermissionsType();
+		atAppPermissionsType.getAppPermission().addAll(atAppPermissions);
+		payload.setAtPermissions(atAppPermissionsType);
 		populateBaseRegisterRequestType(payload,itsId,ecProfile,atProfile,itsValidFrom,itsValidTo,regions);
 		
 		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(),
@@ -146,17 +144,15 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 * 
 	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
 	 * @param request the related request
-	 * @param user Defines a group the ITS station will belong to. This can for instance be the chassi number of the
-	 *             vehicle in order to keep track of in which vehicle a specific ECU is located.
-	 * @param userDisplayName A human readable form of the user entry. If not set is the user value used.
 	 * @param ecuType Type of ECU used for the ITS station, used to verify against available values in profile and when
 	 *                defining assurance level.
-	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier in hostname format.
+	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier.
 	 * @param initECKey the initial ec public key type containing keys to update.
 	 * @param ecProfile Name of profile to use for the enrollment credential. The profile determines Service Permissions,
 	 *                  default region and validity. If not set is default profile for default EA used.
 	 * @param atProfile Name of profile to use for the authorization ticket. The profile determines Service Permissions,
 	 *                  default region and validity. If not set is default profile for default AA used.
+	 * @param atAppPermissions list of app permissions to use in generate Authorization Tickets.
 	 * @param itsValidFrom The date time when the related ITS station will have it’s initial EC certificate start date.
 	 *                     The start date of any EC or AT certificates cannot be before this date.
 	 * @param itsValidTo Field to define an end life of an ITS station, no certificate (EC or AT) can have a validity after this date.
@@ -169,15 +165,17 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-    public CSMessageResponseData generateRegisterITSResponse(String relatedEndEntity, CSMessage request, String user,
-															 String userDisplayName, String ecuType, byte[] itsId,
+    public CSMessageResponseData generateRegisterITSResponse(String relatedEndEntity, CSMessage request, String ecuType,
+															 String itsId,
 															 InitECKeyType initECKey,
-															 String ecProfile, String atProfile, Date itsValidFrom,
+															 String ecProfile, String atProfile,
+															 List<AppPermissionsType> atAppPermissions, Date itsValidFrom,
 															 Date itsValidTo, RegionsType regions, ITSStatusType itsStatus)
 			throws MessageContentException, MessageProcessingException{
     	RegisterITSResponse payload = of.createRegisterITSResponse();
 
-		populateBaseV2XResponseType(payload,user,userDisplayName,ecuType,itsId,initECKey,ecProfile,atProfile,itsValidFrom,itsValidTo,regions,itsStatus);
+		populateBaseV2XResponseType(payload,ecuType,itsId,initECKey,ecProfile,atProfile,
+				atAppPermissions,itsValidFrom,itsValidTo,regions,itsStatus);
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), payload);
 	}
 
@@ -186,23 +184,19 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 *
 	 * @param requestId  id of request to send.
 	 * @param destinationId the destination Id to use.
-	 * @param user Defines a group the ITS station will belong to. This can for instance be the chassi number of the
-	 *             vehicle in order to keep track of in which vehicle a specific ECU is located.
-	 * @param userDisplayName A human readable form of the user entry. If not set is the user value used.
-	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier in hostname format. (Required)
+	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier. (Required)
 	 * @param ecInitSignPubKey the initial ec sign public key as a COER encoded PublicVerificationKey from ETSI 103 097.
-	 * @param ecInitEncPubKey the initial ec enc public key as a COER encoded PublicEncryptionKey from ETSI 103 097.
 	 * @param ecProfile Name of profile to use for the enrollment credential. The profile determines Service Permissions,
 	 *                  default region and validity. If not set is default profile for default EA used.
 	 * @param atProfile Name of profile to use for the authorization ticket. The profile determines Service Permissions,
 	 *                  default region and validity. If not set is default profile for default AA used.
+	 * @param atAppPermissions list of app permissions to use in generate Authorization Tickets.
 	 * @param itsValidFrom The date time when the related ITS station will have it’s initial EC certificate start date.
 	 *                     The start date of any EC or AT certificates cannot be before this date.
 	 * @param itsValidTo Field to define an end life of an ITS station, no certificate (EC or AT) can have a validity after this date.
 	 *                   Use case could be a test fleet where no vehicles should be used after a specific date.
 	 * @param regions Defines specific regions for this vehicle. The defined regions is checked against the profile and only regions that are a subset of regions defined in related profile will be accepted.
 	 *                If not set is the default regions set in related profile used.
-	 * @param itsStatus to update the ITS status of the station.
 	 * @param originator the credential of the original requester, null if this is the origin of the request.
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
 	 * @return  a generated and signed (if configured) message.
@@ -210,18 +204,19 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public byte[] generateUpdateITSRequest(String requestId, String destinationId, String organisation, String user,
-										   String userDisplayName,  byte[] itsId,
-										   byte[] ecInitSignPubKey, byte[] ecInitEncPubKey, String ecProfile,
-										   String atProfile, Date itsValidFrom, Date itsValidTo, RegionsType regions,
-										   ITSStatusType itsStatus,
+	public byte[] generateUpdateITSRequest(String requestId, String destinationId, String organisation, String itsId,
+										   byte[] ecInitSignPubKey, String ecProfile,
+										   String atProfile, List<AppPermissionsType> atAppPermissions,
+										   Date itsValidFrom, Date itsValidTo, RegionsType regions,
 										   Credential originator, List<Object> assertions)
 			throws MessageContentException, MessageProcessingException{
 		UpdateITSRequest payload = of.createUpdateITSRequest();
-		payload.setUser(user);
-		payload.setUserDisplayName(userDisplayName);
-		payload.setEcInitPublicKey(createInitECKeyType(ecInitSignPubKey,ecInitEncPubKey));
-		payload.setItsStatus(itsStatus);
+		payload.setEcInitPublicKey(createInitECKeyType(ecInitSignPubKey));
+		if(atAppPermissions != null){
+			ATAppPermissionsType atAppPermissionsType = of.createATAppPermissionsType();
+			atAppPermissionsType.getAppPermission().addAll(atAppPermissions);
+			payload.setAtPermissions(atAppPermissionsType);
+		}
 		populateBaseRegisterRequestType(payload,itsId,ecProfile,atProfile,itsValidFrom,itsValidTo,regions);
 
 		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(), payload, originator, assertions);
@@ -234,9 +229,6 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 * @param request the related request
 	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
 	 * @param request the related request
-	 * @param user Defines a group the ITS station will belong to. This can for instance be the chassi number of the
-	 *             vehicle in order to keep track of in which vehicle a specific ECU is located.
-	 * @param userDisplayName A human readable form of the user entry. If not set is the user value used.
 	 * @param ecuType Type of ECU used for the ITS station, used to verify against available values in profile and when
 	 *                defining assurance level.
 	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier in hostname format.
@@ -245,6 +237,7 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 *                  default region and validity. If not set is default profile for default EA used.
 	 * @param atProfile Name of profile to use for the authorization ticket. The profile determines Service Permissions,
 	 *                  default region and validity. If not set is default profile for default AA used.
+	 * @param atAppPermissions list of app permissions to use in generate Authorization Tickets.
 	 * @param itsValidFrom The date time when the related ITS station will have it’s initial EC certificate start date.
 	 *                     The start date of any EC or AT certificates cannot be before this date.
 	 * @param itsValidTo Field to define an end life of an ITS station, no certificate (EC or AT) can have a validity after this date.
@@ -257,15 +250,16 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public CSMessageResponseData generateUpdateITSResponse(String relatedEndEntity, CSMessage request, String user,
-														   String userDisplayName, String ecuType, byte[] itsId,
+	public CSMessageResponseData generateUpdateITSResponse(String relatedEndEntity, CSMessage request,
+														   String ecuType, String itsId,
 														   InitECKeyType initECKey, String ecProfile,
-														   String atProfile, Date itsValidFrom, Date itsValidTo,
+														   String atProfile, List<AppPermissionsType> atAppPermissions,
+														   Date itsValidFrom, Date itsValidTo,
 														   RegionsType regions, ITSStatusType itsStatus)
 			throws MessageContentException, MessageProcessingException{
 		UpdateITSResponse payload = of.createUpdateITSResponse();
-		populateBaseV2XResponseType(payload,user,userDisplayName,ecuType,itsId,initECKey,
-				ecProfile,atProfile,itsValidFrom,itsValidTo,regions,itsStatus);
+		populateBaseV2XResponseType(payload,ecuType,itsId,initECKey,
+				ecProfile,atProfile,atAppPermissions, itsValidFrom,itsValidTo,regions,itsStatus);
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(),
 				payload);
 	}
@@ -276,7 +270,7 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 * @param requestId  id of request to send.
 	 * @param destinationId the destination Id to use.
 	 * @param organisation the related organisation (short name)
-	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier in hostname format.
+	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier.
 	 * @param originator the credential of the original requester, null if this is the origin of the request.
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
 	 * @return  a generated and signed (if configured) message.
@@ -284,7 +278,7 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public byte[] generateGetITSDataRequest(String requestId, String destinationId, String organisation, byte[] itsId,
+	public byte[] generateGetITSDataRequest(String requestId, String destinationId, String organisation, String itsId,
 											Credential originator, List<Object> assertions)
 			throws MessageContentException, MessageProcessingException{
 		GetITSDataRequest payload = of.createGetITSDataRequest();
@@ -299,9 +293,6 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 *
 	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
 	 * @param request the related request
-	 * @param user Defines a group the ITS station will belong to. This can for instance be the chassi number of the
-	 *             vehicle in order to keep track of in which vehicle a specific ECU is located.
-	 * @param userDisplayName A human readable form of the user entry. If not set is the user value used.
 	 * @param ecuType Type of ECU used for the ITS station, used to verify against available values in profile and when
 	 *                defining assurance level.
 	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier in hostname format.
@@ -310,6 +301,7 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 *                  default region and validity. If not set is default profile for default EA used.
 	 * @param atProfile Name of profile to use for the authorization ticket. The profile determines Service Permissions,
 	 *                  default region and validity. If not set is default profile for default AA used.
+	 * @param atAppPermissions list of app permissions to use in generate Authorization Tickets.
 	 * @param itsValidFrom The date time when the related ITS station will have it’s initial EC certificate start date.
 	 *                     The start date of any EC or AT certificates cannot be before this date.
 	 * @param itsValidTo Field to define an end life of an ITS station, no certificate (EC or AT) can have a validity after this date.
@@ -322,16 +314,17 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public CSMessageResponseData generateGetITSDataResponse(String relatedEndEntity, CSMessage request, String user,
-															String userDisplayName, String ecuType, byte[] itsId,
+	public CSMessageResponseData generateGetITSDataResponse(String relatedEndEntity, CSMessage request,
+															String ecuType, String itsId,
 															InitECKeyType initECKey,
-															String ecProfile, String atProfile, Date itsValidFrom,
+															String ecProfile, String atProfile,
+															List<AppPermissionsType> atAppPermissions, Date itsValidFrom,
 															Date itsValidTo, RegionsType regions, ITSStatusType itsStatus)
 			throws MessageContentException, MessageProcessingException{
 		GetITSDataResponse payload = of.createGetITSDataResponse();
 
-		populateBaseV2XResponseType(payload,user,userDisplayName,ecuType,itsId,initECKey,
-				ecProfile,atProfile,itsValidFrom,itsValidTo,regions,itsStatus);
+		populateBaseV2XResponseType(payload,ecuType,itsId,initECKey,
+				ecProfile,atProfile,atAppPermissions,itsValidFrom,itsValidTo,regions,itsStatus);
 		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), payload);
 	}
 
@@ -341,7 +334,7 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 * @param requestId  id of request to send.
 	 * @param destinationId the destination Id to use.
 	 * @param organisation the related organisation (short name)
-	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier in hostname format.
+	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier.
 	 * @param originator the credential of the original requester, null if this is the origin of the request.
 	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
 	 * @return  a generated and signed (if configured) message.
@@ -349,7 +342,7 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public byte[] generateDeactivateITSRequest(String requestId, String destinationId, String organisation, byte[] itsId,
+	public byte[] generateDeactivateITSRequest(String requestId, String destinationId, String organisation, String itsId,
 											   Credential originator, List<Object> assertions)
 			throws MessageContentException, MessageProcessingException{
 		DeactivateITSRequest payload = of.createDeactivateITSRequest();
@@ -364,17 +357,15 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 *
 	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
 	 * @param request the related request
-	 * @param user Defines a group the ITS station will belong to. This can for instance be the chassi number of the
-	 *             vehicle in order to keep track of in which vehicle a specific ECU is located.
-	 * @param userDisplayName A human readable form of the user entry. If not set is the user value used.
 	 * @param ecuType Type of ECU used for the ITS station, used to verify against available values in profile and when
 	 *                defining assurance level.
-	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier in hostname format.
+	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier.
 	 * @param initECKey the initial ec public key type containing keys to update.
 	 * @param ecProfile Name of profile to use for the enrollment credential. The profile determines Service Permissions,
 	 *                  default region and validity. If not set is default profile for default EA used.
 	 * @param atProfile Name of profile to use for the authorization ticket. The profile determines Service Permissions,
 	 *                  default region and validity. If not set is default profile for default AA used.
+	 * @param atAppPermissions list of app permissions to use in generate Authorization Tickets.
 	 * @param itsValidFrom The date time when the related ITS station will have it’s initial EC certificate start date.
 	 *                     The start date of any EC or AT certificates cannot be before this date.
 	 * @param itsValidTo Field to define an end life of an ITS station, no certificate (EC or AT) can have a validity after this date.
@@ -387,42 +378,114 @@ public class V2XPayloadParser extends BasePayloadParser {
 	 * @throws MessageContentException if input data contained invalid format.
 	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
 	 */
-	public CSMessageResponseData generateDeactivateITSResponse(String relatedEndEntity, CSMessage request, String user,
-															   String userDisplayName, String ecuType, byte[] itsId,
+	public CSMessageResponseData generateDeactivateITSResponse(String relatedEndEntity, CSMessage request,
+															   String ecuType, String itsId,
 															   InitECKeyType initECKey,
-															   String ecProfile, String atProfile, Date itsValidFrom,
+															   String ecProfile, String atProfile,
+															   List<AppPermissionsType> atAppPermissions, Date itsValidFrom,
 															   Date itsValidTo, RegionsType regions, ITSStatusType itsStatus)
 			throws MessageContentException, MessageProcessingException{
 		DeactivateITSResponse payload = of.createDeactivateITSResponse();
 
-		populateBaseV2XResponseType(payload,user,userDisplayName,ecuType,itsId,initECKey,ecProfile,atProfile,itsValidFrom,itsValidTo,regions,itsStatus);
-		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(), payload);
+		populateBaseV2XResponseType(payload,ecuType,itsId,initECKey,ecProfile,atProfile,
+				atAppPermissions, itsValidFrom,itsValidTo,regions,itsStatus);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(),
+				payload);
+	}
+
+	/**
+	 * Method generate a Reactivate ITS Request Message.
+	 *
+	 * @param requestId  id of request to send.
+	 * @param destinationId the destination Id to use.
+	 * @param organisation the related organisation (short name)
+	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier.
+	 * @param originator the credential of the original requester, null if this is the origin of the request.
+	 * @param assertions a list of related authorization assertions, or null if no authorization assertions is available.
+	 * @return  a generated and signed (if configured) message.
+	 *
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public byte[] generateReactivateITSRequest(String requestId, String destinationId, String organisation, String itsId,
+											   Credential originator, List<Object> assertions)
+			throws MessageContentException, MessageProcessingException{
+		ReactivateITSRequest payload = of.createReactivateITSRequest();
+		payload.setItsId(itsId);
+
+		return getCSMessageParser().generateCSRequestMessage(requestId, destinationId, organisation, getPayloadVersion(),
+				payload, originator, assertions);
+	}
+
+	/**
+	 * Method generate a Reactivate ITS Response Message.
+	 *
+	 * @param relatedEndEntity the name of the related end entity (such as username of the related user)
+	 * @param request the related request
+	 * @param ecuType Type of ECU used for the ITS station, used to verify against available values in profile and when
+	 *                defining assurance level.
+	 * @param itsId the canonical name of the ITS to register. Should be a unique identifier.
+	 * @param initECKey the initial ec public key type containing keys to update.
+	 * @param ecProfile Name of profile to use for the enrollment credential. The profile determines Service Permissions,
+	 *                  default region and validity. If not set is default profile for default EA used.
+	 * @param atProfile Name of profile to use for the authorization ticket. The profile determines Service Permissions,
+	 *                  default region and validity. If not set is default profile for default AA used.
+	 * @param atAppPermissions list of app permissions to use in generate Authorization Tickets.
+	 * @param itsValidFrom The date time when the related ITS station will have it’s initial EC certificate start date.
+	 *                     The start date of any EC or AT certificates cannot be before this date.
+	 * @param itsValidTo Field to define an end life of an ITS station, no certificate (EC or AT) can have a validity after this date.
+	 *                   Use case could be a test fleet where no vehicles should be used after a specific date.
+	 * @param regions Defines specific regions for this vehicle. The defined regions is checked against the profile and only regions that are a subset of regions defined in related profile will be accepted.
+	 *                If not set is the default regions set in related profile used.
+	 * @param itsStatus the current status of the ITS Station.
+	 * @return a generated and signed message.
+	 *
+	 * @throws MessageContentException if input data contained invalid format.
+	 * @throws MessageProcessingException if internal problems occurred processing the cs message.
+	 */
+	public CSMessageResponseData generateReactivateITSResponse(String relatedEndEntity, CSMessage request,
+															   String ecuType, String itsId,
+															   InitECKeyType initECKey,
+															   String ecProfile, String atProfile,
+															   List<AppPermissionsType> atAppPermissions, Date itsValidFrom,
+															   Date itsValidTo, RegionsType regions, ITSStatusType itsStatus)
+			throws MessageContentException, MessageProcessingException{
+		ReactivateITSResponse payload = of.createReactivateITSResponse();
+
+		populateBaseV2XResponseType(payload,ecuType,itsId,initECKey,ecProfile,atProfile,
+				atAppPermissions, itsValidFrom,itsValidTo,regions,itsStatus);
+		return getCSMessageParser().generateCSResponseMessage(relatedEndEntity, request, request.getPayLoadVersion(),
+				payload);
 	}
 
 
-	private void populateBaseV2XResponseType(BaseV2XResponseType payload, String user, String userDisplayName,
-											 String ecuType, byte[] itsId,
+	private void populateBaseV2XResponseType(BaseV2XResponseType payload,
+											 String ecuType, String itsId,
 											 InitECKeyType initECKey, String ecProfile, String atProfile,
+											 List<AppPermissionsType> atAppPermissions,
 											 Date itsValidFrom, Date itsValidTo, RegionsType regions,
 											 ITSStatusType itsStatus) throws MessageProcessingException {
-		payload.setUser(user);
-		payload.setUserDisplayName(userDisplayName);
 		payload.setEcuType(ecuType);
 		payload.setItsId(itsId);
 		payload.setEcInitPublicKey(initECKey);
 		payload.setEcProfile(ecProfile);
 		payload.setAtProfile(atProfile);
+		if(atAppPermissions != null){
+			ATAppPermissionsType atAppPermissionsType = of.createATAppPermissionsType();
+			atAppPermissionsType.getAppPermission().addAll(atAppPermissions);
+			payload.setAtPermissions(atAppPermissionsType);
+		}
 		if(itsValidFrom != null) {
 			payload.setItsValidFrom(MessageGenerateUtils.dateToXMLGregorianCalendar(itsValidFrom));
 		}
 		if(itsValidTo != null) {
-			payload.setItsValidFrom(MessageGenerateUtils.dateToXMLGregorianCalendar(itsValidTo));
+			payload.setItsValidTo(MessageGenerateUtils.dateToXMLGregorianCalendar(itsValidTo));
 		}
 		payload.setRegions(regions);
 		payload.setItsStatus(itsStatus);
 	}
 
-	private void populateBaseRegisterRequestType(BaseRegisterRequestType payload, byte[] itsId,
+	private void populateBaseRegisterRequestType(BaseRegisterRequestType payload, String itsId,
 												 String ecProfile, String atProfile, Date itsValidFrom, Date itsValidTo,
 												 RegionsType regions) throws MessageProcessingException {
 		payload.setItsId(itsId);
@@ -438,17 +501,9 @@ public class V2XPayloadParser extends BasePayloadParser {
 	}
 
 
-	private InitECKeyType createInitECKeyType(byte[] ecInitSignPubKey, byte[] ecInitEncPubKey){
+	private InitECKeyType createInitECKeyType(byte[] ecInitSignPubKey){
 		InitECKeyType initECKeyType = of.createInitECKeyType();
-		InitECKeyType.PublicKeyInfos subjectPublicKeyInfos = of.createInitECKeyTypePublicKeyInfos();
-		if(ecInitSignPubKey != null){
-			subjectPublicKeyInfos.setPublicVerificationKey(ecInitSignPubKey);
-		}
-		if(ecInitEncPubKey != null){
-			subjectPublicKeyInfos.setPublicEncryptionKey(ecInitEncPubKey);
-		}
-		initECKeyType.setPublicKeyInfos(subjectPublicKeyInfos);
-
+		initECKeyType.setPublicVerificationKey(ecInitSignPubKey);
 		return initECKeyType;
 	}
 
