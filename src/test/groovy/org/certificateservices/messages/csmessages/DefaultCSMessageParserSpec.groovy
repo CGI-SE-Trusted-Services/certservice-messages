@@ -793,7 +793,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 		}
 	}
 	
-	public static void verifySuccessfulBasePayload(GPathResult payLoadObject, String expectedResponseTo){
+	static void verifySuccessfulBasePayload(GPathResult payLoadObject, String expectedResponseTo){
 	  assert payLoadObject.inResponseTo == expectedResponseTo
 	  assert payLoadObject.status == "SUCCESS"
 	  assert payLoadObject.failureMessage.size() == 0
@@ -808,7 +808,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 	}
 	
 
-	public static Credential createOriginatorCredential(){
+	static Credential createOriginatorCredential(){
 		Credential c = of.createCredential();
 		
 
