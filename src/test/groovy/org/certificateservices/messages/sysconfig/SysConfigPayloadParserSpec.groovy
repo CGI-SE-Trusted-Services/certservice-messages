@@ -32,13 +32,13 @@ class SysConfigPayloadParserSpec extends Specification {
 	
 	def setupSpec(){
 		Security.addProvider(new BouncyCastleProvider())
-		Init.init();
+		Init.init()
 	}
 	
 	def setup(){
 		setupRegisteredPayloadParser();
 		csMessageParser = CSMessageParserManager.getCSMessageParser()
-		pp = PayloadParserRegistry.getParser(SysConfigPayloadParser.NAMESPACE);
+		pp = PayloadParserRegistry.getParser(SysConfigPayloadParser.NAMESPACE)
 	}
 	
 	def "Verify that JAXBPackage(), getNameSpace(), getSchemaAsInputStream(), getSupportedVersions(), getDefaultPayloadVersion() returns the correct values"(){
