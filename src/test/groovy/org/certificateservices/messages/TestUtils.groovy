@@ -67,6 +67,7 @@ class TestUtils {
 		assert rd.messageName == expectedMessageName
 		assert rd.relatedEndEntity == expectedRelatedEndEntity
 		assert rd.messageProperties != null
+		assert rd.responseMessage != null
 	}
 
 	static void setupRegisteredPayloadParser(){
