@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.certificateservices.messages.csmessages.constants.Constants;
+import org.certificateservices.messages.csmessages.jaxb.CSMessage;
 
 /**
  * Value class containing the result of a message processing call.
@@ -35,6 +36,7 @@ public class CSMessageResponseData {
 	protected String destination;
 	protected byte[] responseData;
 	protected boolean isForwardableResponse = false;
+	protected CSMessage responseMessage;
 	protected Map<String,String> messageProperties = new HashMap<String,String>();
 	
 	
@@ -48,6 +50,26 @@ public class CSMessageResponseData {
 	/**
 	 * Default constructor
 	 * 
+	 * @param responseMessage The related response message.
+	 * @param relatedEndEntity the related end entity of the message.
+	 * @param responseData the response data
+	 * @param isForwardableResponse true if response is forwardable.
+	 */
+	public CSMessageResponseData(CSMessage responseMessage,String relatedEndEntity,
+			byte[] responseData, boolean isForwardableResponse) {
+		super();
+		this.responseMessage = responseMessage;
+		this.messageId = responseMessage.getID();
+		this.setMessageName(responseMessage.getName());
+		this.setRelatedEndEntity(relatedEndEntity);
+		this.destination = responseMessage.getDestinationId();
+		this.responseData = responseData;
+		this.isForwardableResponse = isForwardableResponse;
+	}
+
+	/**
+	 * Alternative constructor when CSMessage is not available.
+	 *
 	 * @param messageId the related id of the message
 	 * @param messageName the name of the message in the response
 	 * @param relatedEndEntity the related end entity of the message.
@@ -55,7 +77,7 @@ public class CSMessageResponseData {
 	 * @param responseData the response data
 	 */
 	public CSMessageResponseData(String messageId, String messageName, String relatedEndEntity, String destination,
-			byte[] responseData) {
+								 byte[] responseData) {
 		super();
 		this.messageId = messageId;
 		this.setMessageName(messageName);
@@ -146,7 +168,7 @@ public class CSMessageResponseData {
 
 	/**
 	 * 
-	 * @param isFailureResponse true if response is a failure indication.
+	 * @param isForwardableResponse true if response is a failure indication.
 	 */
 	public void setIsForwardableResponse(boolean isForwardableResponse) {
 		this.isForwardableResponse = isForwardableResponse;
@@ -199,7 +221,23 @@ public class CSMessageResponseData {
 	public void setMessageName(String messageName) {
 		this.messageName = messageName;
 	}
-	
+
+	/**
+	 *
+	 * @return responseMessage The related response message.
+	 */
+	public CSMessage getResponseMessage() {
+		return responseMessage;
+	}
+
+	/**
+	 *
+	 * @param responseMessage The related response message.
+	 */
+	public void setResponseMessage(CSMessage responseMessage) {
+		this.responseMessage = responseMessage;
+	}
+
 	/**
 	 * Gets a map of extra properties related to a message, for specific purposes, for example
 	 * JMS properties in a MQ environment.
