@@ -319,7 +319,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		populateSuccessfulResponse(payload, request);
 		CSMessage message = genCSMessage(request.getVersion(), payLoadVersion, request.getName(), null, request.getSourceId(), request.getOrganisation(),  getOriginatorFromRequest(request), payload,  null);
 		byte[] responseData = marshallAndSignCSMessage( message);
-		return new CSMessageResponseData(message.getID(),message.getName(), relatedEndEntity, message.getDestinationId(),responseData, isForwardableResponse);
+		return new CSMessageResponseData(message, relatedEndEntity, responseData, isForwardableResponse);
 	}
 
 	/**
@@ -452,7 +452,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			CSMessage csMessage = genCSMessage(version,version,requestName, null,destinationID, organisation, originator, objectFactory.createFailureResponse(csResponse), null);
 
 			byte[] responseData = marshallAndSignCSMessage(csMessage);
-			return new CSMessageResponseData(csMessage.getID(), csMessage.getName(), relatedEndEntity, csMessage.getDestinationId(),responseData, false );
+			return new CSMessageResponseData(csMessage, relatedEndEntity, responseData, false );
 		} catch (ParserConfigurationException e) {
 			throw new MessageProcessingException("Error configuring the XML SAX Parser : " + e.getMessage());
 		} catch (SAXException e) {
