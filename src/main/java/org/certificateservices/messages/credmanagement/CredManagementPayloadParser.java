@@ -577,7 +577,7 @@ public class CredManagementPayloadParser extends BasePayloadParser {
 
 		CSMessage csMessage = getCSMessageParser().genCSMessage(csMessageVersion, payLoadVersion,requestName,responseId, destinationId, organisation, originator, response, assertions);
 		byte[] responseData = getCSMessageParser().marshallAndSignCSMessage(csMessage);
-		return new CSMessageResponseData(csMessage.getID(),csMessage.getName(), relatedEndEntity, csMessage.getDestinationId(),responseData, true);
+		return new CSMessageResponseData(csMessage, relatedEndEntity, responseData, true);
 		
 	}
 	
