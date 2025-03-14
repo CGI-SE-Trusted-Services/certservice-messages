@@ -11,8 +11,8 @@ description "certservice-messages"
 
 ext {
     bcJdk18onVersion = "1.76"
-    groovyVersion = "3.0.23"
-    tomcatEmbedVersion = "9.0.98"
+    groovyVersion = "3.0.24"
+    tomcatEmbedVersion = "9.0.102"
     commonsIOVersion = "2.18.0"
 }
 
@@ -46,7 +46,7 @@ dependencies {
     }
     testRuntimeOnly 'com.sun.xml.bind:jaxb-core:2.3.0.1'
     testRuntimeOnly 'com.sun.xml.bind:jaxb-impl:2.3.9'
-    testRuntimeOnly 'net.bytebuddy:byte-buddy:1.16.1'
+    testRuntimeOnly 'net.bytebuddy:byte-buddy:1.17.2'
 
     testImplementation 'org.objenesis:objenesis:3.4'
     testImplementation "commons-io:commons-io:${commonsIOVersion}"

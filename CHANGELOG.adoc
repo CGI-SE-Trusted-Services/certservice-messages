@@ -9,13 +9,14 @@ of the Certificate Service Messages Library.
 
 * Upgraded Byte Buddy to 1.16.1.
 * Upgraded XmlSec to 2.3.5.
+* Upgraded Tomcat from 9.0.98 to 9.0.102.
 
 == Version 2411.1
 
 === Dependency upgrades
 
 * Upgraded Grails from 6.2.0 to 6.2.2.
-* Upgraded Groovy to 3.0.23.
+* Upgraded Groovy to 3.0.24.
 * Upgraded Tomcat from 9.0.93 to 9.0.98.
 * Upgraded Apache Commons IO from 2.16.1 to 2.18.0
 * Upgraded Snakeyaml from 2.2 to 2.3.
