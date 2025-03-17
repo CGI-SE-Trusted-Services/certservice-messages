@@ -3,7 +3,7 @@
 This document provides information about changes that have been made for each new version
 of the Certificate Service Messages Library.
 
-== Version 2502.1
+== Version 2503.1
 
 === Dependency upgrades
 
