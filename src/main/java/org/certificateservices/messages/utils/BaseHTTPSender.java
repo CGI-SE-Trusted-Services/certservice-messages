@@ -10,6 +10,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Abstract Base implementation of a MsgSender using HTTP.
@@ -61,6 +63,19 @@ public abstract class BaseHTTPSender {
         }
 
         return isConnected;
+    }
+
+    public static byte[] toByteArray(final InputStream inputStream) throws IOException {
+        if (inputStream == null) {
+            return new byte[0];
+        }
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        byte[] data = new byte[4096];
+        int nRead;
+        while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, nRead);
+        }
+        return buffer.toByteArray();
     }
 
     /**
@@ -224,16 +239,24 @@ public abstract class BaseHTTPSender {
                     inputStream.close();
                     callback.responseReceived(baos.toByteArray());
                 }else {
+                    String errorMessage = con.getResponseMessage();
+                    if(con.getErrorStream() != null) {
+                        try (InputStream errorStream = con.getErrorStream()) {
+                            byte[] responseData = toByteArray(errorStream);
+                            errorMessage = new String(responseData, StandardCharsets.UTF_8);
+                        }
+                    }
+
                     if(httpStatus == 429){
-                        callback.errorOccurred(new SpamProtectionException("Error sending message to " + url + ", got response code :" + con.getResponseCode() + " message: " + con.getResponseMessage()));
+                        callback.errorOccurred(new SpamProtectionException("Error sending message to " + url + ", got response code :" + con.getResponseCode() + " message: " + errorMessage));
                     }else {
                         if (responseCode == 4) {
-                            callback.errorOccurred(new MessageContentException("Error sending message to " + url + ", got response code :" + con.getResponseCode() + " message: " + con.getResponseMessage()));
+                            callback.errorOccurred(new MessageContentException("Error sending message to " + url + ", got response code :" + con.getResponseCode() + " message: " + errorMessage));
                         } else {
                             if(httpStatus == 503){
-                                callback.errorOccurred(new TimeoutException("Timeout sending message to " + url + ", got response code :" + con.getResponseCode() + " message: " + con.getResponseMessage()));
+                                callback.errorOccurred(new TimeoutException("Timeout sending message to " + url + ", got response code :" + con.getResponseCode() + " message: " + errorMessage));
                             }else {
-                                callback.errorOccurred(new MessageProcessingException("Error sending message to " + url + ", got response code :" + con.getResponseCode() + " message: " + con.getResponseMessage()));
+                                callback.errorOccurred(new MessageProcessingException("Error sending message to " + url + ", got response code :" + con.getResponseCode() + " message: " + errorMessage));
                             }
                         }
                     }
