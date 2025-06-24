@@ -9,6 +9,10 @@ of the Certificate Service Messages Library.
 
 * Upgraded Gradle to 7.6.5.
 ** Updated the Gradle Wrapper files(gradlew, gradlew.bat, gradle-wrapper.jar) to align with the new Gradle version.
+* Upgraded testImplementation of Groovy XML to 3.0.25.
+* Upgraded testImplementation of Byte Buddy to 1.17.6.
+* Upgraded testImplementation of Tomcat to 9.0.106.
+* Upgraded testImplementation of Apache Commons IO to 2.19.0.
 
 == Version 2503.1
 
