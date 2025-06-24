@@ -3,6 +3,13 @@
 This document provides information about changes that have been made for each new version
 of the Certificate Service Messages Library.
 
+== Version 2506.1
+
+=== Dependency upgrades
+
+* Upgraded Gradle to 7.6.5.
+** Updated the Gradle Wrapper files(gradlew, gradlew.bat, gradle-wrapper.jar) to align with the new Gradle version.
+
 == Version 2503.1
 
 === Dependency upgrades
