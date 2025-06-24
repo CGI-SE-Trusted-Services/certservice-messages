@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "org.certificateservices.messages"
-group = "certservice-messages"
+description = "certservice-messages"
 
 ext {
     bcJdk18onVersion = "1.76"
