@@ -18,6 +18,20 @@ ext {
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
+pluginManager.withPlugin('org.certificateservices.gradle.certservice-gradle-plugin') {
+    certserviceSettings {
+        useMavenCentral = true
+        licenseName = "GNU Lesser General Public License v3.0 or later"
+        licenseURL = "https://www.gnu.org/licenses/lgpl-3.0-standalone.html"
+        useDeveloperPOM = true
+        useScmPOM = true
+        scmConnection = "https://github.com/CGI-SE-Trusted-Services/certservice-messages.git"
+        scmDeveloperConnection = "https://github.com/CGI-SE-Trusted-Services/certservice-messages.git"
+        scmUrl = "https://github.com/CGI-SE-Trusted-Services/certservice-messages"
+        projectUrl = "https://github.com/CGI-SE-Trusted-Services/certservice-messages"
+    }
+}
+
 repositories {
     mavenCentral()
 }
