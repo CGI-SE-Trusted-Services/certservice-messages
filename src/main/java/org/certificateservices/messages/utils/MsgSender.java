@@ -20,29 +20,29 @@ import java.io.IOException;
 
 /**
  * Interface to send and receive request and response messages to an end point.
- *
+ * <p>
  * Created by Philip Vendil on 16/06/16.
  */
 public interface MsgSender {
 
     /**
-     * Method to syncronically send a request and wait for a response. I.e the method
+     * Method to synchronically send a request and wait for a response. I.e the method
      * will wait for the response from the client.
      *
      * @param request the request message to send.
      * @return the response message to receive.
-     * @throws MessageContentException if content of the request was illegal.
+     * @throws MessageContentException    if content of the request was illegal.
      * @throws MessageProcessingException if internal problems occurred processing the request.
-     * @throws IOException if communication problems occurred.
-     * @throws SpamProtectionException if server side regarded call as a SPAM request and denied it.
+     * @throws IOException                if communication problems occurred.
+     * @throws SpamProtectionException    if server side regarded call as a SPAM request and denied it.
      */
     byte[] sendMsg(byte[] request) throws MessageContentException, MessageProcessingException, IOException, SpamProtectionException;
 
     /**
-     * Method to asyncronically send a request and response (or error) is signaled through callback.
+     * Method to asynchronically send a request and response (or error) is signaled through callback.
      *
-     * @param request the request to send.
-     * @param callback the callback to signal when the reply is recieved.
+     * @param request  the request to send.
+     * @param callback the callback to signal when the reply is received.
      */
     void sendMsg(byte[] request, MsgCallback callback);
 
@@ -51,15 +51,15 @@ public interface MsgSender {
      *
      * @return true, if connection works.
      */
-    public boolean testConnection();
+    boolean testConnection();
 
     /**
      * Message callback interface for receiving response data or errors.
      */
-    interface MsgCallback{
+    interface MsgCallback {
 
         /**
-         * Method called after a successful transport of the request and response message.
+         * Method called after successful transport of the request and response message.
          *
          * @param responseData the response data from the call.
          */

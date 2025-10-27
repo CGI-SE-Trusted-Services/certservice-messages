@@ -3,6 +3,15 @@
 This document provides information about changes that have been made for each new version
 of the Certificate Service Messages Library.
 
+== Version 2511.1
+
+=== Dependency upgrades
+
+* Made msgSender components overall more stable.
+* Upgraded OpenCSV from 5.11.1 to 5.12.0
+* Upgraded IBM MQ from 9.4.3.0 to 9.4.4.0
+* Upgraded Logback Classic Module from 1.5.18 to 1.5.20
+
 == Version 2506.1
 
 === Dependency upgrades
