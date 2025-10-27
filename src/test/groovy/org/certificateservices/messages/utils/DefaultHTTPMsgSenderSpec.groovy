@@ -135,7 +135,7 @@ class DefaultHTTPMsgSenderSpec extends Specification {
         msgSender.sendMsg("".getBytes())
         then:
         def e = thrown (SpamProtectionException)
-        e.message =~ "Error sending message to http://localhost:8089/messageprocessor/spam, got response code :429"
+        e.message =~ "Error sending message to http://localhost:8089/messageprocessor/spam, got response code: 429"
     }
 
     def "Verify that SpamProtectionException is thrown if server returns 429 (Too many requests) response code for asynchronous call."(){
@@ -151,7 +151,7 @@ class DefaultHTTPMsgSenderSpec extends Specification {
             Thread.sleep(100)
         }
         asyncCallBack.error instanceof SpamProtectionException
-        asyncCallBack.error.message =~ "Error sending message to http://localhost:8089/messageprocessor/spam, got response code :429"
+        asyncCallBack.error.message =~ "Error sending message to http://localhost:8089/messageprocessor/spam, got response code: 429"
     }
 
     def "Verify that TimeoutException is thrown if server returns 503 (Service Unavailable) response code for synchronous call."(){
@@ -161,7 +161,7 @@ class DefaultHTTPMsgSenderSpec extends Specification {
         msgSender.sendMsg("".getBytes())
         then:
         def e = thrown (TimeoutException)
-        e.message =~ "Timeout sending message to http://localhost:8089/messageprocessor/timeout, got response code :503"
+        e.message =~ "Timeout sending message to http://localhost:8089/messageprocessor/timeout, got response code: 503"
     }
 
     def "Verify that TimeoutException is thrown if server returns 503 (Service Unavailable) response code for asynchronous call."(){
@@ -178,7 +178,7 @@ class DefaultHTTPMsgSenderSpec extends Specification {
         }
         asyncCallBack.error instanceof TimeoutException
         asyncCallBack.error instanceof MessageProcessingException
-        asyncCallBack.error.message =~ "Timeout sending message to http://localhost:8089/messageprocessor/timeout, got response code :503"
+        asyncCallBack.error.message =~ "Timeout sending message to http://localhost:8089/messageprocessor/timeout, got response code: 503"
     }
 
 
