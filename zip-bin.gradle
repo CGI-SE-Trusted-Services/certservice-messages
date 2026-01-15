@@ -27,7 +27,7 @@ tasks.register('zipBin', Zip) {
         into(projectBaseName)
     }
 
-    from(configurations.default) {
+    from(configurations.runtimeClasspath) {
         exclude('*-sources.jar')
         exclude('*-javadoc.jar')
         into(projectBaseName + '/lib/')
