@@ -7,7 +7,9 @@ of the Certificate Service Messages Library.
 
 === Dependency upgrades
 
-* Upgraded Tomcat to from 9.0.106 to 9.0.112
+* Updated Gradle wrapper to 8.14.4
+* Upgraded Tomcat to from 9.0.106 to 9.0.115
+* Upgraded Commons IO from 2.19.0 to 2.21.0.
 
 == Version 2511.1
 
