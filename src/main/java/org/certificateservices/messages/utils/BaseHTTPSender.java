@@ -28,8 +28,6 @@ public abstract class BaseHTTPSender {
     protected final String requestType;
     protected final String outputContentType;
 
-    protected static final ExecutorService executor = Executors.newCachedThreadPool();
-
     /**
      * Main constructor where it is possible to specify request type.
      *
@@ -108,7 +106,7 @@ public abstract class BaseHTTPSender {
      * @param callback the callback to signal the result to.
      */
     protected void sendMsg(byte[] request, MsgSender.MsgCallback callback) {
-        executor.submit(new SendMsgRunnable(request, callback));
+        new Thread(new BaseHTTPSender.SendMsgRunnable(request,callback)).start();
     }
 
     /**
@@ -118,7 +116,7 @@ public abstract class BaseHTTPSender {
      * @param callback   the callback to signal the result to.
      */
     protected void sendMsg(String parameters, MsgSender.MsgCallback callback) throws MessageContentException {
-        executor.submit(new SendMsgRunnable(parameters, callback));
+        new Thread(new BaseHTTPSender.SendMsgRunnable(parameters,callback)).start();
     }
 
     /**
