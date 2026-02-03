@@ -74,7 +74,7 @@ public interface MessageHandler {
 	 * Method returning if the handler is currently connected to the JMS broker.
 	 * @return true if connected.
 	 */
-	public boolean isConnected();
+    boolean isConnected();
 	
 	/**
 	 * Method called by service if the MessageHandler should disconnect from the MessageQueue server.

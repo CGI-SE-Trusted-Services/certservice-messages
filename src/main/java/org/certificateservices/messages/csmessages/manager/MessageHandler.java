@@ -56,28 +56,28 @@ public interface MessageHandler {
 	 * 
 	 * @param sender a MessageSender implementation.
 	 */
-	public void addSender(MessageSender sender);
+    void addSender(MessageSender sender);
 	
 	/**
 	 * Method to add a listener to this  Message Handler, this method should be called before a connection.
 	 * 
 	 * @param listener a MessageListener implementation.
 	 */
-	public void addListener(MessageListener listener);
+    void addListener(MessageListener listener);
 	
 	/**
 	 * Method to retrieved a message sender given it's name.
 	 * @param name the unique name of the sender.
 	 * @throws MessageProcessingException if given name didn't exist or didn't correspond to a MessageSender.
 	 */
-	public MessageSender getMessageSender(String name) throws MessageProcessingException;
+    MessageSender getMessageSender(String name) throws MessageProcessingException;
 	
 	/**
 	 * Method to retrieved a message listener given it's name.
 	 * @param name the unique name of the listener.
 	 * @throws MessageProcessingException if given name didn't exist or didn't correspond to a MessageListener.
 	 */
-	public MessageListener getMessageListener(String name) throws MessageProcessingException;
+    MessageListener getMessageListener(String name) throws MessageProcessingException;
 	
 	/**
 	 * Method called by service if the MessageHandler should connect to the MessageQueue server and start processing incoming calls.
@@ -103,7 +103,7 @@ public interface MessageHandler {
 	 * Method returning if the handler is currently connected to the JMS broker.
 	 * @return true if connected.
 	 */
-	public boolean isConnected();
+    boolean isConnected();
 	
 	/**
 	 * Method called by service if the MessageHandler should disconnect from the MessageQueue server.
