@@ -3,6 +3,14 @@
 This document provides information about changes that have been made for each new version
 of the Certificate Service Messages Library.
 
+== Version 2602.1
+
+* Smaller code cleanup to MessageHandler related code.
+
+=== Dependency upgrades
+
+* TODO
+
 == Version 2601.1
 
 === Dependency upgrades
