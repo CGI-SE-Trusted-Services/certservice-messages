@@ -10,7 +10,6 @@ description = "certservice-messages"
 
 ext {
     bcJdk18onVersion = "1.76"
-    groovyVersion = "3.0.25"
     tomcatEmbedVersion = "9.0.115"
     commonsIOVersion = "2.21.0"
 }
@@ -46,8 +45,8 @@ dependencies {
     testImplementation 'org.objenesis:objenesis:3.4'
     testImplementation "commons-io:commons-io:${commonsIOVersion}"
     testImplementation "org.apache.tomcat.embed:tomcat-embed-core:${tomcatEmbedVersion}"
-    testImplementation "org.codehaus.groovy:groovy-xml:${groovyVersion}"
-    testImplementation platform("org.spockframework:spock-bom:2.3-groovy-3.0")
+    testImplementation "org.apache.groovy:groovy-xml:${groovyVersion}"
+    testImplementation platform("org.spockframework:spock-bom:$spockVersion")
     testImplementation "org.spockframework:spock-core"
 }
 
