@@ -3,6 +3,10 @@
 This document provides information about changes that have been made for each new version
 of the Certificate Service Messages Library.
 
+== Version 2604.1
+
+The project now targets java 21.
+
 == Version 2602.1
 
 * Smaller code cleanup to MessageHandler related code.
