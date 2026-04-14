@@ -8,12 +8,6 @@ plugins {
 group = "org.certificateservices.messages"
 description = "certservice-messages"
 
-ext {
-    bcJdk18onVersion = "1.76"
-    tomcatEmbedVersion = "9.0.115"
-    commonsIOVersion = "2.21.0"
-}
-
 pluginManager.withPlugin('org.certificateservices.gradle.certservice-gradle-plugin') {
     certserviceSettings {
         licenseName = "GNU Lesser General Public License v3.0 or later"
