@@ -73,7 +73,7 @@ class SAMLProtocolMessageParserSpec extends CommonSAMLMessageParserSpecification
 		requestedAuthnContext.setComparison(AuthnContextComparisonType.EXACT)
 
 		ScopingType scoping = samlpOf.createScopingType()
-		scoping.setProxyCount(new BigInteger("123"))
+		scoping.setProxyCount(BigInteger.valueOf(123))
 
 		byte[] authNRequest = spmp.genAuthNRequest(DEFAULT_CONTEXT,"_1234512341234",true,false,"SomeProtocolBinding", 1,"http://assertionConsumerServiceURL",2,"SomeProviderName","SomeDestination","SomeConsent", issuer, extensions, subject, nameIdPolicy, conditions, requestedAuthnContext, scoping, true)
 
