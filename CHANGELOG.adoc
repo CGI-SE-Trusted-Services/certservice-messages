@@ -3,6 +3,10 @@
 This document provides information about changes that have been made for each new version
 of the Certificate Service Messages Library.
 
+== Version 2605.1
+
+* Upgraded bouncy castle to 1.84.
+
 == Version 2604.1
 
 The project now targets java 21.
