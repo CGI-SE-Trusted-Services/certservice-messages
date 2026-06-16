@@ -82,7 +82,7 @@
 			<xs:element name="key" minOccurs="1" maxOccurs="1">
 				<xs:simpleType>
 					<xs:restriction base="xs:string">
-						<xs:pattern value="[a-z0-9_\-\.]+"/>
+						<xs:pattern value="[a-z0-9_\-.]+"/>
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
@@ -137,7 +137,7 @@
 			<xs:element name="key" minOccurs="1" maxOccurs="1">
 				<xs:simpleType>
 					<xs:restriction base="xs:string">
-						<xs:pattern value="[a-z0-9_\-\.]+"/>
+						<xs:pattern value="[a-z0-9_\-.]+"/>
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
@@ -275,7 +275,7 @@
 					<xs:restriction base="xs:string">
 						<xs:minLength value="1"/>
 						<xs:maxLength value="255"/>
-						<xs:pattern value="[a-z0-9_\-\.]+"/>
+						<xs:pattern value="[a-z0-9_\-.]+"/>
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
@@ -284,7 +284,7 @@
 					<xs:restriction base="xs:string">
 						<xs:minLength value="1"/>
 						<xs:maxLength value="32"/>
-						<xs:pattern value="[a-z0-9_\-\.]+"/>
+						<xs:pattern value="[a-z0-9_\-.]+"/>
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
@@ -386,7 +386,7 @@
 					<xs:restriction base="xs:string">
 						<xs:minLength value="1"/>
 						<xs:maxLength value="255"/>
-						<xs:pattern value="[a-z0-9_\-\.]+"/>
+						<xs:pattern value="[a-z0-9_\-.]+"/>
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>

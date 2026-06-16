@@ -32,5 +32,5 @@ public enum HealthStatus {
 	/**
 	 * Indicating a critical error occurred at the monitoring point that should be corrected. 
 	 */
-	ERROR;
+	ERROR
 }

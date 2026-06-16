@@ -12,6 +12,8 @@
 *************************************************************************/
 package org.certificateservices.messages;
 
+import java.io.Serial;
+
 /**
  * Exception thrown due to bad content of a message.
  * 
@@ -21,7 +23,7 @@ package org.certificateservices.messages;
  */
 public class MessageContentException extends Exception {
 
-
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	/**

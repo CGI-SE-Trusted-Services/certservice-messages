@@ -12,6 +12,8 @@
 *************************************************************************/
 package org.certificateservices.messages;
 
+import java.io.Serial;
+
 /**
  * Exception thrown when internal error occurred during processing of an
  * message, this could be of bad configuration or library dependencies missing.
@@ -22,7 +24,7 @@ package org.certificateservices.messages;
  */
 public class MessageProcessingException extends Exception {
 
-
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	/**

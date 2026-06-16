@@ -43,7 +43,7 @@ public class PKIMessageUtils {
 					Object result = m.invoke(payLoad);
 					if(result instanceof PKIResponse){
 						String value = ((PKIResponse) result).getInResponseTo();
-						if(value != null && !value.trim().equals("")){
+						if(value != null && !value.trim().isEmpty()){
 							retval = value;
 							break;
 						}

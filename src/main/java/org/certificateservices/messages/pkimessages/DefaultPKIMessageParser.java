@@ -21,6 +21,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -191,7 +192,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		}
 
 		sourceId = SettingsUtils.getProperty(config, SETTING_SOURCEID, DefaultCSMessageParser.SETTING_SOURCEID);
-		if(sourceId == null || sourceId.trim().equals("")){
+		if(sourceId == null || sourceId.trim().isEmpty()){
 			throw new MessageException("Error setting " + DefaultCSMessageParser.SETTING_SOURCEID + " must be set.");
 		}
 
@@ -220,15 +221,13 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 			
 			
 			Object object = getPKIMessageUnmarshaller(version).unmarshal(new ByteArrayInputStream(messageData));
-			validatePKIMessage(object, new String(messageData,"UTF-8"));
+			validatePKIMessage(object, new String(messageData, StandardCharsets.UTF_8));
 			return (PKIMessage) object;
 		}catch(JAXBException e){
 			throw new IllegalArgumentException("Error parsing PKI Message: " + e.getMessage(),e);
-		} catch (UnsupportedEncodingException e) {
-			throw new IllegalArgumentException("Error parsing PKI Message: " + e.getMessage(),e);
 		}
-		
-	}
+
+    }
 	
 	/**
 	 * Verifies that the given version is supported.
@@ -727,7 +726,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
     				version = versionNode.getNodeValue();
     			}
     		}  
-    		if(version == null || version.trim().equals("")){
+    		if(version == null || version.trim().isEmpty()){
     			throw new IllegalArgumentException("Error unsupported protocol version when generating PKIResponse, version: " + version);
     		}
 
@@ -746,11 +745,11 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 			String responseToRequestID = (String) result;
 
 			expr = xpath.compile("//*[local-name()='organisation']/text()");
-			result = expr.evaluate(doc, XPathConstants.STRING);;
+			result = expr.evaluate(doc, XPathConstants.STRING);
 			String organisation = (String) result;
 			
 			expr = xpath.compile("//*[local-name()='name']/text()");
-			result = expr.evaluate(doc, XPathConstants.STRING);;
+			result = expr.evaluate(doc, XPathConstants.STRING);
 			String requestName = (String) result;
 			
 			if(organisation == null || responseToRequestID == null || destinationID == null || requestName==null){
@@ -778,7 +777,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 	}
 	
 	/**
-	 * @see org.certificateservices.messages.pkimessages.PKIMessageParser#getSigningCertificate(PKIMessage)	 
+	 * @see org.certificateservices.messages.pkimessages.PKIMessageParser#getSigningCertificate(PKIMessage)
 	 */	
 	public X509Certificate getSigningCertificate(byte[] request)
 			throws IllegalArgumentException, MessageException {
@@ -793,7 +792,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 				
 				XPathExpression expr = xpath.compile("//*[local-name()='KeyInfo']/*[local-name()='X509Data']/*[local-name()='X509Certificate']/text()");
 				String result = (String) expr.evaluate(doc, XPathConstants.STRING);
-				if(result != null && !result.equals("")){
+				if(result != null && !result.isEmpty()){
 					CertificateFactory cf = 
 							CertificateFactory.getInstance("X.509");
 					retval = (X509Certificate) 
@@ -947,7 +946,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 				CanonicalizationMethod cm =  fac.newCanonicalizationMethod(CanonicalizationMethod.EXCLUSIVE,(C14NMethodParameterSpec) null);
 				SignatureMethod sm = fac.newSignatureMethod("http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",null);
 				SignedInfo signedInfo =fac.newSignedInfo(cm,sm,refList);
-				DOMSignContext signContext = null;
+				DOMSignContext signContext;
 				signContext = new DOMSignContext(securityProvider.getSigningKey(),doc.getDocumentElement());
 
 				signContext.setIdAttributeNS(doc.getDocumentElement(), null, "ID");
@@ -970,14 +969,12 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 			StringWriter writer = new StringWriter();
 			transformer.transform(new DOMSource(doc), new StreamResult(writer));
 			String output = writer.getBuffer().toString();	
-			return output.getBytes("UTF-8");
+			return output.getBytes(StandardCharsets.UTF_8);
 		}catch (MessageProcessingException e) {
 			throw new MessageException("Error marshalling PKI Message, " + e.getMessage(),e);
 		}  catch (JAXBException e) {
 			throw new MessageException("Error marshalling PKI Message, " + e.getMessage(),e);
 		} catch (ParserConfigurationException e) {
-			throw new MessageException("Error marshalling PKI Message, " + e.getMessage(),e);
-		} catch (UnsupportedEncodingException e) {
 			throw new MessageException("Error marshalling PKI Message, " + e.getMessage(),e);
 		} catch (TransformerException e) {
 			throw new MessageException("Error marshalling PKI Message, " + e.getMessage(),e);
@@ -1068,7 +1065,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
     		throw new IllegalArgumentException("Error parsing XML data: " + e.getMessage(),e);
     	}
 
-    	if(retval == null || retval.trim().equals("")){
+    	if(retval == null || retval.trim().isEmpty()){
     	  throw new IllegalArgumentException("Error no version attribute found in PKI Message.");
     	}
     	return retval;
@@ -1146,9 +1143,8 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 		URL xsdURL = getClass().getResource(schemaLocation);
 		SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 		URL xsdURL2 = getClass().getResource(XMLDSIG_XSD_SCHEMA_RESOURCE_LOCATION);
-		String xsdContent = null;
-		try {		
-			InputStream resourceAsStream = xsdURL2.openStream();
+		String xsdContent;
+		try (InputStream resourceAsStream = xsdURL2.openStream()) {
 			synchronized (resourceAsStream) {
 				byte[] i = new byte[resourceAsStream.available()];
 				resourceAsStream.read(i);

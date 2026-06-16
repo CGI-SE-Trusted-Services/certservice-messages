@@ -51,7 +51,7 @@ public class PKISettingsUtils {
 	public static Boolean parseBoolean(Properties config, String setting, String alternativeSetting, boolean required) throws MessageException{
 		String value = config.getProperty(setting, (alternativeSetting != null ? config.getProperty(alternativeSetting, "") : ""));
 
-		if(value == null || value.trim().equals("")){
+		if(value == null || value.trim().isEmpty()){
 			if(required){
 				throw new MessageException("Error parsing setting " + setting + ", a value must be set to either TRUE or FALSE");
 			}
@@ -130,7 +130,7 @@ public class PKISettingsUtils {
 		if(value == null && alternativeSetting != null){
 			value = config.getProperty(alternativeSetting);
 		}
-		if(value == null || value.trim().equals("")){
+		if(value == null || value.trim().isEmpty()){
 			return defaulValue;
 		}
 		String[] values = value.split(deliminator);
@@ -170,7 +170,7 @@ public class PKISettingsUtils {
 		if(value == null && alternativeSetting != null){
 			value = config.getProperty(alternativeSetting);
 		}
-		if(value == null || value.trim().equals("")){
+		if(value == null || value.trim().isEmpty()){
 			if(required){
 			  throw new MessageException("Required setting " + setting + " not set.");
 			}else{
@@ -207,7 +207,7 @@ public class PKISettingsUtils {
      */
 	public static String getRequiredProperty(Properties config, String key, String alternativeSettings) throws MessageException{
 		String value = config.getProperty(key, (alternativeSettings != null ? config.getProperty(alternativeSettings, "") : ""));
-		if(value.trim().equals("")){
+		if(value.trim().isEmpty()){
 			throw new MessageException("Error required configuration property " + key + " not set.");
 		}
 		return value;

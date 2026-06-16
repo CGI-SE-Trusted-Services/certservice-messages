@@ -256,7 +256,7 @@ public abstract class BaseHTTPSender {
     /**
      * Special case callback used for synchronous request calls.
      */
-    protected class SynchronousCallback implements MsgSender.MsgCallback {
+    protected static class SynchronousCallback implements MsgSender.MsgCallback {
         byte[] responseData;
         Exception error;
 

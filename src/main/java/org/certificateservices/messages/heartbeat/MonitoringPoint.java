@@ -46,7 +46,7 @@ public class MonitoringPoint {
 	public MonitoringPoint(String monitoringPointId, Date timestamp,
 			HealthStatus status) throws MessageContentException {
 		super();
-		if(monitoringPointId == null || monitoringPointId.equals("")){
+		if(monitoringPointId == null || monitoringPointId.isEmpty()){
 			throw new MessageContentException("Error creating monitoring point in heart beat message, the monitoring point id cannot be null or empty");
 		}
 		if(timestamp == null){

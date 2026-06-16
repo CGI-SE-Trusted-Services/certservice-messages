@@ -37,7 +37,7 @@ public class HeartBeatMessage {
 	 * @throws MessageContentException if invalid parameters where sent to the constructor.
 	 */
 	public HeartBeatMessage(String systemId, List<MonitoringPoint> monitoringPoints, HealthStatus overallStatus) throws MessageContentException{
-		if(systemId == null || systemId.equals("")){
+		if(systemId == null || systemId.isEmpty()){
 			throw new MessageContentException("Error creating heart beat message, the system id cannot be null or empty");
 		}
 		if(monitoringPoints == null || monitoringPoints.size() <1){

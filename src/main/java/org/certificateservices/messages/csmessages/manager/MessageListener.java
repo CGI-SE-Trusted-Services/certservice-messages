@@ -38,7 +38,7 @@ public interface MessageListener extends MessageComponent {
 	
 	/**
 	 * 
-	 * @return a list of registered aliases of response callbacks.
+	 * @return a set of registered aliases of response callbacks.
 	 */
 	Set<String> getCallbackAliases();
 	

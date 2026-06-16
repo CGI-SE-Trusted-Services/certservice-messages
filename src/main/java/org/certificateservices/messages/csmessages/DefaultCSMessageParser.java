@@ -206,7 +206,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 		}
 
 		sourceId = SettingsUtils.getProperty(config, SETTING_SOURCEID, OLD_SETTING_SOURCEID);
-		if(sourceId == null || sourceId.trim().equals("")){
+		if(sourceId == null || sourceId.trim().isEmpty()){
 			throw new MessageProcessingException("Error setting " + SETTING_SOURCEID + " must be set.");
 		}
 		
@@ -331,7 +331,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 */
 	public byte[] generateGetApprovalRequest(String requestId, String destinationId, String organisation, byte[] request, Credential originator, List<Object> assertions) throws MessageContentException, MessageProcessingException{
 		CSMessage csMessage = parseMessage(request);
-		CSRequest requestPayload = null;
+		CSRequest requestPayload;
 		try{
 			requestPayload = (CSRequest) csMessage.getPayload().getAny();
 		}catch(Exception e){
@@ -430,7 +430,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
     				version = versionNode.getNodeValue();
     			}
     		}  
-    		if(version == null || version.trim().equals("")){
+    		if(version == null || version.trim().isEmpty()){
     			throw new MessageContentException("Error unsupported protocol version when generating CSResponse, version: " + version);
     		}
 
@@ -449,11 +449,11 @@ public class DefaultCSMessageParser implements CSMessageParser {
 			String responseToRequestID = (String) result;
 
 			expr = xpath.compile("//*[local-name()='organisation']/text()");
-			result = expr.evaluate(doc, XPathConstants.STRING);;
+			result = expr.evaluate(doc, XPathConstants.STRING);
 			String organisation = (String) result;
 			
 			expr = xpath.compile("//*[local-name()='name']/text()");
-			result = expr.evaluate(doc, XPathConstants.STRING);;
+			result = expr.evaluate(doc, XPathConstants.STRING);
 			String requestName = (String) result;
 			
 			if(organisation == null || responseToRequestID == null || destinationID == null || requestName==null){
@@ -692,10 +692,10 @@ public class DefaultCSMessageParser implements CSMessageParser {
     		throw new MessageContentException("Error parsing XML data: " + e.getMessage(),e);
     	}
 
-    	if(messageVersion == null || messageVersion.trim().equals("")){
+    	if(messageVersion == null || messageVersion.trim().isEmpty()){
     	  throw new MessageContentException("Error no version attribute found in CS Message.");
     	}
-    	if(payLoadVersion == null || payLoadVersion.trim().equals("")){
+    	if(payLoadVersion == null || payLoadVersion.trim().isEmpty()){
       	  throw new MessageContentException("Error no payload version attribute found in CS Message.");
       	}
     	return new CSMessageVersion(messageVersion, payLoadVersion);
@@ -920,7 +920,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	 * @author Philip Vendil
 	 *
 	 */
-	private class JAXBRelatedData{
+	private static class JAXBRelatedData{
 		
 		private JAXBContext jaxbContext = null;
 		private HashMap<String, Validator> payLoadValidatorCache = new HashMap<String, Validator>();
@@ -942,15 +942,16 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	    JAXBContext getJAXBContext() throws JAXBException, MessageProcessingException{
 	    	if(jaxbContext== null){
 	    		jaxbClassPath = "org.certificateservices.messages.csmessages.jaxb:org.certificateservices.messages.xmldsig.jaxb:org.certificateservices.messages.xenc.jaxb:org.certificateservices.messages.csexport.data.jaxb:org.certificateservices.messages.sensitivekeys.jaxb";
-	    			    		
+				StringBuilder jaxbClassPathBuilder = new StringBuilder(jaxbClassPath);
+
 	    		for(String namespace : PayloadParserRegistry.getRegistredNamespaces()){
 	    			String jaxbPackage = PayloadParserRegistry.getParser(namespace).getJAXBPackage();
 	    			if(jaxbPackage != null){
-	    			  jaxbClassPath += ":" + jaxbPackage;
+						jaxbClassPathBuilder.append(":").append(jaxbPackage);
 	    			}
 	    		}
-	    		
-	    		jaxbContext = JAXBContext.newInstance(jaxbClassPath);
+	    		jaxbClassPath = jaxbClassPathBuilder.toString();
+	    		jaxbContext = JAXBContext.newInstance(jaxbClassPathBuilder.toString());
 	    		
 	    	}
 	    	return jaxbContext;
@@ -1014,7 +1015,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	     * @throws JAXBException of internal JAXB problems occurred when looking up the name space.
 	     */
 	    private String getNamespace(Object jaxbObject) throws MessageProcessingException {
-	    	QName qname = null;
+	    	QName qname;
 			try {
 				qname = getJAXBIntrospector().getElementName(jaxbObject);
 			} catch (JAXBException e) {
@@ -1099,7 +1100,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 	}
 
 
-	public class CSMessageSignatureLocationFinder implements XMLSigner.SignatureLocationFinder {
+	public static class CSMessageSignatureLocationFinder implements XMLSigner.SignatureLocationFinder {
 		@Override
 		public Element[] getSignatureLocations(Document doc) throws MessageContentException {
 			try{

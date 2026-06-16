@@ -16,6 +16,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.List;
@@ -192,14 +193,12 @@ public class HardTokenDataParser {
 			StringWriter writer = new StringWriter();
 			getTransformer().transform(new DOMSource(doc), new StreamResult(writer));
 			String output = writer.getBuffer().toString();	
-			return output.getBytes("UTF-8");
+			return output.getBytes(StandardCharsets.UTF_8);
 		} catch (JAXBException e) {
 			throw new MessageContentException("Message content error when generating hard token data: " + e.getMessage(), e);
 		} catch (TransformerException e) {
 			throw new MessageProcessingException("Internal error when generating hard token data: " + e.getMessage(), e);
-		} catch (UnsupportedEncodingException e) {
-			throw new MessageProcessingException("Internal error when generating hard token data: " + e.getMessage(), e);
-		}catch (ParserConfigurationException e) {
+		} catch (ParserConfigurationException e) {
 			throw new MessageProcessingException("Internal error when generating hard token data: " + e.getMessage(), e);
 		} 
 	}
@@ -224,14 +223,12 @@ public class HardTokenDataParser {
 			StringWriter writer = new StringWriter();
 			getTransformer().transform(new DOMSource(encDoc), new StreamResult(writer));
 			String output = writer.getBuffer().toString();	
-			return output.getBytes("UTF-8");
+			return output.getBytes(StandardCharsets.UTF_8);
 		} catch (JAXBException e) {
 			throw new MessageContentException("Message content error when generating hard token data: " + e.getMessage(), e);
 		} catch (TransformerException e) {
 			throw new MessageProcessingException("Internal error when generating hard token data: " + e.getMessage(), e);
-		} catch (UnsupportedEncodingException e) {
-			throw new MessageProcessingException("Internal error when generating hard token data: " + e.getMessage(), e);
-		}catch (ParserConfigurationException e) {
+		} catch (ParserConfigurationException e) {
 			throw new MessageProcessingException("Internal error when generating hard token data: " + e.getMessage(), e);
 		} 
 	}
@@ -305,7 +302,7 @@ public class HardTokenDataParser {
     	return transformer;
     }
     
-    public class HardTokenParserLSResourceResolver implements  LSResourceResolver {
+    public static class HardTokenParserLSResourceResolver implements  LSResourceResolver {
 		
 		public LSInput resolveResource(String type, String namespaceURI,
 				String publicId, String systemId, String baseURI) {

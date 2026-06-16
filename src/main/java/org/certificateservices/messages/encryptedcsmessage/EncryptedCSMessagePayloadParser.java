@@ -17,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Properties;
@@ -276,9 +277,7 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
 			StringWriter writer = new StringWriter();
 			transformer.transform(new DOMSource(doc), new StreamResult(writer));
 			String output = writer.getBuffer().toString();	
-			return output.getBytes("UTF-8");			
-		} catch (IOException e) {
-			throw new MessageContentException("Error parsing message: " + e.getMessage(), e);
+			return output.getBytes(StandardCharsets.UTF_8);
 		} catch (NoDecryptionKeyFoundException e) {
 			throw new MessageContentException("Error no related decryption key found for message: " + e.getMessage(), e);
 		} catch (TransformerException e) {
@@ -388,7 +387,7 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
     /**
      * Converter that replaces all decrypted EncryptedAssertions with Assertions
      */
-    public class EncryptedCSMessageXMLConverter implements DecryptedXMLConverter{
+    public static class EncryptedCSMessageXMLConverter implements DecryptedXMLConverter{
 
 		public Document convert(Document doc) throws MessageContentException {
 			NodeList nodeList = doc.getElementsByTagNameNS(DefaultCSMessageParser.CSMESSAGE_NAMESPACE, "CSMessage");
@@ -406,7 +405,7 @@ public class EncryptedCSMessagePayloadParser extends BasePayloadParser {
 		
 	}
 
-    public class EncryptionParserLSResourceResolver implements  LSResourceResolver {
+    public static class EncryptionParserLSResourceResolver implements  LSResourceResolver {
 		
 		public LSInput resolveResource(String type, String namespaceURI,
 				String publicId, String systemId, String baseURI) {

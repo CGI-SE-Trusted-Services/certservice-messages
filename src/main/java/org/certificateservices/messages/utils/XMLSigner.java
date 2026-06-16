@@ -15,6 +15,7 @@ package org.certificateservices.messages.utils;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -671,9 +672,7 @@ public class XMLSigner {
 			StringWriter writer = new StringWriter();
 			transformer.transform(new DOMSource(doc), new StreamResult(writer));
 			String output = writer.getBuffer().toString();
-			return output.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new MessageProcessingException("Error marshalling to XML, " + e.getMessage(),e);
+			return output.getBytes(StandardCharsets.UTF_8);
 		} catch (TransformerException e) {
 			throw new MessageProcessingException("Error marshalling to XML, " + e.getMessage(),e);
 		}

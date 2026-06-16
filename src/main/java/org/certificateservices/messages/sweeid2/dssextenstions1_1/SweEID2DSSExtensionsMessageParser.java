@@ -634,7 +634,7 @@ public class SweEID2DSSExtensionsMessageParser extends DSS1CoreMessageParser{
         JAXBElement<byte[]> message = eid2Of.createMessage(messageToEncrypt);
         Document encryptedDoc = xmlEncrypter.encryptElement(context, message,recipients,false);
 
-        EncryptedElementType encryptedElementType = null;
+        EncryptedElementType encryptedElementType;
         try {
             EncryptedDataType encryptedDataType = (EncryptedDataType) ((JAXBElement<?>) getUnmarshaller().unmarshal(encryptedDoc)).getValue();
             encryptedElementType =  of.createEncryptedElementType();
@@ -1025,7 +1025,7 @@ public class SweEID2DSSExtensionsMessageParser extends DSS1CoreMessageParser{
      */
     protected JAXBContext getDSSJAXBContext() throws JAXBException{
         if(dssJaxbContext== null){
-            dssJaxbContext = JAXBContext.newInstance(super.BASE_JAXB_CONTEXT);
+            dssJaxbContext = JAXBContext.newInstance(DSS1CoreMessageParser.BASE_JAXB_CONTEXT);
 
         }
         return dssJaxbContext;

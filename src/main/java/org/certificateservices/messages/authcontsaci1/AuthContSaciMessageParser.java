@@ -185,7 +185,7 @@ public class AuthContSaciMessageParser {
         return transformer;
     }
 
-    public class AuthContentSaciLSResourceResolver implements LSResourceResolver {
+    public static class AuthContentSaciLSResourceResolver implements LSResourceResolver {
 
         public LSInput resolveResource(String type, String namespaceURI,
                                        String publicId, String systemId, String baseURI) {

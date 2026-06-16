@@ -28,6 +28,7 @@ import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
@@ -122,10 +123,10 @@ public class CertUtils {
 	 * @return Certificate in PEM-format (UTF8).
 	 */
 	public static String getPEMCertFromByteArray(byte[] cert){
-		String pem = null;
+		StringBuilder pem;
 		byte[] bytes = Base64.encode(cert);
 		byte[] buf;
-		pem = BEGIN_CERTIFICATE + "\n";
+		pem = new StringBuilder(BEGIN_CERTIFICATE + "\n");
 		for(int i=0,l=0;i<bytes.length;i++){
 			if(l<BASE64_LINE_LENGTH){
 				buf = new byte[]{bytes[i]};
@@ -134,11 +135,11 @@ public class CertUtils {
 				buf = new byte[]{'\n', bytes[i]};
 				l=1;
 			}
-			pem += new String(buf, Charset.forName("UTF-8"));
+			pem.append(new String(buf, StandardCharsets.UTF_8));
 		}
-		pem = pem + "\n" + END_CERTIFICATE;
+		pem.append("\n").append(END_CERTIFICATE);
 
-		return pem;
+		return pem.toString();
 	}
 
 	/**
@@ -148,10 +149,10 @@ public class CertUtils {
 	 * @return pem formatted certificate request.
 	 */
 	public static String getPemCertificateRequestFromByteArray(byte[] certificateRequest){
-		String pem = null;
+		StringBuilder pem;
 		byte[] bytes = Base64.encode(certificateRequest);
 		byte[] buf;
-		pem = BEGIN_CERTIFICATE_REQUEST + "\n";
+		pem = new StringBuilder(BEGIN_CERTIFICATE_REQUEST + "\n");
 		for(int i=0,l=0;i<bytes.length;i++){
 			if(l<BASE64_LINE_LENGTH){
 				buf = new byte[]{bytes[i]};
@@ -160,11 +161,11 @@ public class CertUtils {
 				buf = new byte[]{'\n', bytes[i]};
 				l=1;
 			}
-			pem += new String(buf, Charset.forName("UTF-8"));
+			pem.append(new String(buf, StandardCharsets.UTF_8));
 		}
-		pem = pem + "\n" + END_CERTIFICATE_REQUEST;
+		pem.append("\n").append(END_CERTIFICATE_REQUEST);
 
-		return pem;
+		return pem.toString();
 	}
 
 	/**
@@ -218,9 +219,8 @@ public class CertUtils {
 		PrintStream opstr = new PrintStream(ostr);
 		String temp;
 
-		while (((temp = bufRdr.readLine()) != null) && !temp.equals(beginKey)) {
-			continue;
-		}
+		do temp = bufRdr.readLine();
+		while (temp != null && !temp.equals(beginKey));
 
 		if (temp == null) {
 			throw new IOException("Error in input buffer, missing " + beginKey + " boundary");
@@ -504,7 +504,7 @@ public class CertUtils {
 	 * @return the dn field of subject or null if no value is found.
 	 */
 	public static String getFirstSubjectField(ASN1ObjectIdentifier dnField, String subjectDN){
-		if(dnField == null || subjectDN == null || subjectDN.trim().equals("")){
+		if(dnField == null || subjectDN == null || subjectDN.trim().isEmpty()){
 			return null;
 		}
 
@@ -524,7 +524,7 @@ public class CertUtils {
 	 * @throws IllegalArgumentException if unsupported Certificate or parameter was null.
 	 */
 	public static String getCertSerialnumberAsString(Certificate cert) throws IllegalArgumentException{
-		if(cert != null && cert instanceof X509Certificate){
+		if(cert instanceof X509Certificate){
 			return ((X509Certificate) cert).getSerialNumber().toString(16).toLowerCase();
 		}
 		throw new IllegalArgumentException("Illegal certificate type or 'null' certificate specified when parsing serial number.");
@@ -646,7 +646,7 @@ public class CertUtils {
 	 * Help method for fetching alternative name from an ASN1Sequence
 	 */
 	private static ASN1Sequence getAltnameSequence(byte[] value) throws IOException {
-		ASN1Object oct = null;
+		ASN1Object oct;
 		try (ASN1InputStream ais = new ASN1InputStream(new ByteArrayInputStream(value))) {
 			oct = ais.readObject();
 		} catch (IOException e) {

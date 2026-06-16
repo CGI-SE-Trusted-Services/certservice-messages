@@ -17,6 +17,7 @@ import org.certificateservices.messages.utils.XMLEncrypter;
 import org.certificateservices.messages.utils.XMLSigner;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -96,7 +97,7 @@ public class PKCS11MessageSecurityProvider implements ContextMessageSecurityProv
     private Map<String, PrivateKey> decryptionKeys = new HashMap<String, PrivateKey>();
     private String defaultDecryptionKeyId = null;
 
-    private PKCS11ProviderManager providerManager = null;
+    private PKCS11ProviderManager providerManager;
 
     protected TruststoreHelper truststoreHelper;
 
@@ -153,7 +154,7 @@ public class PKCS11MessageSecurityProvider implements ContextMessageSecurityProv
                 String alias = aliases.nextElement();
                 Key key = pkcs11Keystore.getKey(alias, pkcs11Password.toCharArray());
                 Certificate[] certChain = pkcs11Keystore.getCertificateChain(alias);
-                if(key != null && key instanceof PrivateKey && certChain != null && certChain.length > 0){
+                if(key instanceof PrivateKey && certChain != null && certChain.length > 0){
                     X509Certificate[] x509CertChain = Arrays.copyOf(certChain,certChain.length, X509Certificate[].class);
                     String keyId = XMLEncrypter.generateKeyId(x509CertChain[0].getPublicKey());
                     decryptionKeys.put(keyId, (PrivateKey) key);
@@ -479,13 +480,13 @@ public class PKCS11MessageSecurityProvider implements ContextMessageSecurityProv
         KeyStore keyStore;
         InputStream configStream;
 
-        StringBuffer pkcs11Config = new StringBuffer();
+        StringBuilder pkcs11Config = new StringBuilder();
         pkcs11Config.append("name = CSMsgSecProv\n");
-        pkcs11Config.append("library = " + pkcs11Library + "\n");
-        pkcs11Config.append("slot = " + slot + "\n");
+        pkcs11Config.append("library = ").append(pkcs11Library).append("\n");
+        pkcs11Config.append("slot = ").append(slot).append("\n");
 
-        log.fine("Using PKCS#11 configuration: " + pkcs11Config.toString());
-        configStream = new ByteArrayInputStream(pkcs11Config.toString().getBytes("UTF-8"));
+        log.fine("Using PKCS#11 configuration: " + pkcs11Config);
+        configStream = new ByteArrayInputStream(pkcs11Config.toString().getBytes(StandardCharsets.UTF_8));
         pkcs11Provider = providerManager.addPKCS11Provider(configStream);
         keyStore = providerManager.loadPKCS11Keystore(slotPassword == null ? null : slotPassword.toCharArray());
 

@@ -92,7 +92,7 @@ public class CSExportDataParser {
 
 	private CSExportDataSignatureLocationFinder csExportDataSignatureLocationFinder = new CSExportDataSignatureLocationFinder();
 
-	private boolean requireSignature = false;
+	private boolean requireSignature;
 
 	/**
 	 * Constructor for CSExportDataParser, this is the default method to create a parser, it should
@@ -342,7 +342,7 @@ public class CSExportDataParser {
     }
 
     
-    public class CSExportLSResourceResolver implements  LSResourceResolver {
+    public static class CSExportLSResourceResolver implements  LSResourceResolver {
 
 		private String version;
 
@@ -374,7 +374,7 @@ public class CSExportDataParser {
 		}
 	}
 
-	public class CSExportDataSignatureLocationFinder implements XMLSigner.SignatureLocationFinder {
+	public static class CSExportDataSignatureLocationFinder implements XMLSigner.SignatureLocationFinder {
 
 		@Override
 		public Element[] getSignatureLocations(Document doc) throws MessageContentException {

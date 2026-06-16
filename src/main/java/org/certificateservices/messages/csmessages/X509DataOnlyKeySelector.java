@@ -157,7 +157,7 @@ public class X509DataOnlyKeySelector extends KeySelector {
 	private KeySelectorResult x509DataSelect(X509Data xd, SignatureMethod sm, String organisation) 
 			throws KeySelectorException {
 
-		KeySelectorResult ksr = null;
+		KeySelectorResult ksr;
 		Iterator<?> xi = xd.getContent().iterator();
 		while (xi.hasNext()) {
 			ksr = null;

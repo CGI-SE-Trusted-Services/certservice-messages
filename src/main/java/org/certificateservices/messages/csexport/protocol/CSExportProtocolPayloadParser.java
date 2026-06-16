@@ -161,9 +161,9 @@ public class CSExportProtocolPayloadParser extends BasePayloadParser {
 				CSResponse csResponse = (CSResponse) ((JAXBElement<?>) responsePayload).getValue();
 				RequestStatus requestStatus = csResponse.getStatus();
 				if (requestStatus.equals(RequestStatus.ILLEGALARGUMENT)) {
-					throw new MessageContentException("Failure CSExport response; status: " + requestStatus.toString() + ", message: " + csResponse.getFailureMessage());
+					throw new MessageContentException("Failure CSExport response; status: " + requestStatus + ", message: " + csResponse.getFailureMessage());
 				} else if (requestStatus.equals(RequestStatus.ERROR) || requestStatus.equals(RequestStatus.APPROVALREQUIRED) || requestStatus.equals(RequestStatus.NOTAUTHORIZED)) {
-					throw new MessageProcessingException("Failure CSExport response; status: " + requestStatus.toString() + ", message: " + csResponse.getFailureMessage());
+					throw new MessageProcessingException("Failure CSExport response; status: " + requestStatus + ", message: " + csResponse.getFailureMessage());
 				}
 			}
 

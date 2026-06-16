@@ -132,13 +132,10 @@ public abstract class AssertionData {
 		if (getClass() != obj.getClass())
 			return false;
 		AssertionData other = (AssertionData) obj;
-		if (id == null) {
-			if (other.id != null)
-				return false;
-		} else if (!id.equals(other.id))
-			return false;
-		return true;
-	}
+		if (id == null)
+            return other.id == null;
+		return id.equals(other.id);
+    }
 
 
 	

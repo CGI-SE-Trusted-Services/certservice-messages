@@ -101,8 +101,8 @@ public class SimpleMessageSecurityProvider implements
 	public static final EncryptionAlgorithmScheme DEFAULT_ENCRYPTION_ALGORITHM_SCHEME = EncryptionAlgorithmScheme.RSA_OAEP_WITH_AES256;
 
 
-	PrivateKey signPrivateKey = null;
-	X509Certificate signCertificate = null;
+	PrivateKey signPrivateKey;
+	X509Certificate signCertificate;
 	
 	Map<String, PrivateKey> decryptionKeys = new HashMap<String, PrivateKey>();
 	Map<String, X509Certificate[]> decryptionCertificates = new HashMap<String, X509Certificate[]>();
@@ -163,7 +163,7 @@ public class SimpleMessageSecurityProvider implements
 			  String alias = aliases.nextElement();
 			  Key key = decKS.getKey(alias, decKeyStorePassword);
 			  Certificate[] certChain = decKS.getCertificateChain(alias);
-			  if(key != null && key instanceof PrivateKey && certChain != null && certChain.length > 0){
+			  if(key instanceof PrivateKey && certChain != null && certChain.length > 0){
 				  X509Certificate[] x509CertChain =  (X509Certificate[]) Arrays.copyOf(certChain,certChain.length, X509Certificate[].class);
 				  String keyId = XMLEncrypter.generateKeyId(x509CertChain[0].getPublicKey());
 				  decryptionKeys.put(keyId, (PrivateKey) key);
@@ -444,7 +444,7 @@ public class SimpleMessageSecurityProvider implements
 	 */
 	protected KeyStore getDecryptionKeyStore(Properties config) throws MessageProcessingException {
 		String encryptPath = config.getProperty(SETTING_DECRYPTKEYSTORE_PATH);
-		if(encryptPath == null || encryptPath.trim().equals("")){
+		if(encryptPath == null || encryptPath.trim().isEmpty()){
 			return getSigningKeyStore(config);
 		}
 		return getKeyStore(config, SETTING_DECRYPTKEYSTORE_PATH, SETTING_DECRYPTKEYSTORE_PASSWORD);
@@ -461,7 +461,7 @@ public class SimpleMessageSecurityProvider implements
 	 */
 	protected char[] getDecryptionKeyStorePassword(Properties config) throws MessageProcessingException {
 		String encryptPath = config.getProperty(SETTING_DECRYPTKEYSTORE_PATH);
-		if(encryptPath == null || encryptPath.trim().equals("")){
+		if(encryptPath == null || encryptPath.trim().isEmpty()){
 			return SettingsUtils.getRequiredProperty(config, SETTING_SIGNINGKEYSTORE_PASSWORD).toCharArray();
 		}
 		return SettingsUtils.getRequiredProperty(config, SETTING_DECRYPTKEYSTORE_PASSWORD).toCharArray();

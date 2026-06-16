@@ -269,12 +269,9 @@ public class X509KeySelector extends KeySelector {
 		if (algName.equalsIgnoreCase("DSA") &&
 				algURI.equalsIgnoreCase(SignatureMethod.DSA_SHA1)) {
 			return true;
-		} else if (algName.equalsIgnoreCase("RSA") &&
-				(algURI.equalsIgnoreCase(SignatureMethod.RSA_SHA1) || algURI.equalsIgnoreCase("http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"))) {
-			return true;
-		} else {
-			return false;
 		}
+		return algName.equalsIgnoreCase("RSA") &&
+                (algURI.equalsIgnoreCase(SignatureMethod.RSA_SHA1) || algURI.equalsIgnoreCase("http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"));
 	}
 
 	/**
@@ -291,10 +288,9 @@ public class X509KeySelector extends KeySelector {
 		// convert signature algorithm to compatible public-key alg OID
 		String algOID = getPKAlgorithmOID(sm.getAlgorithm());
 
-		KeySelectorResult ksr = null;
+		KeySelectorResult ksr;
 		Iterator<?> xi = xd.getContent().iterator();
 		while (xi.hasNext()) {
-			ksr = null;
 			Object o = xi.next();
 			// check X509Certificate
 			if (o instanceof X509Certificate) {

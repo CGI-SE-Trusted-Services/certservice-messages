@@ -12,6 +12,8 @@
 *************************************************************************/
 package org.certificateservices.messages;
 
+import java.io.Serial;
+
 /**
  * Exception thrown due to bad internal state when processing a PKIMessage resulting
  * in a ERROR response code in the PKIMessage protocol.
@@ -23,7 +25,7 @@ package org.certificateservices.messages;
 @Deprecated
 public class MessageException extends MessageProcessingException {
 
-
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	/**

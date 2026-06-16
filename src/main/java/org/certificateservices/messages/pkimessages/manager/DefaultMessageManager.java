@@ -276,7 +276,7 @@ public class DefaultMessageManager implements MessageManager, MessageResponseCal
 	 * @author Philip Vendil
 	 *
 	 */
-	protected class RequestEntry{
+	protected static class RequestEntry{
 		
 		private PKIMessage response;
 
