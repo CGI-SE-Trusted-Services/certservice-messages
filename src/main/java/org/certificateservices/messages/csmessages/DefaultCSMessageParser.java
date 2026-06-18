@@ -1107,7 +1107,7 @@ public class DefaultCSMessageParser implements CSMessageParser {
 				if(doc.getDocumentElement().getLocalName().equals("CSMessage") && doc.getDocumentElement().getNamespaceURI().equals(DefaultCSMessageParser.CSMESSAGE_NAMESPACE)){
 					return new Element[]{doc.getDocumentElement()};
 				}
-			}catch(Exception e){
+			}catch(Exception ignored){
 			}
 			throw new MessageContentException("Invalid CS message type sent for signature.");
 		}

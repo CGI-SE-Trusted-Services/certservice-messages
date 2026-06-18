@@ -715,7 +715,7 @@ public abstract class BaseSAMLMessageParser {
 					}
 					return result;
 				}
-			}catch(Exception e){
+			}catch(Exception ignored){
 			}
 			throw new MessageContentException("Invalid assertion message type sent for signature.");
 		}
@@ -754,7 +754,7 @@ public abstract class BaseSAMLMessageParser {
 				if(doc.getDocumentElement().getNamespaceURI().equals(PROTOCOL_NAMESPACE)){
 					return new Element[] {doc.getDocumentElement()};
 				}
-			}catch(Exception e){
+			}catch(Exception ignored){
 			}
 			throw new MessageContentException("Invalid SAMLP message type sent for signature.");
 		}

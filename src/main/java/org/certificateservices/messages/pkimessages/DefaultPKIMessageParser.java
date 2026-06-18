@@ -799,7 +799,7 @@ public class DefaultPKIMessageParser implements PKIMessageParser {
 							cf.generateCertificate(new ByteArrayInputStream(Base64.decode(result.getBytes())));					
 				}
 				
-			}catch(CertificateException e){
+			}catch(CertificateException ignored){
 				
 			} catch (ParserConfigurationException e) {
 				throw new MessageException("Error building XPath Expression when fetching signing certificate: " + e.getMessage(),e);

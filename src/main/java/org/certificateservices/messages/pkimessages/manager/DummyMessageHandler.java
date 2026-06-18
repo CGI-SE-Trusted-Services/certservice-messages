@@ -142,7 +142,7 @@ public class DummyMessageHandler implements MessageHandler{
 		public void run() {
 			try {
 				Thread.sleep(waitTime);
-			} catch (InterruptedException e) {
+			} catch (InterruptedException ignored) {
 			}				
 			callback.responseReceived(responseMessage);	
 		}

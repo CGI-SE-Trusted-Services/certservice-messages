@@ -271,7 +271,7 @@ public class CertUtils {
 		PKCS10CertificationRequest retval = null;
 		try{
 			retval = new PKCS10CertificationRequest(buffer);
-		}catch(IllegalArgumentException e){}
+		}catch(IllegalArgumentException ignored){}
 
 		return retval;
 	}
