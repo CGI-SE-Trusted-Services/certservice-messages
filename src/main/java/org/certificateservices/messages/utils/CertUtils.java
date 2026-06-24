@@ -126,7 +126,7 @@ public class CertUtils {
 		StringBuilder pem;
 		byte[] bytes = Base64.encode(cert);
 		byte[] buf;
-		pem = new StringBuilder(BEGIN_CERTIFICATE + "\n");
+		pem = new StringBuilder(BEGIN_CERTIFICATE).append("\n");
 		for(int i=0,l=0;i<bytes.length;i++){
 			if(l<BASE64_LINE_LENGTH){
 				buf = new byte[]{bytes[i]};
@@ -152,7 +152,7 @@ public class CertUtils {
 		StringBuilder pem;
 		byte[] bytes = Base64.encode(certificateRequest);
 		byte[] buf;
-		pem = new StringBuilder(BEGIN_CERTIFICATE_REQUEST + "\n");
+		pem = new StringBuilder(BEGIN_CERTIFICATE_REQUEST).append("\n");
 		for(int i=0,l=0;i<bytes.length;i++){
 			if(l<BASE64_LINE_LENGTH){
 				buf = new byte[]{bytes[i]};
