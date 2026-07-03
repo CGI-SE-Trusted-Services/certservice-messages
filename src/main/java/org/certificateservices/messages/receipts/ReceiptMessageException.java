@@ -12,8 +12,6 @@
 *************************************************************************/
 package org.certificateservices.messages.receipts;
 
-import java.io.Serial;
-
 /**
  * Exception thrown due to bad internal state when processing a RecieptMessage.
  * 
@@ -23,7 +21,6 @@ import java.io.Serial;
  */
 public class ReceiptMessageException extends Exception {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
 	/**

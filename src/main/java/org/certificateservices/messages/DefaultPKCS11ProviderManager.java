@@ -109,6 +109,6 @@ public class DefaultPKCS11ProviderManager implements PKCS11ProviderManager {
         for (int length; (length = inputStream.read(buffer)) != -1; ) {
             result.write(buffer, 0, length);
         }
-        return result.toString(StandardCharsets.UTF_8);
+        return result.toString(StandardCharsets.UTF_8.name());
     }
 }

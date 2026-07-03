@@ -12,8 +12,6 @@
 *************************************************************************/
 package org.certificateservices.messages;
 
-import java.io.Serial;
-
 /**
  * Exception thrown when no decryption key could be found when trying to decrypt a message.
  * 
@@ -23,7 +21,6 @@ import java.io.Serial;
  */
 public class NoDecryptionKeyFoundException extends Exception {
 
-	@Serial
 	private static final long serialVersionUID = 1L;
 
 	/**

@@ -418,7 +418,7 @@ public class XMLEncrypter {
 		Document encDocument, document;
 		try {
 			ByteArrayOutputStream os = new ByteArrayOutputStream();		
-			properties.storeToXML(os, null, StandardCharsets.UTF_8);
+			properties.storeToXML(os, null, StandardCharsets.UTF_8.name());
 			InputStream is = new ByteArrayInputStream(os.toByteArray());
 			documentBuilder.setEntityResolver(new EntityResolver() {
 				@Override

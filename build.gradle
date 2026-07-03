@@ -48,6 +48,11 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
+// JDK 1.8 compatibility - to be removed after confirmation no client requires it
+tasks.named('compileJava', JavaCompile) {
+    options.release = 8
+}
+
 test {
     useJUnitPlatform()
 }
