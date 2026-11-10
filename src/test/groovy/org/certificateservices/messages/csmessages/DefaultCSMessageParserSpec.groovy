@@ -419,7 +419,7 @@ public class DefaultCSMessageParserSpec extends Specification{
 	
 	def "Verify that verifyCSMessageVersion returns true for supported versions and throws MessageContentException for unsupported versions"(){
 		expect:
-		mp.verifyCSMessageVersion(SUPPORTED_CSMESSAGE_VERSIONS[0]) 
+		mp.verifyCSMessageVersion(DefaultCSMessageParser.SUPPORTED_CSMESSAGE_VERSIONS[0])
 		
 		when:
 		mp.verifyCSMessageVersion("unsupported")
